@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import Functions.plot as gp
 
 # Create an instance of PlotConfig with x_range and y_range
