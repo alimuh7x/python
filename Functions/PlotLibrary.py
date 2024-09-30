@@ -15,6 +15,7 @@ class PlotConfig:
     ylabel      : str = "Y Axis"                      # Y-axis label
     x_range     : Optional[Tuple[int, int]] = None    # X-axis range (min, max)
     y_range     : Optional[Tuple[int, int]] = None    # Y-axis range (min, max)
+    xtics       : Optional[List[Tuple[str, int]]] = None # for Box plot
 
 def Histogram(config: PlotConfig):
     fig = gp()
@@ -158,3 +159,100 @@ def Line_plot(config: PlotConfig):
     fig.c(f'plot {full_plot_command}')
 
     print(f"Plot saved as '{config.output_file}'.")
+
+
+def BoxPlot(config: PlotConfig):
+    fig = gp()
+
+    # Normalize data_files to a list
+    if isinstance(config.data_files, str):
+        data_files = [config.data_files]
+    else:
+        data_files = config.data_files
+
+    # Number of files and pairs
+    num_files = len(data_files)
+    num_pairs = len(config.cols)
+
+    # Case 1: Single file with one pair of columns
+    if num_files == 1 and num_pairs == 1:
+        data_file = data_files[0]
+        if not os.path.exists(data_file):
+            print(f"Error: Data file '{data_file}' does not exist.")
+            return  # Exit if the file is missing
+
+        x_col, y_col = config.cols[0]
+        plot_command = (
+            f'"{data_file}" using ({x_col}):{y_col}:(0.25) lw 2 lc rgb "#0072BD" with boxplot notitle'
+        )
+
+    # Case 2: Single file with multiple pairs of columns
+    elif num_files == 1 and num_pairs > 1:
+        data_file = data_files[0]
+        if not os.path.exists(data_file):
+            print(f"Error: Data file '{data_file}' does not exist.")
+            return  # Exit if the file is missing
+
+        plot_command = []
+        for i in range(num_pairs):
+            x_col, y_col = config.cols[i]
+            plot_command.append(
+                f'"{data_file}" using ({x_col}):{y_col}:(0.25) lw 2 lc rgb "{get_color(i)}" with boxplot notitle'
+            )
+        
+        plot_command = ', '.join(plot_command)
+
+    # Case 3: Multiple files with one column pair each
+    elif num_files == num_pairs:
+        plot_command = []
+        for i in range(num_files):
+            data_file = data_files[i]
+            if not os.path.exists(data_file):
+                print(f"Error: Data file '{data_file}' does not exist.")
+                return  # Exit if any file is missing
+
+            x_col, y_col = config.cols[i]
+            plot_command.append(
+                f'"{data_file}" using ({x_col}):{y_col}:(0.25) lw 2 lc rgb "{get_color(i)}" with boxplot notitle'
+            )
+        
+        plot_command = ', '.join(plot_command)
+
+    else:
+        print("Error: The number of data files must match the number of column pairs.")
+        return  # Exit if the conditions are not met
+
+    # Set up terminal and output configurations
+    fig.c('set terminal pngcairo enhanced size 1000,800 font "Helvetica, 35"')
+    fig.c(f'set output "{config.output_file}"')
+    fig.c('set style data boxplot')
+    fig.c('set style fill solid 0.5 border -1')
+    fig.c('set style boxplot outliers pointtype 7')
+    fig.c('set mxtics 2')
+    fig.c('set mytics 2')
+    fig.c('set border lw 3')
+
+    # Set y-axis label
+    fig.c(f'set ylabel "{config.ylabel}"')
+
+
+    fig.c('set xtics font "Cambria, 34"')
+    # Set xtics if provided
+    if config.xtics:
+        xtics_command = ', '.join([f'"{label}" {position}' for label, position in config.xtics])
+        fig.c(f'set xtics ({xtics_command})')
+
+
+    # Generate the final plot command
+    fig.c(f'plot {plot_command}')
+
+    # Set y-axis range if provided
+    if config.y_range:
+        fig.c(f'set yrange [{config.y_range[0]}:{config.y_range[1]}]')
+
+    print(f"Box plot saved as '{config.output_file}'.")
+
+def get_color(index):
+    # Define colors based on the index
+    colors = ['#0072BD', '#D95319', '#77AC30']
+    return colors[index % len(colors)]

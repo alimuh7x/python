@@ -25,8 +25,6 @@ if pwd == Path011:
     gp.Histogram(histogram_config)
 
 ########################################################################################
-# NOTE: Hystogram                                -
-########################################################################################
 
 PathDiagonal='/mnt/e/RUB/1_Learn_PPT/OPLearn/trunk/examples/ChannelWidthDiagonal/python'
 histogram_config = gp.PlotConfig(
@@ -54,8 +52,56 @@ histogram_config2 = gp.PlotConfig(
     multipliers=[(20, 1), (20, 1), (20, 1)],
     legends    =['{/:Bold T}_{100}', '{/:Bold T}_{110}', '{/:Bold T}_{xy}'])
 
+########################################################################################
+# NOTE: Box Plot                                 -
+########################################################################################
+
+Box_config = gp.PlotConfig(
+    data_files=[
+        '../TextData/Area_Histogram.txt',
+        '../../ChannelWidth_011/TextData/Area_Histogram.txt',
+        '../../ChannelWidth_XY/TextData/Area_Histogram.txt'
+    ],
+    output_file="Box_Cross_X.png",
+    cols=[(1, 4), (2, 2), (3, 2)],  # Example column pairs
+    multipliers=[(1, 1), (1, 1), (1, 1)],
+    ylabel='Area Fraction [%]',
+    xtics=[("{/:Bold T}_{100}", 1), ("{/:Bold T}_{110}", 2), ("{/:Bold T}_{xy}", 3)],
+    y_range=(10, 100)
+)
+
+Box_config2 = gp.PlotConfig(
+    data_files=[
+        '../TextData/Area_Histogram.txt',
+        '../../ChannelWidth_011/TextData/Area_Histogram.txt',
+        '../../ChannelWidth_XY/TextData/Area_Histogram.txt'
+    ],
+    output_file="Box_Cross_Y.png",
+    cols=[(1, 2), (2, 3), (3, 3)],
+    multipliers=[(1, 1), (1, 1), (1, 1)],
+    ylabel='Area Fraction [%]',
+    xtics=[("{/:Bold T}_{100}", 1), ("{/:Bold T}_{110}", 2), ("{/:Bold T}_{xy}", 3)],
+    y_range=(10, 100)
+)
+
+Box_config3 = gp.PlotConfig(
+    data_files=[
+        '../TextData/Area_Histogram.txt',
+        '../../ChannelWidth_011/TextData/Area_Histogram.txt',
+        '../../ChannelWidth_XY/TextData/Area_Histogram.txt'
+    ],
+    output_file="Box_Cross_Z.png",
+    cols=[(1, 3), (2, 4), (3, 4)],
+    multipliers=[(1, 1), (1, 1), (1, 1)],
+    ylabel='Area Fraction [%]',
+    xtics=[("{/:Bold T}_{100}", 1), ("{/:Bold T}_{110}", 2), ("{/:Bold T}_{xy}", 3)],
+    y_range=(10, 100)
+)
 if pwd == PathDiagonal:
     gp.Histogram(histogram_config)
+    gp.BoxPlot(Box_config)
+    gp.BoxPlot(Box_config2)
+    gp.BoxPlot(Box_config3)
     gp.Histogram(histogram_config2)
 
 ###########################################################################################
