@@ -1,19 +1,13 @@
-def test_function(a, b, c):
-    if a + b > 10 and c < 5:
-        print('Sum of a and b is greater than 10, and c is less than 5')
-    else:
-        print('Condition not met')
-    return a + b + c
+import Functions.plot as gp
 
+# Create an instance of PlotConfig with x_range and y_range
+plot_config = gp.PlotConfig(
+    data_file="datafile.dat",  # Input data file
+    output_file="output_plot.png",  # Output image file
+    x_range=(0, 10),  # Set x-axis range
+    y_range=(0, 100)  # Set y-axis range
+)
 
-x = [1, 2, 3, 4, 5]
-y = {'key1': 'value1', 'key2': 'value2'}
+# Call the plot function using the PlotConfig instance
+gp.plot_with_gnuplot_py(plot_config)
 
-test_function(1, 2, 3)
-
-
-def my_function(x, y):
-    return x + y
-
-
-my_function(1, 2)
