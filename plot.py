@@ -31,7 +31,7 @@ if pwd == Path011:
 PathDiagonal='/mnt/e/RUB/1_Learn_PPT/OPLearn/trunk/examples/ChannelWidthDiagonal/python'
 histogram_config = gp.PlotConfig(
     data_files  ="../TextData/Channelwidth_Histogram.txt",
-    output_file="histogram_output.png",
+    output_file="Channel_Width_001.png",
     xlabel     ="Channel width [nm]",
     ylabel     ="Frequency",
     x_range    =(40, 350),
@@ -46,7 +46,7 @@ histogram_config2 = gp.PlotConfig(
         '../../ChannelWidth_011/TextData/Channelwidth_Histogram_XY.txt',
         '../../ChannelWidth_XY/TextData/Channelwidth_Histogram_XY.txt'
     ],
-    output_file="Channel_width_Output.png",
+    output_file="Channel_Width_Comparison.png",
     xlabel     ="Channel width [nm]",
     ylabel     ="Frequency",
     x_range    =(40, 350),
