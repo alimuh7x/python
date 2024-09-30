@@ -1,8 +1,28 @@
 #!/home/alimuh7x/myenv/bin/python3
 
 import os
-import Functions.plot as gp
+import Functions.PlotLibrary as gp
 pwd = os.getcwd()
+
+########################################################################################
+# NOTE: Hystogram                                -
+########################################################################################
+
+Path011='/mnt/e/RUB/1_Learn_PPT/OPLearn/trunk/examples/ChannelWidth_011/python'
+
+histogram_config = gp.PlotConfig(
+    data_files  ="../TextData/Channelwidth_Histogram.txt",
+    output_file="histogram_output.png",
+    xlabel     ="Channel width [nm]",
+    ylabel     ="Frequency",
+    x_range    =(40, 350),
+    cols       =[(1, 2), (3, 4), (5, 6)],
+    multipliers=[(20, 1), (20, 1), (20, 1)],
+    legends     =["x - direction", "y - direction", "z - direction"]
+)
+
+if pwd == Path011:
+    gp.Histogram(histogram_config)
 
 ########################################################################################
 # NOTE: Hystogram                                -

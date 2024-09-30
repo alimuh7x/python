@@ -16,22 +16,73 @@ class PlotConfig:
     x_range     : Optional[Tuple[int, int]] = None    # X-axis range (min, max)
     y_range     : Optional[Tuple[int, int]] = None    # Y-axis range (min, max)
 
-
 def Histogram(config: PlotConfig):
     fig = gp()
 
+    # Normalize data_files to a list
     if isinstance(config.data_files, str):
         data_files = [config.data_files]
     else:
         data_files = config.data_files
 
-    for file in data_files:
-        if not os.path.exists(file):
-            print(f"Error: Data file '{file}' does not exist.")
-            return  # Exit the function if any file is missing
+    # Number of files and pairs
+    num_files = len(data_files)
+    num_pairs = len(config.cols)
+
+    # Case 1: Single file with one pair of columns
+    if num_files == 1 and num_pairs == 1:
+        data_file = data_files[0]
+        if not os.path.exists(data_file):
+            print(f"Error: Data file '{data_file}' does not exist.")
+            return  # Exit if the file is missing
+
+        x_col, y_col = config.cols[0]
+        x_mult, y_mult = config.multipliers[0]
+        plot_command = (
+            f'"{data_file}" using ({x_mult}*${x_col}):({y_mult}*${y_col}) '
+            f'smooth csplines with filledcurves x1 ls 1 title "{config.legends[0] if config.legends else "Data 1"}"'
+        )
+
+    # Case 2: Single file with multiple pairs of columns
+    elif num_files == 1 and num_pairs > 1:
+        data_file = data_files[0]
+        if not os.path.exists(data_file):
+            print(f"Error: Data file '{data_file}' does not exist.")
+            return  # Exit if the file is missing
+
+        plot_command = []
+        for i in range(num_pairs):
+            x_col, y_col = config.cols[i]
+            x_mult, y_mult = config.multipliers[i]
+            plot_command.append(
+                f'"{data_file}" using ({x_mult}*${x_col}):({y_mult}*${y_col}) smooth csplines with filledcurves x1 ls {i + 1} title "{config.legends[i] if config.legends else f"Data {i + 1}"}"'
+            )
+        
+        plot_command = ', '.join(plot_command)
+
+    # Case 3: Multiple files with one column pair each
+    elif num_files == num_pairs:
+        plot_command = []
+        for i in range(num_files):
+            data_file = data_files[i]
+            if not os.path.exists(data_file):
+                print(f"Error: Data file '{data_file}' does not exist.")
+                return  # Exit if any file is missing
+
+            x_col, y_col = config.cols[i]
+            x_mult, y_mult = config.multipliers[i]
+            plot_command.append(
+                f'"{data_file}" using ({x_mult}*${x_col}):({y_mult}*${y_col}) smooth csplines with filledcurves x1 ls {i + 1} title "{config.legends[i] if config.legends else f"Data {i + 1}"}"'
+            )
+        
+        plot_command = ', '.join(plot_command)
+
+    else:
+        print("Error: The number of data files and column pairs do not match.")
+        return  # Exit if the conditions are not met
 
     # Set up terminal and output configurations
-    fig.c(f'set terminal pngcairo size 1200,800 enhanced font "Helvetica,35"')
+    fig.c('set terminal pngcairo size 1200,800 enhanced font "Helvetica,35"')
     fig.c('set mxtics 2')
     fig.c('set mytics 2')
     fig.c('set border lw 3')
@@ -56,26 +107,11 @@ def Histogram(config: PlotConfig):
 
     fig.c(f'set key font "Cambria, 34"')
 
-    # If legends are not provided, generate default legends
-    if config.legends is None:
-        legends = [f"Data {i + 1}" for i in range(len(data_files))]
-    else:
-        legends = config.legends
-
-    # Create plot commands for each data file
-    plot_command = []
-    for i, data_file in enumerate(data_files):
-        x_col, y_col = config.cols[i]
-        x_mult, y_mult = config.multipliers[i]
-        plot_command.append(
-            f'"{data_file}" using ({x_mult}*${x_col}):({y_mult}*${y_col}) smooth csplines with filledcurves x1 ls {i + 1} title "{legends[i]}"'
-        )
-
-    # Join all plot commands
-    full_plot_command = ', '.join(plot_command)
-    fig.c(f'plot {full_plot_command}')
+    # Generate the plot command
+    fig.c(f'plot {plot_command}')
 
     print(f"Histogram saved as '{config.output_file}'.")
+
 
 
 def Line_plot(config: PlotConfig):
