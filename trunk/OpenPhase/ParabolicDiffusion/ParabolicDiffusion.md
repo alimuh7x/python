@@ -50,21 +50,21 @@ with
 
 The chemical potential is:
 
-\[
+$$
 \mu = A V_m \left[(c - C_{\alpha}^{eq}) \phi_\alpha + (c - C_{\beta}^{eq}) \phi_\beta\right]
-\]
+$$
 
 This drives diffusion through:
 
-\[
+$$
 \frac{\partial c}{\partial t} = M \nabla^2 \mu
-\]
+$$
 
 Where:
 
-\[
+$$
 M = \frac{D_\alpha \phi_\alpha + D_\beta \phi_\beta}{RT}
-\]
+$$
 
 ---
 
@@ -72,11 +72,11 @@ M = \frac{D_\alpha \phi_\alpha + D_\beta \phi_\beta}{RT}
 
 The phase-field variable evolves by:
 
-\[
+$$
 \frac{\partial \phi}{\partial t}
 = L_\phi \left[ \sigma(\nabla^2\phi - \frac{\partial W}{\partial \phi})
 + \frac{6}{w}\,\phi_\alpha\phi_\beta \Delta f \right]
-\]
+$$
 
 Where:
 - `W` = double-well potential  
@@ -101,9 +101,9 @@ This plot shows how `c(x)` evolves under the chemical potential gradient.
 
 The transformation driving force:
 
-\[
+$$
 \Delta f = (f_\beta - f_\alpha) \phi_\alpha \phi_\beta
-\]
+$$
 
 Averaged across the interface region.
 
@@ -131,9 +131,9 @@ It should monotonically decrease as the system evolves.
 
 During simulation, the total concentration:
 
-\[
+$$
 \int c(x)\, dx
-\]
+$$
 
 is checked every 500 steps.
 
