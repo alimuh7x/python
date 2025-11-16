@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "/home/alimuh7x/myenv/bin/python3",
+  "venvPath": "/home/alimuh7x",
+  "venv": "myenv",
+  "typeCheckingMode": "basic",
+  "reportMissingModuleSource": false,
+  "reportMissingImports": false
+}
+
