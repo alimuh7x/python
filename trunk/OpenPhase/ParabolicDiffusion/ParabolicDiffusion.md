@@ -1,6 +1,6 @@
 # 1D Diffusion + Phase-Field Interface Simulation
 
-This simulation models:
+**This simulation models:**
 
 - 1D diffusion across an interface,
 - chemical potential–driven evolution,
@@ -181,7 +181,7 @@ Small deviations (< 1%) indicate
 
 ---
 
-# Simulation Results
+### Simulation Results
 
 
 <div style="display:flex; gap:10px;" markdown="1">

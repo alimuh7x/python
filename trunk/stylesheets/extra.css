@@ -8,22 +8,20 @@
 
 .md-typeset .admonition,
 .md-typeset details {
-    font-size: 0.9rem;   /* default is 0.8–0.9rem */
+    font-size: 0.75rem;   /* default is 0.8–0.9rem */
 }
 
 /* Make title bigger too */
 .md-typeset .admonition-title {
-    font-size: 1.0rem;
-    font-weight: 700;
-    border-radius: 4px 4px 0 0 !important;
+    font-size: 0.85rem;
+    font-weight: 510;
+    border-radius: 6px 6px 0 0 !important;
     background-color: #E6E6E6 !important;   /* slightly darker blue */
-    border: none !important;
 }
 .md-typeset .admonition {
-    border: none !important;
     border-radius: 6px !important;
-    box-shadow: none !important;
-    background-color: #f8f9fa !important;   /* light blue — change as you want */
+    background-color: #fcfcfc !important;   /* light blue — change as you want */
+    border: 1px solid #B0B0B0 !important;
 }
 
 
@@ -57,3 +55,15 @@
     border-radius: 4px;
 }
 
+/* Inline code background */
+.md-typeset code {
+    font-weight: 600 !important;
+    background-color: #ececec !important;   /* light grey */
+    padding: 4px 4px;
+    border-radius: 4px;
+}
+:root  > * {
+  --md-primary-fg-color:        #44444E;
+  --md-primary-fg-color--light: #ECB7B7;
+  --md-primary-fg-color--dark:  #90030C;
+}

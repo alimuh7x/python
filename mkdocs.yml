@@ -56,7 +56,7 @@ markdown_extensions:
          anchor_linenums: true
     - toc:
         permalink: true
-        toc_depth: 3
+        toc_depth: 6
 
 extra_css:
   - stylesheets/extra.css
