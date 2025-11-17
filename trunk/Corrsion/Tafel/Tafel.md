@@ -3,9 +3,12 @@
 ## Butler–Volmer equation
 
 ---
+
 $$
 i_a = i_0 \, \exp\!\left(\frac{\alpha_a n F (E - E_{eq})}{R T}\right),
+$$
 
+$$
 i_c = -\,i_0 \, \exp\!\left(-\frac{\alpha_c n F (E - E_{eq})}{R T}\right)
 $$
 
@@ -27,19 +30,26 @@ $$
 | T        | 298      | K                     |
 | n        | 1        | electrons transferred |
 
----
-### Log |i| vs E Plot (Tafel Plot)
-![Tafel equation](./Tafel_plot.png =500x)
----
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" markdown="1">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+    ![Final Concentration](./Tafel_plot.png){ width="500" }
+    <figcaption>Log |i| vs E Plot (Tafel Plot)</figcaption>
+  </figure>
 
-### Potential vs |i| Plot
-![Tafel equation](./Potential_plot.png =500x)
----
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+    ![Final Concentration](./Potential_plot.png){ width="500" }
+    <figcaption>Potential vs |i| Plot</figcaption>
+  </figure>
 
-### Potential vs Current Plot
-![Tafel equation](./2Potential_plot.png =500x)
----
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+    ![Final Concentration](./2Potential_plot.png){ width="500" }
+    <figcaption>Potential vs Current Plot</figcaption>
+  </figure>
 
-### Potential vs Current Plot
-![Tafel equation](./Tafel_alpha_plot.png =500x)
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+    ![Final Concentration](./Tafel_alpha_plot.png){ width="500" }
+    <figcaption>Potential vs Current Plot different alpha</figcaption>
+  </figure>
+</div>
+
 ---

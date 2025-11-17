@@ -52,10 +52,10 @@ $$
 
 
 ## Concentration
-![Concentration](./ReactionTime_Evolution_Concentrations.png =800x)
+![Concentration](./ReactionTime_Evolution_Concentrations.png)
 
 ## Rates 
-![Rates](./ReactionTime_Evolution_Rates.png =800x)
+![Rates](./ReactionTime_Evolution_Rates.png)
 
 
 
