@@ -12,9 +12,11 @@ theme:
     - content.code.annotate
     - content.tabs.link
     - content.action.edit
-    - navigation.expand
     - navigation.path
     - navigation.indexes
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
   palette:
     - scheme: default
       primary: teal
@@ -60,3 +62,6 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+
+extra:
+  print_site: true
