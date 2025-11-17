@@ -30,23 +30,23 @@ $$
 | T        | 298      | K                     |
 | n        | 1        | electrons transferred |
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+<div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Tafel_plot.png){ width="500" }
     <figcaption>Log |i| vs E Plot (Tafel Plot)</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Potential_plot.png){ width="500" }
     <figcaption>Potential vs |i| Plot</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./2Potential_plot.png){ width="500" }
     <figcaption>Potential vs Current Plot</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Tafel_alpha_plot.png){ width="500" }
     <figcaption>Potential vs Current Plot different alpha</figcaption>
   </figure>
