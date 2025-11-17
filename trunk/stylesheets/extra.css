@@ -1,12 +1,59 @@
-.gallery-item {
+.eq-box {
     border: 2px solid #ccc;
     border-radius: 8px;
-    padding: 8px;
-    text-align: center;
-    background: white;
+    padding: 10px;
+    background: #fafafa;
+    margin: 10px 0;
 }
-.gallery-img {
-    width: 100%;
+
+.md-typeset .admonition,
+.md-typeset details {
+    font-size: 0.9rem;   /* default is 0.8–0.9rem */
+}
+
+/* Make title bigger too */
+.md-typeset .admonition-title {
+    font-size: 1.0rem;
+    font-weight: 700;
+    border-radius: 4px 4px 0 0 !important;
+    background-color: #E6E6E6 !important;   /* slightly darker blue */
+    border: none !important;
+}
+.md-typeset .admonition {
+    border: none !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    background-color: #f8f9fa !important;   /* light blue — change as you want */
+}
+
+
+.md-typeset h1, 
+.md-typeset h2,
+.md-typeset h3 {
+    padding-left: 12px;
+    border-left: 6px solid #a0aec0;  /* soft grey */
+}
+
+/* H1 */
+.md-typeset h1 {
+    background-color: #e5e5e5;   /* light grey */
+    padding: 6px 12px;
     border-radius: 6px;
+    font-weight: 400 !important;
+}
+
+/* H2 */
+.md-typeset h2 {
+    background-color: #ececec;   /* slightly darker grey */
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 400 !important;
+}
+
+/* H3 */
+.md-typeset h3 {
+    background-color: #f3f3f3;
+    padding: 4px 8px;
+    border-radius: 4px;
 }
 

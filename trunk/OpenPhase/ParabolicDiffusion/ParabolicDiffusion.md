@@ -100,6 +100,8 @@ This plot shows how `c(x)` evolves under the chemical potential gradient.
 
 The local free energy density of each phase is defined as:
 
+<div class="eq-box" markdown="1">
+
 $$
 f_{\alpha}(c) = \frac{1}{2} A \,(c - C_{\alpha}^{eq})^2
 $$
@@ -107,6 +109,8 @@ $$
 $$
 f_{\beta}(c) = \frac{1}{2} A \,(c - C_{\beta}^{eq})^2
 $$
+
+</div>
 
 The mixture free energy is obtained using phase fractions:
 
@@ -134,14 +138,18 @@ EnergyN.append(abs(Energy))
 
 ---
 
-### ▶**Driving Force Evolution**
+### ▶ **Driving Force Evolution**
 
 The transformation driving force:
+
+<div class="eq-box" markdown="1">
+
 
 $$
 \Delta f = (f_\beta - f_\alpha) \phi_\alpha \phi_\beta
 $$
 
+</div>
 Averaged across the interface region.
 
 ![Driving Force](./DrivingForce.png)
