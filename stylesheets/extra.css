@@ -1,0 +1,69 @@
+.eq-box {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    background: #fafafa;
+    margin: 10px 0;
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+    font-size: 0.75rem;   /* default is 0.8–0.9rem */
+}
+
+/* Make title bigger too */
+.md-typeset .admonition-title {
+    font-size: 0.85rem;
+    font-weight: 510;
+    border-radius: 6px 6px 0 0 !important;
+    background-color: #E6E6E6 !important;   /* slightly darker blue */
+}
+.md-typeset .admonition {
+    border-radius: 6px !important;
+    background-color: #fcfcfc !important;   /* light blue — change as you want */
+    border: 1px solid #B0B0B0 !important;
+}
+
+
+.md-typeset h1, 
+.md-typeset h2,
+.md-typeset h3 {
+    padding-left: 12px;
+    border-left: 6px solid #a0aec0;  /* soft grey */
+}
+
+/* H1 */
+.md-typeset h1 {
+    background-color: #e5e5e5;   /* light grey */
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 400 !important;
+}
+
+/* H2 */
+.md-typeset h2 {
+    background-color: #ececec;   /* slightly darker grey */
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: 400 !important;
+}
+
+/* H3 */
+.md-typeset h3 {
+    background-color: #f3f3f3;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Inline code background */
+.md-typeset code {
+    font-weight: 600 !important;
+    background-color: #ececec !important;   /* light grey */
+    padding: 4px 4px;
+    border-radius: 4px;
+}
+:root  > * {
+  --md-primary-fg-color:        #44444E;
+  --md-primary-fg-color--light: #ECB7B7;
+  --md-primary-fg-color--dark:  #90030C;
+}
