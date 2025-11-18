@@ -23,6 +23,7 @@
 
 ---
 
+
 ## 🔘 1. Initial Condition
 
 The initial interface profile is:

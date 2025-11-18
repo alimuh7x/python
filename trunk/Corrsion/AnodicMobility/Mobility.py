@@ -1,16 +1,18 @@
 #!/home/alimuh7x/myenv/bin/python3
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 import numpy as np
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+# Add src/ folder to Python's module search path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_PATH = os.path.join(CURRENT_DIR, "..", "..", "src")
+sys.path.append(os.path.realpath(SRC_PATH))
 
-from src.plot_utils import save_dual_plot
+from Plotter import Plotter
 
 
 OUTPUT_DIR = Path(__file__).parent
@@ -33,17 +35,17 @@ def main() -> None:
     exponential_term = np.exp((aa * nM * F * phi_m) / (Rg * T))
     print(f"exp((aa * nM * F * phi_m) / (Rg * T)) = {exponential_term:.6e}")
 
-    save_dual_plot(
+    plot = Plotter(fontsize=12)
+    plot.multiplot(
         phi_l,
         La,
+        phi_l,
         eta,
+        xlabel="Liquid potential, phi_l [V]",
+        ylabel="Anodic mobility / Overpotential",
+        labels=("Anodic mobility L_a [m^4 / Js]", "Overpotential eta [V]"),
+        filename="Anodic_Mobility_and_Overpotential_vs_Liquid_Potential.png",
         marker=True,
-        x_label="Liquid potential, phi_l [V]",
-        y_label="Anodic mobility / Overpotential",
-        y1_label="Anodic mobility L_a [m^4 / Js]",
-        y2_label="Overpotential eta [V]",
-        filename=OUTPUT_DIR / "Anodic_Mobility_vs_Liquid_Potential.png",
-        title="Anodic mobility vs Liquid potential",
     )
     print("✅ Saved: Anodic_Mobility_vs_Liquid_Potential.png")
 
