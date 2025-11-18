@@ -36,7 +36,6 @@ $$
 
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-
   <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Anodic_Mobility_and_Overpotential_vs_Liquid_Potential.png){ width="600" }
     <figcaption>Anodic_Mobility_vs_Liquid_Potential</figcaption>
