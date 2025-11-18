@@ -60,6 +60,63 @@ class Plotter:
 
         plt.close()
 
+    def multiplot(self, x1, y1, x2, y2, xlabel="x", ylabel="y",
+                     labels=("Plot 1", "Plot 2"), filename=None, marker=True):
+        """General-purpose 1D multi-plot (two lines) with ticks, markers, frame, Verdana."""
+
+        x1 = np.asarray(x1)
+        y1 = np.asarray(y1)
+        x2 = np.asarray(x2)
+        y2 = np.asarray(y2)
+        plt.figure()
+
+        # Main lines without markers
+        plt.plot(x1, y1, color="black", linewidth=1.5, label=labels[0], linestyle="-")
+        plt.plot(x2, y2, color="black", linewidth=1.5, label=labels[1], linestyle="-")
+
+        # Only 20 markers per line
+        idx1 = np.linspace(0, len(x1)-1, 20, dtype=int)
+        plt.plot(x1[idx1], y1[idx1], "s", color="black", linestyle="none", label=None)  # 20 square markers
+        idx2 = np.linspace(0, len(x2)-1, 20, dtype=int)
+        plt.plot(x2[idx2], y2[idx2], "o", color="black", linestyle="none", label=None)  # 20 circle markers
+
+        # Labels + title
+        plt.xlabel(xlabel, fontproperties=self.font)
+        plt.ylabel(ylabel, fontproperties=self.font)
+
+        ax = plt.gca()
+
+        # Ticks
+        ax.tick_params(which="major", direction="in", length=7, width=1.2,
+                       top=True, bottom=True, left=True, right=True)
+        ax.tick_params(which="minor", direction="in", length=4, width=0.8,
+                       top=True, bottom=True, left=True, right=True)
+        ax.minorticks_on()
+
+        # Apply font to tick labels
+        for lbl in ax.get_xticklabels() + ax.get_yticklabels():
+            lbl.set_fontproperties(self.font)
+
+        # Border
+        for spine in ax.spines.values():
+            spine.set_linewidth(1.0)
+            spine.set_color("black")
+
+        # No grid
+        plt.grid(False)
+
+        plt.subplots_adjust(left=0.15, bottom=0.15)
+
+        # Legend without box
+        legend = plt.legend(prop=self.font)
+        legend.get_frame().set_linewidth(0)
+
+        # Save figure
+        if filename:
+            plt.savefig(filename, dpi=200)
+
+        plt.close()
+
     def plot2x1(self, Data, Labels, filename=None, marker=True):
         """
         Create a 2x1 subplot figure.
