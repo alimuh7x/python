@@ -27,7 +27,7 @@ def main() -> None:
     T = 298
     phi_m = 0.2
 
-    phi_l = np.linspace(0.0, 0.3, 200)
+    phi_l = np.linspace(0.0, 0.2, 200)
     eta = phi_m - phi_l
 
     La = L0 * np.exp((aa * nM * F * eta) / (Rg * T))
@@ -36,17 +36,8 @@ def main() -> None:
     print(f"exp((aa * nM * F * phi_m) / (Rg * T)) = {exponential_term:.6e}")
 
     plot = Plotter(fontsize=12)
-    plot.multiplot(
-        phi_l,
-        La,
-        phi_l,
-        eta,
-        xlabel="Liquid potential, phi_l [V]",
-        ylabel="Anodic mobility / Overpotential",
-        labels=("Anodic mobility L_a [m^4 / Js]", "Overpotential eta [V]"),
-        filename="Anodic_Mobility_and_Overpotential_vs_Liquid_Potential.png",
-        marker=True,
-    )
+    plot.plot1D(phi_l, La, xlabel=r'$\phi_\ell$ Liquid potential', ylabel=r'mobility ($L_\alpha$)', filename='Mobility.png', marker=True)
+    plot.plot1D(phi_l, eta, xlabel=r'$\phi_\ell$ Liquid potential', ylabel=r'Overpotential $\eta$', filename='Overpotential.png', marker=True)
     print("✅ Saved: Anodic_Mobility_vs_Liquid_Potential.png")
 
 

@@ -1,33 +1,19 @@
 # Fe Hydrolysis Simulation
 
 
-#### Initial values
+### Initial values
 
-| Header 1 | Header 2 | Header 3 |
-| -------- | -------- | -------- |
-| **K1**            | 1.0e-4;         |          |
-| **K2**            | 1.0e-14         |          |
-| **Ctot**          | 5.55e4;         |   $mol/m^3$         |
-| **kb1**           | 2.78e3;         |   $s{}^-1$          |
-| **kb2**           | 2.78e3;         |   $s^-1$          |
-
-
----
-#### Initial mole fractions
-
-
-| Header 1 | Header 2 |
-| -------- | -------- |
-| **xM**            |   0.1                |
-| **xMOH**          |   0.0                |
-| **xH**            |   $1e-12$             |
-| **xOH**           |   $K_2 / x_H$         |
-| **dt**            |   $1e-5$             |
-| **Nt**            |   $2e5$              |
-
+| Constants | Values| Units |                                             Initial MF | Values | 
+| -------- | -------- | :--------: |                                           -------- | :--------: |
+| **K1**            | `1.0e-4   `      |  |                                    **xM**            |   `0.1        `  |
+| **K2**            | `1.0e-14  `       |  |                                   **xMOH**          |   `0.0        `     |     
+| **Ctot**          | `5.55e4   `      |  `  mol/m³`          |                **xH**            |   `1e-12      `      | 
+| **kb1**           | `2.78e3   `      |  ` 1/s    `      |                    **xOH**           |   `K_2 / x_H  `      | 
+| **kb2**           | `2.78e3   `      |  ` 1/s    `      |                    **dt**            |   `1e-5       `      |
+                                                                               **Nt**            |   `2e5        `      |
 
 ---
-#### The governing hydrolysis reactions are:
+### The governing hydrolysis reactions
 
 $$
 \mathrm{Fe^{2+} + H_2O \leftrightarrow FeOH^+ + H^+}
@@ -37,6 +23,7 @@ $$
 $$
 \mathrm{H_2O \leftrightarrow H^+ + OH^-}
 $$
+
 
 ##### Rate equations:
 
@@ -51,11 +38,21 @@ $$
 
 
 
-## Concentration
-![Concentration](./ReactionTime_Evolution_Concentrations.png)
+### Concentration Evolution
 
-## Rates 
-![Rates](./ReactionTime_Evolution_Rates.png)
+<div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+    ![Final Concentration](./ReactionTime_Evolution_Concentrations.png){ width="600" }
+    <figcaption>Concentration</figcaption>
+  </figure>
+</div>
 
+### Concentration Rates 
+<div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
+  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+    ![Final Concentration](./ReactionTime_Evolution_Concentrations.png){ width="600" }
+    <figcaption>Concentration Rates</figcaption>
+  </figure>
+</div>    
 
 

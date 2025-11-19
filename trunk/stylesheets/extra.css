@@ -32,6 +32,25 @@
     border-left: 6px solid #a0aec0;  /* soft grey */
 }
 
+.md-typeset h4 {
+    padding-left: 12px;
+    border-left: 6px solid #a0aec0;  /* soft grey */
+    border-radius: 4px;
+}
+
+.md-typeset h5 {
+    padding-left: 40px;
+    position: relative;
+}
+
+.md-typeset h5::before {
+    content: "◆"; /* book icon Unicode */
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1em;
+}
 /* H1 */
 .md-typeset h1 {
     background-color: #e5e5e5;   /* light grey */
@@ -67,3 +86,10 @@
   --md-primary-fg-color--light: #ECB7B7;
   --md-primary-fg-color--dark:  #90030C;
 }
+
+
+.md-typeset table thead tr {
+    background-color: #f3f3f3 !important;   /* light cyan */
+    font-size: 0.8rem !important;
+}
+

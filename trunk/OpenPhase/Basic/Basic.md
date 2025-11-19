@@ -23,6 +23,7 @@ This section lists the key equations used in the simulation, including the diffu
 
 
 
+
 ---
 
 ### Gradient of order parameter:
