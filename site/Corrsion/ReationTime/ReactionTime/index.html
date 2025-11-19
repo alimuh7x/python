@@ -6,7 +6,7 @@
       
       
       
-        <link rel="prev" href="../../Mobility/Mobility/">
+        <link rel="prev" href="../../AnodicMobility/Mobility/">
       
       
         <link rel="next" href="../../Tafel/Tafel/">
@@ -244,7 +244,7 @@
     
     
       <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../Mobility/Mobility/" class="md-tabs__link">
+        <a href="../../AnodicMobility/Mobility/" class="md-tabs__link">
           
   
   
@@ -490,7 +490,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../Mobility/Mobility/" class="md-nav__link">
+      <a href="../../AnodicMobility/Mobility/" class="md-nav__link">
         
   
   
@@ -658,26 +658,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#initial-mole-fractions" class="md-nav__link">
+  <a href="#the-governing-hydrolysis-reactions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Initial mole fractions
+        The governing hydrolysis reactions
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-governing-hydrolysis-reactions-are" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The governing hydrolysis reactions are:
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The governing hydrolysis reactions are:">
+    <nav class="md-nav" aria-label="The governing hydrolysis reactions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -708,10 +697,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#concentration" class="md-nav__link">
+  <a href="#concentration-evolution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Concentration
+        Concentration Evolution
       
     </span>
   </a>
@@ -719,10 +708,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rates" class="md-nav__link">
+  <a href="#concentration-rates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rates
+        Concentration Rates
       
     </span>
   </a>
@@ -1135,26 +1124,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#initial-mole-fractions" class="md-nav__link">
+  <a href="#the-governing-hydrolysis-reactions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Initial mole fractions
+        The governing hydrolysis reactions
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-governing-hydrolysis-reactions-are" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The governing hydrolysis reactions are:
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="The governing hydrolysis reactions are:">
+    <nav class="md-nav" aria-label="The governing hydrolysis reactions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1185,10 +1163,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#concentration" class="md-nav__link">
+  <a href="#concentration-evolution" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Concentration
+        Concentration Evolution
       
     </span>
   </a>
@@ -1196,10 +1174,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#rates" class="md-nav__link">
+  <a href="#concentration-rates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Rates
+        Concentration Rates
       
     </span>
   </a>
@@ -1254,7 +1232,7 @@
     
     
       <li class="md-path__item">
-        <a href="../../Mobility/Mobility/" class="md-path__link">
+        <a href="../../AnodicMobility/Mobility/" class="md-path__link">
           
   <span class="md-ellipsis">
     Corrsion
@@ -1298,81 +1276,64 @@
 
 
 <h1 id="fe-hydrolysis-simulation">Fe Hydrolysis Simulation<a class="headerlink" href="#fe-hydrolysis-simulation" title="Permanent link">¶</a></h1>
-<h4 id="initial-values">Initial values<a class="headerlink" href="#initial-values" title="Permanent link">¶</a></h4>
+<h3 id="initial-values">Initial values<a class="headerlink" href="#initial-values" title="Permanent link">¶</a></h3>
 <table>
 <thead>
 <tr>
-<th>Header 1</th>
-<th>Header 2</th>
-<th>Header 3</th>
+<th>Constants</th>
+<th>Values</th>
+<th style="text-align: center;">Units</th>
+<th>Initial MF</th>
+<th style="text-align: center;">Values</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><strong>K1</strong></td>
-<td>1.0e-4;</td>
-<td></td>
+<td><code>1.0e-4</code></td>
+<td style="text-align: center;"></td>
+<td><strong>xM</strong></td>
+<td style="text-align: center;"><code>0.1</code></td>
 </tr>
 <tr>
 <td><strong>K2</strong></td>
-<td>1.0e-14</td>
-<td></td>
+<td><code>1.0e-14</code></td>
+<td style="text-align: center;"></td>
+<td><strong>xMOH</strong></td>
+<td style="text-align: center;"><code>0.0</code></td>
 </tr>
 <tr>
 <td><strong>Ctot</strong></td>
-<td>5.55e4;</td>
-<td>$mol/m^3$</td>
+<td><code>5.55e4</code></td>
+<td style="text-align: center;"><code>mol/m³</code></td>
+<td><strong>xH</strong></td>
+<td style="text-align: center;"><code>1e-12</code></td>
 </tr>
 <tr>
 <td><strong>kb1</strong></td>
-<td>2.78e3;</td>
-<td>$s{}^-1$</td>
+<td><code>2.78e3</code></td>
+<td style="text-align: center;"><code>1/s</code></td>
+<td><strong>xOH</strong></td>
+<td style="text-align: center;"><code>K_2 / x_H</code></td>
 </tr>
 <tr>
 <td><strong>kb2</strong></td>
-<td>2.78e3;</td>
-<td>$s^-1$</td>
-</tr>
-</tbody>
-</table>
-<hr>
-<h4 id="initial-mole-fractions">Initial mole fractions<a class="headerlink" href="#initial-mole-fractions" title="Permanent link">¶</a></h4>
-<table>
-<thead>
-<tr>
-<th>Header 1</th>
-<th>Header 2</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>xM</strong></td>
-<td>0.1</td>
-</tr>
-<tr>
-<td><strong>xMOH</strong></td>
-<td>0.0</td>
-</tr>
-<tr>
-<td><strong>xH</strong></td>
-<td>$1e-12$</td>
-</tr>
-<tr>
-<td><strong>xOH</strong></td>
-<td>$K_2 / x_H$</td>
-</tr>
-<tr>
+<td><code>2.78e3</code></td>
+<td style="text-align: center;"><code>1/s</code></td>
 <td><strong>dt</strong></td>
-<td>$1e-5$</td>
+<td style="text-align: center;"><code>1e-5</code></td>
 </tr>
 <tr>
 <td><strong>Nt</strong></td>
-<td>$2e5$</td>
+<td><code>2e5</code></td>
+<td style="text-align: center;"></td>
+<td></td>
+<td style="text-align: center;"></td>
 </tr>
 </tbody>
 </table>
 <hr>
-<h4 id="the-governing-hydrolysis-reactions-are">The governing hydrolysis reactions are:<a class="headerlink" href="#the-governing-hydrolysis-reactions-are" title="Permanent link">¶</a></h4>
+<h3 id="the-governing-hydrolysis-reactions">The governing hydrolysis reactions<a class="headerlink" href="#the-governing-hydrolysis-reactions" title="Permanent link">¶</a></h3>
 <p>
 <script type="math/tex; mode=display">
 \mathrm{Fe^{2+} + H_2O \leftrightarrow FeOH^+ + H^+}
@@ -1395,10 +1356,22 @@ R_{OH} &= k_{b2}(K_2 - x_H x_{OH})
 \end{aligned}
 </script>
 </p>
-<h2 id="concentration">Concentration<a class="headerlink" href="#concentration" title="Permanent link">¶</a></h2>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../ReactionTime_Evolution_Concentrations.png" data-desc-position="bottom"><img alt="Concentration" src="../ReactionTime_Evolution_Concentrations.png"></a></p>
-<h2 id="rates">Rates<a class="headerlink" href="#rates" title="Permanent link">¶</a></h2>
-<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../ReactionTime_Evolution_Rates.png" data-desc-position="bottom"><img alt="Rates" src="../ReactionTime_Evolution_Rates.png"></a></p>
+<h3 id="concentration-evolution">Concentration Evolution<a class="headerlink" href="#concentration-evolution" title="Permanent link">¶</a></h3>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<figure style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+    <a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../ReactionTime_Evolution_Concentrations.png" data-desc-position="bottom"><img alt="Final Concentration" src="../ReactionTime_Evolution_Concentrations.png" width="600"></a>
+    <figcaption>Concentration</figcaption>
+  </figure>
+</div>
+<h3 id="concentration-rates">Concentration Rates<a class="headerlink" href="#concentration-rates" title="Permanent link">¶</a></h3>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<figure style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+    <a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../ReactionTime_Evolution_Concentrations.png" data-desc-position="bottom"><img alt="Final Concentration" src="../ReactionTime_Evolution_Concentrations.png" width="600"></a>
+    <figcaption>Concentration Rates</figcaption>
+  </figure>
+</div>
+<div class="highlight"><pre><span></span><code>
+</code></pre></div>
 
 
 
