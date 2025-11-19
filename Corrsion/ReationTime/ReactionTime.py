@@ -1,16 +1,19 @@
+#!/home/alimuh7x/myenv/bin/python3
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 import numpy as np
 
-ROOT_DIR = Path(__file__).resolve().parents[2]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
 
-from src.plot_utils import save_four_subplot
+# Add src/ folder to Python's module search path
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_PATH = os.path.join(CURRENT_DIR, "..", "..", "src")
+sys.path.append(os.path.realpath(SRC_PATH))
 
+from Plotter import Plotter
 
 OUTPUT_DIR = Path(__file__).parent
 
@@ -75,17 +78,18 @@ def main() -> None:
                 f"K1*xM={K1*xM:.2e}, xH*xMOH={xH*xMOH:.2e}, xH={xH:.2e}, xOH={xOH:.2e}"
             )
 
-    rates = np.column_stack([time, RM_arr, RMOH_arr, RH_arr, ROH_arr])
-    concentrations = np.column_stack([time, xM_arr, xMOH_arr, xH_arr, xOH_arr])
+    rates = [time, RM_arr, time,RMOH_arr, time,RH_arr, time,ROH_arr]
+    concentrations = [time, xM_arr, time,xMOH_arr, time,xH_arr, time,xOH_arr]
 
-    save_four_subplot(
+    Plot = Plotter(fontsize=12)
+    Plot.plot2x2(
         rates,
-        ["time", "R_M", "R_{MOH}", "R_H", "R_{OH}"],
+        ["time", "R_M", "time","R_{MOH}", "time","R_H", "time","R_{OH}"],
         OUTPUT_DIR / "ReactionTime_Evolution_Rates.png",
     )
-    save_four_subplot(
+    Plot.plot2x2(
         concentrations,
-        ["time", "c_M", "c_{MOH}", "c_H", "c_{OH}"],
+        ["time", "c_M", "time","c_{MOH}", "time","c_H", "time","c_{OH}"],
         OUTPUT_DIR / "ReactionTime_Evolution_Concentrations.png",
     )
     print("✅ Saved: ReactionTime_Evolution_Rates.png and ReactionTime_Evolution_Concentrations.png")

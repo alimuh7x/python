@@ -56,7 +56,7 @@ class Plotter:
 
         # Save figure
         if filename:
-            plt.savefig(filename, dpi=200)
+            plt.savefig(filename, dpi=130)
 
         plt.close()
 
@@ -113,9 +113,11 @@ class Plotter:
 
         # Save figure
         if filename:
-            plt.savefig(filename, dpi=200)
+            plt.savefig(filename, dpi=130)
 
         plt.close()
+
+    
 
     def plot2x1(self, Data, Labels, filename=None, marker=True):
         """
@@ -170,7 +172,7 @@ class Plotter:
         plt.subplots_adjust(top=0.95, left=0.15, bottom=0.12, hspace=0.35)
     
         if filename:
-            plt.savefig(filename, dpi=200)
+            plt.savefig(filename, dpi=130)
     
         plt.close()
 
@@ -227,7 +229,60 @@ class Plotter:
         plt.subplots_adjust(left=0.08, right=0.95, bottom=0.15, wspace=0.30)
     
         if filename:
-            plt.savefig(filename, dpi=200)
+            plt.savefig(filename, dpi=130)
     
         plt.close()
-     
+
+    def plot2x2(self, Data, Labels, filename=None, marker=True):
+        """
+        Create a 2x2 subplot figure.
+        Data = [x1, y1, x2, y2, x3, y3, x4, y4]
+        Labels = [
+            "xlabel1", "ylabel1",
+            "xlabel2", "ylabel2",
+            "xlabel3", "ylabel3",
+            "xlabel4", "ylabel4"
+        ]
+        """
+        x1, y1, x2, y2, x3, y3, x4, y4 = map(np.asarray, Data)
+        xlabel1, ylabel1, xlabel2, ylabel2, xlabel3, ylabel3, xlabel4, ylabel4 = Labels
+
+        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+        axes = axes.flatten()
+
+        def style(ax, x, y, xlabel, ylabel):
+            # Main line
+            ax.plot(x, y, color="black", linewidth=1.5)
+            # Markers
+            if marker:
+                idx = np.linspace(0, len(x)-1, 20, dtype=int)
+                ax.plot(x[idx], y[idx], "o", color="black", linestyle="none")
+            # Labels
+            ax.set_xlabel(xlabel, fontproperties=self.font)
+            ax.set_ylabel(ylabel, fontproperties=self.font)
+            # Ticks
+            ax.tick_params(which="major", direction="in", length=7, width=1.2,
+                           top=True, bottom=True, left=True, right=True)
+            ax.tick_params(which="minor", direction="in", length=4, width=0.8,
+                           top=True, bottom=True, left=True, right=True)
+            ax.minorticks_on()
+            # Tick font
+            for lbl in ax.get_xticklabels() + ax.get_yticklabels():
+                lbl.set_fontproperties(self.font)
+            # Border
+            for spine in ax.spines.values():
+                spine.set_linewidth(1.0)
+                spine.set_color("black")
+            ax.grid(False)
+
+        style(axes[0], x1, y1, xlabel1, ylabel1)
+        style(axes[1], x2, y2, xlabel2, ylabel2)
+        style(axes[2], x3, y3, xlabel3, ylabel3)
+        style(axes[3], x4, y4, xlabel4, ylabel4)
+
+        plt.subplots_adjust(left=0.12, right=0.96, bottom=0.08, top=0.96, wspace=0.30, hspace=0.30)
+
+        if filename:
+            plt.savefig(filename, dpi=200)
+
+  
