@@ -1,8 +1,6 @@
-
 # Corrosion Reactions
 
-
-### Initial values
+## Initial values
 
 | Constants | Values| Units |                                             Initial MF | Values | 
 | -------- | -------- | :--------: |                                           -------- | :--------: |
@@ -16,19 +14,20 @@
 
 
 ---
-### The governing hydrolysis reactions
+
+## The governing hydrolysis reactions
 
 $$
 \mathrm{Fe^{2+} + H_2O \leftrightarrow FeOH^+ + H^+}
 $$
 
-##### Water self-ionization:
+### Water self-ionization:
 $$
 \mathrm{H_2O \leftrightarrow H^+ + OH^-}
 $$
 
 
-##### Rate equations:
+### Rate equations:
 
 $$
 \begin{aligned}
@@ -41,7 +40,7 @@ $$
 
 
 
-### Concentration Evolution
+## Concentration Evolution
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
   <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
@@ -50,7 +49,7 @@ $$
   </figure>
 </div>
 
-### Concentration Rates 
+## Concentration Rates 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
   <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./ReactionTime_Evolution_Concentrations.png){ width="600" }

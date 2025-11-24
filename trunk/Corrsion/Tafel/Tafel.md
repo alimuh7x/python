@@ -1,6 +1,5 @@
+# Tafel Equation
 
-
-#  Tafel Equation
 ## Butler–Volmer equation
 
 ---
@@ -22,7 +21,7 @@ E_{eq} &= 0.0;  \\  % equilibrium potential (V vs SHE for Fe)
 \end{align*}
 $$
 
-### Constants
+## Constants
         
 
 | Header 1 | Header 2 | Header 3              |
@@ -33,7 +32,7 @@ $$
 | n        | 1        | electrons transferred |
 
 
-### Plots
+## Plots
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
   <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">

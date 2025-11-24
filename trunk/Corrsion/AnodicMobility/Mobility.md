@@ -1,5 +1,4 @@
-
-#   Anodic Mobility OR Current density
+# Anodic Mobility OR Current density
 
 ---
 $$
@@ -20,15 +19,15 @@ $$
 
 ---
 
-#### Anodic Mobility vs Liquid Potential
+## Anodic Mobility vs Liquid Potential
 
-##### Plot 1:
+### Plot 1:
 
 $$
 L_a - \phi_l 
 $$
 
-##### Plot 2:
+### Plot 2:
 
 $$
 \eta - \phi_l
