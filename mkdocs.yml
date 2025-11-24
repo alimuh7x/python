@@ -19,15 +19,15 @@ theme:
     - navigation.sections
   palette:
     - scheme: default
-      primary: teal
-      accent: red
+      primary: grey
+      accent: grey
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
 
     - scheme: slate
-      primary: teal
-      accent: red
+      primary: grey
+      accent: grey
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -38,8 +38,9 @@ plugins:
       collapse_single_pages: true
   - glightbox
 
-extra_javascript: 
+extra_javascript:
     - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    - javascripts/width-control.js
 
 markdown_extensions:
     - admonition
