@@ -10,7 +10,9 @@ This module contains phase-field simulations for microstructure evolution, inclu
 
 ![Phase Field Profile](Basic/Emperical_phi.png){ align=right width=45% }
 
-![Bulk Potential](Basic/Emperical_potential.png){ align=right width=45% }
+
+
+![Bulk Potential](Basic/Emperical_potential.png){ align=right width=45% style="clear: both;" }
 
 **File:** `Basic/Basic.py`
 
@@ -28,33 +30,23 @@ where $\xi$ is the interface width.
 
 **Free Energy Functional:**
 
-$$
-F = \int \left[f_{bulk}(\phi) + f_{grad}(\nabla\phi)\right] dx
-$$
+$$ F = \int \left[f_{bulk}(\phi) + f_{grad}(\nabla\phi)\right] dx $$
 
 **Bulk Free Energy (Double-Well Potential):**
 
-$$
-f_{bulk} = W \phi^2 (1 - \phi)^2
-$$
+$$ f_{bulk} = W \phi^2 (1 - \phi)^2 $$
 
 **Gradient Energy:**
 
-$$
-f_{grad} = \frac{1}{2}\kappa |\nabla\phi|^2
-$$
+$$ f_{grad} = \frac{1}{2}\kappa |\nabla\phi|^2 $$
 
 **Physical Interpretation:**
 
 For physically meaningful interface energy $\sigma$ and width $\eta$:
 
-$$
-f_{bulk} = \frac{18\sigma}{\eta} \phi^2 (1 - \phi)^2
-$$
+$$ f_{bulk} = \frac{18\sigma}{\eta} \phi^2 (1 - \phi)^2 $$
 
-$$
-f_{grad} = \frac{1}{2}\sigma\eta |\nabla\phi|^2
-$$
+$$ f_{grad} = \frac{1}{2}\sigma\eta |\nabla\phi|^2 $$
 
 **Parameters:**
 
@@ -73,7 +65,9 @@ $$
 
 ![Driving Force](ParabolicDiffusion/DrivingForce.png){ align=right width=45% }
 
-![Composition and Energy](ParabolicDiffusion/Composition_Energy.png){ align=right width=45% }
+
+
+![Composition and Energy](ParabolicDiffusion/Composition_Energy.png){ align=right width=45% style="clear: both;" }
 
 **File:** `ParabolicDiffusion/ParabolicDiffusion.py`
 
@@ -83,27 +77,19 @@ Simulates coupled diffusion and phase transformation with parabolic free energy.
 
 **Diffusion Equation (with chemical potential):**
 
-$$
-\frac{\partial c}{\partial t} = \nabla \cdot \left[M \nabla \mu\right]
-$$
+$$ \frac{\partial c}{\partial t} = \nabla \cdot \left[M \nabla \mu\right] $$
 
 **Chemical Potential:**
 
-$$
-\mu = \frac{\partial f}{\partial c} = A V_m (c - C_{eq}^\alpha)\phi_\alpha + A V_m (c - C_{eq}^\beta)\phi_\beta
-$$
+$$ \mu = \frac{\partial f}{\partial c} = A V_m (c - C_{eq}^\alpha)\phi_\alpha + A V_m (c - C_{eq}^\beta)\phi_\beta $$
 
 **Phase-Field Evolution (Allen-Cahn):**
 
-$$
-\frac{\partial \phi}{\partial t} = L_\phi \left[\sigma(\nabla^2\phi - \frac{\partial W}{\partial \phi}) + \frac{6}{w}\phi_\alpha\phi_\beta\Delta f\right]
-$$
+$$ \frac{\partial \phi}{\partial t} = L_\phi \left[\sigma(\nabla^2\phi - \frac{\partial W}{\partial \phi}) + \frac{6}{w}\phi_\alpha\phi_\beta\Delta f\right] $$
 
 **Double-Well Potential Derivative:**
 
-$$
-\frac{\partial W}{\partial \phi} = \frac{72 \cdot 2}{w^2} \phi(1-\phi)(1-2\phi)
-$$
+$$ \frac{\partial W}{\partial \phi} = \frac{72 \cdot 2}{w^2} \phi(1-\phi)(1-2\phi) $$
 
 **Free Energy Densities:**
 
@@ -112,9 +98,7 @@ $$
 
 **Driving Force:**
 
-$$
-\Delta f = (f_\beta - f_\alpha)\phi_\alpha\phi_\beta
-$$
+$$ \Delta f = (f_\beta - f_\alpha)\phi_\alpha\phi_\beta $$
 
 **Parameters:**
 
@@ -135,13 +119,9 @@ $$
 
 The simulation checks the CFL (Courant-Friedrichs-Lewy) condition:
 
-$$
-\frac{\dot{c} \cdot \Delta t}{c} < 0.1
-$$
+$$ \frac{\dot{c} \cdot \Delta t}{c} < 0.1 $$
 
-$$
-D \cdot \Delta t < \frac{\Delta x^2}{6}
-$$
+$$ D \cdot \Delta t < \frac{\Delta x^2}{6} $$
 
 **Output:** 2 plots
 
@@ -162,15 +142,11 @@ The phase-field method replaces sharp interfaces with diffuse interfaces describ
 
 **Interface Energy:**
 
-$$
-\sigma = \int_{-\infty}^{\infty} \left[f_{bulk}(\phi) + f_{grad}\right] dx
-$$
+$$ \sigma = \int_{-\infty}^{\infty} \left[f_{bulk}(\phi) + f_{grad}\right] dx $$
 
 **Interface Width:**
 
-$$
-\xi \approx \frac{\text{distance where } \phi \text{ varies from 0.1 to 0.9}}{\text{characteristic length}}
-$$
+$$ \xi \approx \frac{\text{distance where } \phi \text{ varies from 0.1 to 0.9}}{\text{characteristic length}} $$
 
 ### Thermodynamic Consistency
 
@@ -207,12 +183,12 @@ cd ParabolicDiffusion && python3 ParabolicDiffusion.py
 
 ## Applications
 
-- **Solidification:** Dendritic growth, eutectic structures
-- **Precipitation:** Second-phase nucleation and growth
-- **Grain growth:** Polycrystalline evolution
-- **Spinodal decomposition:** Phase separation
-- **Recrystallization:** Microstructure refinement
-- **Additive manufacturing:** Rapid solidification modeling
+- Solidification: Dendritic growth, eutectic structures
+- Precipitation: Second-phase nucleation and growth
+- Grain growth: Polycrystalline evolution
+- Spinodal decomposition: Phase separation
+- Recrystallization: Microstructure refinement
+- Additive manufacturing: Rapid solidification modeling
 
 ## References
 
@@ -223,8 +199,8 @@ cd ParabolicDiffusion && python3 ParabolicDiffusion.py
 
 ## Numerical Methods
 
-- **Finite difference** for spatial derivatives
-- **Forward Euler** for time integration
-- **Periodic boundary conditions** for concentration
-- **CFL condition checking** for stability
-- **Mass conservation** monitoring
+- Finite difference for spatial derivatives
+- Forward Euler for time integration
+- Periodic boundary conditions for concentration
+- CFL condition checking for stability
+- Mass conservation monitoring

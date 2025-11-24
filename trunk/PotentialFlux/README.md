@@ -54,7 +54,7 @@ Simulates ionic transport in corrosion using Cui et al. (2022) parameters:
 ### 4. Poisson Equation (1D)
 
 ![Poisson Solution](PoissonEquation/Numerical_SOR.png){ align=right width=45% }
-![Charge Movement](PoissonEquation/Charge_Movement_from_Potential.png){ align=right width=45% }
+![Charge Movement](PoissonEquation/Charge_Movement_from_Potential.png){ align=right width=45% style="clear: both;" }
 
 **File:** `PoissonEquation/PoissonEquation.py`
 
@@ -70,7 +70,7 @@ Comprehensive 1D Poisson solver with:
 ### 5. Poisson Equation (2D)
 
 ![2D Electric Potential](PoissonEquation2D/potential_phi_with_E.png){ align=right width=45% }
-![2D Electric Field Magnitude](PoissonEquation2D/E_magnitude_with_arrows.png){ align=right width=45% }
+![2D Electric Field Magnitude](PoissonEquation2D/E_magnitude_with_arrows.png){ align=right width=45% style="clear: both;" }
 
 **File:** `PoissonEquation2D/PoissonEquation2D.py`
 

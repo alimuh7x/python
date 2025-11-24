@@ -41,7 +41,7 @@ where:
 
 ![Tafel Plot](Tafel/Tafel_plot.png){ align=right width=45% }
 
-![Tafel Alpha Effect](Tafel/Tafel_alpha_plot.png){ align=right width=45% }
+![Tafel Alpha Effect](Tafel/Tafel_alpha_plot.png){ align=right width=45% style="clear: both;" }
 
 **File:** `Tafel/Tafel.py`
 
@@ -102,7 +102,7 @@ $$
 
 ![Metal Oxide Rates](ReactionNew/Metal_Oxide.png){ align=right width=45% }
 
-![pH Profile](ReactionNew/PH_vs_xM.png){ align=right width=45% }
+![pH Profile](ReactionNew/PH_vs_xM.png){ align=right width=45% style="clear: both;" }
 
 **File:** `ReactionNew/ReactionNew.py`
 
