@@ -186,17 +186,17 @@ Small deviations (< 1%) indicate
 
 
 <div style="display:flex; gap:10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="padding:4px; border-radius:6px;">
     ![Final Concentration](./Final_Concentration.png){ width="300" }
     <figcaption>Final Concentration</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="padding:4px; border-radius:6px;">
     ![Driving Force](./DrivingForce.png){ width="300" }
     <figcaption>Driving Force</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="padding:4px; border-radius:6px;">
     ![Energy](./Energy.png){ width="300" }
     <figcaption>Energy</figcaption>
   </figure>

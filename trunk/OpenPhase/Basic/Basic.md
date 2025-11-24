@@ -95,12 +95,12 @@ $$
 </div>
 
 <div style="display:flex; gap:10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="padding:4px; border-radius:6px;">
     ![Gradient Potential](./Emperical_grad.png){ width="400" }
     <figcaption>Gradient Potential</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px;">
+  <figure markdown="span" style="padding:4px; border-radius:6px;">
     ![Double well potential](./Emperical_potential.png){ width="400" }
     <figcaption>Double well potential</figcaption>
   </figure>

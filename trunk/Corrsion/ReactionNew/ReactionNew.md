@@ -66,12 +66,12 @@ $$
 ### Metal and Hydroxide Reaction Rates
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Metal Oxide](./Metal_Oxide.png){ width="600" }
     <figcaption>Fe & FeOH reaction rates vs Fe mole fraction</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Hydrogen Oxide](./Hydrogen_Oxide.png){ width="600" }
     <figcaption>H⁺ & OH⁻ production rates vs Fe mole fraction</figcaption>
   </figure>
@@ -80,12 +80,12 @@ $$
 ### pH Evolution
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![pH Linear](./PH.png){ width="600" }
     <figcaption>pH vs H⁺ mole fraction (linear scale)</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![pH Log](./log_PH.png){ width="600" }
     <figcaption>pH vs H⁺ mole fraction (log scale)</figcaption>
   </figure>

@@ -38,12 +38,12 @@ $$
 
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Mobility.png){ width="500" }
     <figcaption>Mobility</figcaption>
   </figure>
 
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./Overpotential.png){ width="500" }
     <figcaption>Overpotential</figcaption>
   </figure>

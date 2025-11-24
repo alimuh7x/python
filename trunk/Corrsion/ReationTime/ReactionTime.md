@@ -43,7 +43,7 @@ $$
 ## Concentration Evolution
 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./ReactionTime_Evolution_Concentrations.png){ width="600" }
     <figcaption>Concentration</figcaption>
   </figure>
@@ -51,7 +51,7 @@ $$
 
 ## Concentration Rates 
 <div style="display: flex; flex-wrap: wrap; gap: 10px;" markdown="1">
-  <figure markdown="span" style="border:1px solid #ccc; padding:4px; border-radius:6px; flex: 1 1 45%;">
+  <figure markdown="span" style="padding:4px; border-radius:6px; flex: 1 1 45%;">
     ![Final Concentration](./ReactionTime_Evolution_Concentrations.png){ width="600" }
     <figcaption>Concentration Rates</figcaption>
   </figure>
