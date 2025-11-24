@@ -2,6 +2,7 @@
 [data-md-color-scheme="default"] {
     --eq-box-bg: #f5f5f5;
     --eq-box-border: #d0d0d0;
+    --inline-math-bg: #e0e0e0;
     --admonition-title-bg: #e6e6e6;
     --admonition-bg: #fcfcfc;
     --admonition-border: #b0b0b0;
@@ -21,6 +22,7 @@
 [data-md-color-scheme="slate"] {
     --eq-box-bg: #2a2a2a;
     --eq-box-border: #505050;
+    --inline-math-bg: #404040;
     --admonition-title-bg: #353535;
     --admonition-bg: #242424;
     --admonition-border: #505050;
@@ -313,6 +315,17 @@ body[data-width="wide"] .md-sidebar {
 .md-typeset img {
     border-radius: 8px;
     padding: 10px;
+    float: right;
+    max-width: 40%;
+    height: auto;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    margin-top: 5px;
+}
+
+/* Stack multiple images vertically on the right */
+.md-typeset img + img {
+    clear: right;
 }
 
 /* Light mode - add subtle gray background to blend with theme */
@@ -331,4 +344,60 @@ body[data-width="wide"] .md-sidebar {
 [data-md-color-scheme="slate"] .md-typeset img.no-invert {
     filter: none;
     mix-blend-mode: normal;
+}
+
+/* Inline math equation styling - with grey background */
+.md-typeset mjx-container[jax="CHTML"][display="false"],
+.md-typeset mjx-container[display="false"],
+.md-typeset span.arithmatex mjx-container {
+    background-color: var(--inline-math-bg) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+}
+
+/* Display equations - center aligned, with borders */
+.md-typeset mjx-container[jax="CHTML"][display="true"],
+.md-typeset mjx-container[display="true"],
+.md-typeset div.arithmatex mjx-container {
+    display: inline-block !important;
+    text-align: center !important;
+    margin: 1em auto !important;
+    background: none !important;
+    padding: 8px 12px !important;
+    border: 2px solid var(--eq-box-border) !important;
+    border-radius: 6px !important;
+}
+
+.md-typeset div.arithmatex {
+    text-align: center !important;
+}
+
+/* Paragraphs containing only images should not take full width */
+.md-typeset p:has(img):has(img:only-child) {
+    display: inline;
+    margin: 0;
+}
+
+/* Regular paragraphs should flow around floated images */
+.md-typeset p {
+    clear: none;
+}
+
+/* Clear float after H1 and H2 sections */
+.md-typeset h1,
+.md-typeset h2 {
+    clear: both;
+}
+
+/* H3 headings should display as block and take full width */
+.md-typeset h3 {
+    clear: both;
+    display: block;
+    width: 100%;
+}
+
+/* Images immediately after H3 should start beside the following text */
+.md-typeset h3 + p img {
+    margin-top: 10px;
 }
