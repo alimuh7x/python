@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
 /* Light mode colors */
 [data-md-color-scheme="default"] {
     --eq-box-bg: #f5f5f5;
@@ -464,4 +466,27 @@ body[data-width="wide"] .md-sidebar {
     overflow-x: auto;
     white-space: pre;
     width: 100%;
+}
+
+.md-typeset .language-latex pre code {
+    display: block;
+    width: 100%;
+}
+
+/* Algorithm pseudocode styling */
+.algorithm {
+    padding: 15px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+}
+
+[data-md-color-scheme="default"] .algorithm {
+    background-color: #f5f5f5; /* Lighter grey for light mode */
+    color: #000000;
+}
+
+[data-md-color-scheme="slate"] .algorithm {
+    background-color: var(--eq-box-bg); /* Use existing dark background for dark mode */
+    color: #e8e8e8;
 }
