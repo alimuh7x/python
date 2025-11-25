@@ -458,3 +458,10 @@ body[data-width="wide"] .md-sidebar {
     font-weight: bold; /* Make text bold on hover */
     color: #ffffff !important; /* Ensure text is white on hover */
 }
+
+/* Algorithm pseudocode styling - make horizontal lines extend full width */
+.md-typeset .language-latex pre {
+    overflow-x: auto;
+    white-space: pre;
+    width: 100%;
+}

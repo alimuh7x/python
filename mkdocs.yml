@@ -6,9 +6,6 @@ theme:
   name: material
   features:
     - toc.follow
-    - navigation.instant
-    - navigation.instant.progress
-    - navigation.instant.prefetch
     - content.code.annotate
     - content.tabs.link
     - content.action.edit
