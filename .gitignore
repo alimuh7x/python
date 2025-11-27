@@ -1,3 +1,7 @@
 myenv/
 ./requirement.md
 ./site/
+*.vtk
+*.vts
+**/*.vtk
+**/*.vts

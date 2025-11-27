@@ -2,6 +2,24 @@ site_name: OpenPhase Docs
 
 docs_dir: trunk
 
+nav:
+  - OpenPhase Docs:
+      - OpenPhase Documentation: index.md
+      - Cooling Curve Simulation: CoolingCurve/README.md
+      - Corrosion Simulations: Corrsion/README.md
+      - Fracture Mechanics Simulations: Fracture/README.md
+      - Gradient Field Visualization: Gradient/README.md
+      - Machine Learning:
+          - Superalloys:
+              - Cuboid Precipitate Analysis: MachineLearning/Superalloys/Cuboid/Cuboid_Report.md
+              - Cube-to-Raft Transition Analysis: MachineLearning/Superalloys/Cube_Raft/CubeRaft_Report.md
+              - Sphericity Roundness:
+                  - Sphericity and Roundness Analysis (fast_rs) - 2D Slice: MachineLearning/Superalloys/Sphericity_Roundness/Sphericity_Roundness_Report.md
+                  - "Comparative Analysis: PF_Initial vs PF_old": MachineLearning/Superalloys/Sphericity_Roundness/Comparison_Report.md
+      - "OpenPhase: Phase-Field Simulations": OpenPhase/README.md
+      - Potential Field Simulations: Potential/README.md
+      - Potential and Flux Simulations: PotentialFlux/README.md
+
 theme:
   name: material
   features:

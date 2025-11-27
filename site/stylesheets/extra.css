@@ -1,40 +1,100 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* Light mode colors */
+[data-md-color-scheme="default"] {
+    --eq-box-bg: #f5f5f5;
+    --eq-box-border: #d0d0d0;
+    --inline-math-bg: #e0e0e0;
+    --admonition-title-bg: #e6e6e6;
+    --admonition-bg: #fcfcfc;
+    --admonition-border: #b0b0b0;
+    --h1-bg: #e5e5e5;
+    --h1-border: #909090;
+    --h2-bg: #ececec;
+    --h2-border: #a0a0a0;
+    --h3-bg: #f3f3f3;
+    --h3-border: #b0b0b0;
+    --code-bg: #ececec;
+    --table-header-bg: #f3f3f3;
+    --dashboard-box-bg: #ffffff;
+    --dashboard-link-bg: #f5f5f5;
+}
+
+/* Dark mode colors - inverted grayscale */
+[data-md-color-scheme="slate"] {
+    --eq-box-bg: #2a2a2a;
+    --eq-box-border: #505050;
+    --inline-math-bg: #404040;
+    --admonition-title-bg: #353535;
+    --admonition-bg: #242424;
+    --admonition-border: #505050;
+    --h1-bg: #2d2d2d;
+    --h1-border: #707070;
+    --h2-bg: #323232;
+    --h2-border: #606060;
+    --h3-bg: #383838;
+    --h3-border: #555555;
+    --code-bg: #323232;
+    --table-header-bg: #2d2d2d;
+    --dashboard-box-bg: #252525;
+    --dashboard-link-bg: #2d2d2d;
+}
+
+/* Make text and headings whiter in dark mode */
+[data-md-color-scheme="slate"] .md-typeset {
+    color: #e8e8e8;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3,
+[data-md-color-scheme="slate"] .md-typeset h4,
+[data-md-color-scheme="slate"] .md-typeset h5,
+[data-md-color-scheme="slate"] .md-typeset h6 {
+    color: #f5f5f5;
+}
+
+[data-md-color-scheme="slate"] .md-typeset p,
+[data-md-color-scheme="slate"] .md-typeset li,
+[data-md-color-scheme="slate"] .md-typeset td,
+[data-md-color-scheme="slate"] .md-typeset th {
+    color: #e8e8e8;
+}
+
 .eq-box {
-    border: 2px solid #ccc;
+    border: 2px solid var(--eq-box-border);
     border-radius: 8px;
     padding: 10px;
-    background: #fafafa;
+    background: var(--eq-box-bg);
     margin: 10px 0;
 }
 
 .md-typeset .admonition,
 .md-typeset details {
-    font-size: 0.75rem;   /* default is 0.8–0.9rem */
+    font-size: 0.75rem;
 }
 
-/* Make title bigger too */
 .md-typeset .admonition-title {
     font-size: 0.85rem;
     font-weight: 510;
     border-radius: 6px 6px 0 0 !important;
-    background-color: #E6E6E6 !important;   /* slightly darker blue */
+    background-color: var(--admonition-title-bg) !important;
 }
+
 .md-typeset .admonition {
     border-radius: 6px !important;
-    background-color: #fcfcfc !important;   /* light blue — change as you want */
-    border: 1px solid #B0B0B0 !important;
+    background-color: var(--admonition-bg) !important;
+    border: 1px solid var(--admonition-border) !important;
 }
 
-
-.md-typeset h1, 
+.md-typeset h1,
 .md-typeset h2,
 .md-typeset h3 {
     padding-left: 12px;
-    border-left: 6px solid #a0aec0;  /* soft grey */
 }
 
 .md-typeset h4 {
     padding-left: 12px;
-    border-left: 6px solid #a0aec0;  /* soft grey */
     border-radius: 4px;
 }
 
@@ -44,16 +104,18 @@
 }
 
 .md-typeset h5::before {
-    content: "◆"; /* book icon Unicode */
+    content: "◆";
     position: absolute;
     left: 8px;
     top: 50%;
     transform: translateY(-50%);
     font-size: 1em;
 }
+
 /* H1 */
 .md-typeset h1 {
-    background-color: #e5e5e5;   /* light grey */
+    background-color: var(--h1-bg);
+    border-left: 6px solid var(--h1-border);
     padding: 6px 12px;
     border-radius: 6px;
     font-weight: 400 !important;
@@ -61,7 +123,8 @@
 
 /* H2 */
 .md-typeset h2 {
-    background-color: #ececec;   /* slightly darker grey */
+    background-color: var(--h2-bg);
+    border-left: 6px solid var(--h2-border);
     padding: 5px 10px;
     border-radius: 5px;
     font-weight: 400 !important;
@@ -69,7 +132,8 @@
 
 /* H3 */
 .md-typeset h3 {
-    background-color: #f3f3f3;
+    background-color: var(--h3-bg);
+    border-left: 6px solid var(--h3-border);
     padding: 4px 8px;
     border-radius: 4px;
 }
@@ -77,19 +141,352 @@
 /* Inline code background */
 .md-typeset code {
     font-weight: 600 !important;
-    background-color: #ececec !important;   /* light grey */
+    background-color: var(--code-bg) !important;
     padding: 4px 4px;
     border-radius: 4px;
 }
-:root  > * {
-  --md-primary-fg-color:        #44444E;
-  --md-primary-fg-color--light: #ECB7B7;
-  --md-primary-fg-color--dark:  #90030C;
-}
-
 
 .md-typeset table thead tr {
-    background-color: #f3f3f3 !important;   /* light cyan */
+    background-color: var(--table-header-bg) !important;
     font-size: 0.8rem !important;
 }
 
+/* Width control styles */
+.width-control-container {
+    position: absolute;
+    top: 100%;
+    right: 1rem;
+    z-index: 999;
+    margin-top: 0.5rem;
+}
+
+.width-control {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 8px;
+    background-color: var(--dashboard-box-bg);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-md-color-scheme="slate"] .width-control {
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
+.width-control button {
+    padding: 6px 10px;
+    border: none;
+    background-color: var(--dashboard-link-bg);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.width-control button svg {
+    display: block;
+}
+
+[data-md-color-scheme="default"] .width-control button {
+    color: #000000;
+}
+
+[data-md-color-scheme="slate"] .width-control button {
+    color: #ffffff;
+}
+
+.width-control button:hover {
+    opacity: 0.7;
+}
+
+.width-control button.active {
+    background-color: var(--h2-bg);
+    font-weight: 600;
+}
+
+/* Width modes */
+body[data-width="narrow"] .md-container {
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+body[data-width="narrow"] .md-grid {
+    max-width: 100%;
+}
+
+body[data-width="narrow"] .md-main__inner {
+    max-width: 100%;
+}
+
+body[data-width="narrow"] .md-content__inner {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+body[data-width="medium"] .md-container {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+body[data-width="medium"] .md-grid {
+    max-width: 100%;
+}
+
+body[data-width="medium"] .md-main__inner {
+    max-width: 100%;
+}
+
+body[data-width="medium"] .md-content__inner {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+body[data-width="wide"] .md-container {
+    max-width: none;
+}
+
+body[data-width="wide"] .md-grid {
+    max-width: none;
+    margin-left: 1rem;
+    margin-right: 1rem;
+}
+
+body[data-width="wide"] .md-main__inner {
+    max-width: none;
+}
+
+body[data-width="wide"] .md-content {
+    max-width: none;
+}
+
+body[data-width="wide"] .md-content__inner {
+    max-width: none;
+}
+
+body[data-width="wide"] .md-sidebar {
+    width: 15rem;
+}
+
+/* Default to medium width */
+.md-container {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.md-grid {
+    max-width: 100%;
+}
+
+.md-main__inner {
+    max-width: 100%;
+}
+
+.md-content__inner {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+/* Dashboard navigation boxes */
+.md-typeset a div[style*="padding: 8px 12px"] {
+    transition: transform 0.15s, opacity 0.15s;
+}
+
+.md-typeset a div[style*="padding: 8px 12px"]:hover {
+    transform: translateX(4px);
+    opacity: 0.8;
+}
+
+/* Remove borders from figure elements */
+.md-typeset figure,
+.md-typeset figure[markdown],
+.md-typeset figure[markdown="span"],
+.md-typeset div figure[style*="border"] {
+    border: none !important;
+    border-color: transparent !important;
+    border-width: 0 !important;
+    border-style: none !important;
+}
+
+/* Adjust images to match theme colors */
+.md-typeset img {
+    border-radius: 8px;
+    padding: 10px;
+    float: right;
+    max-width: 40%;
+    height: auto;
+    margin-left: 20px;
+    margin-bottom: 20px;
+    margin-top: 5px;
+}
+
+/* Stack multiple images vertically on the right */
+.md-typeset img + img {
+    clear: right;
+}
+
+/* Light mode - add subtle gray background to blend with theme */
+[data-md-color-scheme="default"] .md-typeset img {
+    background-color: #f5f5f5;
+}
+
+/* Dark mode - invert and add dark background to match theme */
+[data-md-color-scheme="slate"] .md-typeset img {
+    filter: invert(0.95) hue-rotate(180deg);
+    background-color: #1e1e1e;
+    mix-blend-mode: screen;
+}
+
+/* Exception: Don't apply filters to images with no-invert class */
+[data-md-color-scheme="slate"] .md-typeset img.no-invert {
+    filter: none;
+    mix-blend-mode: normal;
+}
+
+/* Inline math equation styling - with grey background */
+.md-typeset mjx-container[jax="CHTML"][display="false"],
+.md-typeset mjx-container[display="false"],
+.md-typeset span.arithmatex mjx-container {
+    background-color: var(--inline-math-bg) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+}
+
+/* Display equations - center aligned, with borders */
+.md-typeset mjx-container[jax="CHTML"][display="true"],
+.md-typeset mjx-container[display="true"],
+.md-typeset div.arithmatex mjx-container {
+    display: inline-block !important;
+    text-align: center !important;
+    margin: 1em auto !important;
+    background: none !important;
+    padding: 8px 12px !important;
+    border: 2px solid var(--eq-box-border) !important;
+    border-radius: 6px !important;
+}
+
+.md-typeset div.arithmatex {
+    text-align: center !important;
+}
+
+/* Paragraphs containing only images should not take full width */
+.md-typeset p:has(img):has(img:only-child) {
+    display: inline;
+    margin: 0;
+}
+
+/* Regular paragraphs should flow around floated images */
+.md-typeset p {
+    clear: none;
+}
+
+/* Clear float after H1 and H2 sections */
+.md-typeset h1,
+.md-typeset h2 {
+    clear: both;
+}
+
+/* H3 headings should display as block and take full width */
+.md-typeset h3 {
+    clear: both;
+    display: block;
+    width: 100%;
+}
+
+/* Images immediately after H3 should start beside the following text */
+.md-typeset h3 + p img {
+    margin-top: 10px;
+}
+
+.md-nav__link--active > .md-nav__link-text {
+    font-weight: 700 !important; /* Make text bold */
+}
+
+/* Light mode */
+[data-md-color-scheme="default"] .md-nav__link--active {
+    background-color: #e0e0e0; /* Grey background */
+    border-radius: 4px;
+    color: #000000 !important; /* Ensure text is readable */
+    padding: 8px 12px;
+    border-left: 3px solid #5a5a5a;
+
+
+}
+
+/* Dark mode */
+[data-md-color-scheme="slate"] .md-nav__link--active {
+    background-color: #4a4a4a; /* Darker grey background */
+    border-radius: 4px;
+    color: #ffffff !important; /* Ensure text is readable */
+    padding: 8px 12px;
+    border-left: 3px solid #707070;
+
+
+}
+
+.md-nav__item .md-nav__link--active {
+    font-weight: 700 !important;
+}
+
+[data-md-color-scheme="default"] .md-nav__item .md-nav__link--active {
+    background-color: #dcdcdc; /* Slightly different grey for parent items */
+    padding: 8px 12px;
+    border-left: 3px solid #5a5a5a;
+
+
+}
+
+[data-md-color-scheme="slate"] .md-nav__item .md-nav__link--active {
+    background-color: #5a5a5a; /* Slightly different dark grey */
+    padding: 8px 12px;
+    border-left: 3px solid #707070;
+
+
+}
+
+/* Hover state for navigation links */
+[data-md-color-scheme="default"] .md-nav__link:hover {
+    font-weight: bold; /* Make text bold on hover */
+    color: #000000 !important; /* Ensure text is black on hover */
+}
+
+[data-md-color-scheme="slate"] .md-nav__link:hover {
+    font-weight: bold; /* Make text bold on hover */
+    color: #ffffff !important; /* Ensure text is white on hover */
+}
+
+/* Algorithm pseudocode styling - make horizontal lines extend full width */
+.md-typeset .language-latex pre {
+    overflow-x: auto;
+    white-space: pre;
+    width: 100%;
+}
+
+.md-typeset .language-latex pre code {
+    display: block;
+    width: 100%;
+}
+
+/* Algorithm pseudocode styling */
+.algorithm {
+    padding: 15px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+}
+
+[data-md-color-scheme="default"] .algorithm {
+    background-color: #f5f5f5; /* Lighter grey for light mode */
+    color: #000000;
+}
+
+[data-md-color-scheme="slate"] .algorithm {
+    background-color: var(--eq-box-bg); /* Use existing dark background for dark mode */
+    color: #e8e8e8;
+}
