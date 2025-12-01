@@ -55,6 +55,7 @@ plugins:
 exclude_docs: |
   **/*.vts
   **/*.cts
+  **/*.ctk
 
 extra_javascript:
     - javascripts/mathjax.js
