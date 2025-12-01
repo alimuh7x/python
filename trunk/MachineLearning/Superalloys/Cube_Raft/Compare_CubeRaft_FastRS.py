@@ -431,7 +431,7 @@ for ax, (title, values, errors) in zip(axes_trend, trend_metrics):
         yval = bar.get_height()
         if np.isnan(yval):
             continue
-        # Adjust text position for error bars
+        # ---- Adjust text position for error bars ------
         error_val = errors[i] if not np.isnan(errors[i]) else 0
         text_y_pos = yval + error_val + (ax.get_ylim()[1] - ax.get_ylim()[0]) * 0.02 # A little above the error bar
         ax.text(bar.get_x() + bar.get_width() / 2.0, text_y_pos, f'{yval:.3f}',
