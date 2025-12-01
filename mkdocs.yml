@@ -52,9 +52,9 @@ plugins:
       collapse_single_pages: true
   - glightbox
 
-exclude_docs:
-  - '**/*.vts'
-  - '**/*.cts'
+exclude_docs: |
+  **/*.vts
+  **/*.cts
 
 extra_javascript:
     - javascripts/mathjax.js
