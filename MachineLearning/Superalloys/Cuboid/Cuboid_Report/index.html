@@ -1,0 +1,1454 @@
+<!DOCTYPE html><html lang="en" class="no-js"><head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../../../Gradient/">
+      
+      
+        <link rel="next" href="../../Cube_Raft/CubeRaft_Report/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Cuboid Precipitate Analysis - OpenPhase Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  <link href="../../../../assets/stylesheets/glightbox.min.css" rel="stylesheet"><script src="../../../../assets/javascripts/glightbox.min.js"></script><style id="glightbox-style">
+            html.glightbox-open { overflow: initial; height: 100%; }
+            .gslide-title { margin-top: 0px; user-select: text; }
+            .gslide-desc { color: #666; user-select: text; }
+            .gslide-image img { background: white; }
+            .gscrollbar-fixer { padding-right: 15px; }
+            .gdesc-inner { font-size: 0.75rem; }
+            body[data-md-color-scheme="slate"] .gdesc-inner { background: var(--md-default-bg-color); }
+            body[data-md-color-scheme="slate"] .gslide-title { color: var(--md-default-fg-color); }
+            body[data-md-color-scheme="slate"] .gslide-desc { color: var(--md-default-fg-color); }
+        </style></head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="grey" data-md-color-accent="grey">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cuboid-precipitate-analysis" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../../.." title="OpenPhase Docs" class="md-header__button md-logo" aria-label="OpenPhase Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OpenPhase Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cuboid Precipitate Analysis
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="grey" data-md-color-accent="grey" aria-label="Switch to dark mode" type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"></path></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="grey" data-md-color-accent="grey" aria-label="Switch to light mode" type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"></path></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="OpenPhase Docs" class="md-nav__button md-logo" aria-label="OpenPhase Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"></path></svg>
+
+    </a>
+    OpenPhase Docs
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../.." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenPhase Docs
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OpenPhase Docs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../CoolingCurve/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cooling Curve Simulation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Corrsion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Corrosion Simulations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Fracture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fracture Mechanics Simulations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Gradient/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gradient Field Visualization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1_6" id="__nav_1_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Machine Learning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_1_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Machine Learning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1_6_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1_6_1" id="__nav_1_6_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Superalloys
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_1_6_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Superalloys
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cuboid Precipitate Analysis
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cuboid Precipitate Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-and-input-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain and Input Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-phase-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Phase Statistics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-precipitate-morphology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Precipitate Morphology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spatial-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spatial Statistics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spatial Statistics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nearest-neighbor-distribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nearest-Neighbor Distribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pair-correlation-function-gr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pair Correlation Function \(g(r)\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Applications
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Cube_Raft/CubeRaft_Report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cube-to-Raft Transition Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1_6_1_3">
+        
+          
+          <label class="md-nav__link" for="__nav_1_6_1_3" id="__nav_1_6_1_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sphericity Roundness
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_1_6_1_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1_6_1_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sphericity Roundness
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Sphericity_Roundness/Sphericity_Roundness_Report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sphericity and Roundness Analysis (fast_rs) - 2D Slice
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Sphericity_Roundness/Comparison_Report/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparative Analysis: PF_Initial vs PF_old
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../OpenPhase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenPhase: Phase-Field Simulations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../Potential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Potential Field Simulations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../../PotentialFlux/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Potential and Flux Simulations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#domain-and-input-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Domain and Input Data
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#global-phase-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Phase Statistics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#per-precipitate-morphology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-Precipitate Morphology
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#spatial-statistics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spatial Statistics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Spatial Statistics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#nearest-neighbor-distribution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Nearest-Neighbor Distribution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pair-correlation-function-gr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pair Correlation Function \(g(r)\)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Files
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#applications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Applications
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+
+  <nav class="md-path" aria-label="Navigation">
+    <ol class="md-path__list">
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../../../.." class="md-path__link">
+          
+  <span class="md-ellipsis">
+    OpenPhase Docs
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Machine Learning
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="./" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Superalloys
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="cuboid-precipitate-analysis">Cuboid Precipitate Analysis<a class="headerlink" href="#cuboid-precipitate-analysis" title="Permanent link">¶</a></h1>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
+<p>This module analyzes 3D phase-field simulations of cuboidal <span class="arithmatex">\(\gamma'\)</span> precipitates in Ni-based superalloys.
+Given a phase-fraction field stored in a VTK file (<code>PF_Initial.vts</code>), the script <code>Cuboid_Feature.py</code>
+extracts global, morphological, spatial, and topological descriptors of the precipitate population,
+and saves both plots and CSV summaries for further post-processing or machine-learning workflows.</p>
+<h2 id="domain-and-input-data">Domain and Input Data<a class="headerlink" href="#domain-and-input-data" title="Permanent link">¶</a></h2>
+<ul>
+<li>Grid spacing: <span class="arithmatex">\(dx = 30\,\text{nm}\)</span></li>
+<li>Mesh size: <span class="arithmatex">\(256 \times 256 \times 256\)</span> (total voxels: <span class="arithmatex">\(16\,777\,216\)</span>)</li>
+<li>Physical domain: <span class="arithmatex">\(7680 \times 7680 \times 7680\,\text{nm}^3\)</span> (<span class="arithmatex">\(7.68^3\,\mu\text{m}^3\)</span>)</li>
+<li>Phase field: <code>PhaseFraction_1</code> (order parameter for the <span class="arithmatex">\(\gamma'\)</span> phase)</li>
+<li>Binary segmentation: voxels with <span class="arithmatex">\(\phi &gt; 0.5\)</span> are classified as <span class="arithmatex">\(\gamma'\)</span></li>
+<li>Voxel volume: <span class="arithmatex">\(dx^3 = 27\,000\,\text{nm}^3\)</span></li>
+</ul>
+<h2 id="global-phase-statistics">Global Phase Statistics<a class="headerlink" href="#global-phase-statistics" title="Permanent link">¶</a></h2>
+<p>The binary phase field is used to compute global descriptors of the <span class="arithmatex">\(\gamma'\)</span> population:</p>
+<ul>
+<li>Total precipitates detected: <strong>1503</strong></li>
+<li>Precipitates analyzed (size filter <span class="arithmatex">\(\geq 20\)</span> voxels): <strong>1236</strong></li>
+<li>Volume fraction of <span class="arithmatex">\(\gamma'\)</span>: <strong>0.6459</strong> (64.59% of the domain)</li>
+<li>Euler characteristic of the <span class="arithmatex">\(\gamma'\)</span> network: <strong>1322</strong></li>
+</ul>
+<p>The Euler characteristic provides a topological measure of connectivity and the number of isolated
+regions and tunnels in the precipitate network.</p>
+<h2 id="per-precipitate-morphology">Per-Precipitate Morphology<a class="headerlink" href="#per-precipitate-morphology" title="Permanent link">¶</a></h2>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../morphology_features.png" data-desc-position="bottom"><img align="right" alt="Morphology feature distributions" src="../morphology_features.png" width="45%"></a></p>
+<p>For each individual precipitate (connected component above the size threshold), the script computes:</p>
+<ul>
+<li><strong>Volume <span class="arithmatex">\(V\)</span></strong> in <span class="arithmatex">\(\text{nm}^3\)</span> and voxel count</li>
+<li><strong>Aspect ratio</strong> based on the bounding-box edge lengths</li>
+</ul>
+<p><strong>Equivalent spherical diameter <span class="arithmatex">\(D_\text{eq}\)</span> (nm)</strong></p>
+<p><span class="arithmatex">\(D_\text{eq}\)</span> is the diameter of a sphere having the same volume <span class="arithmatex">\(V\)</span> as the precipitate (volume-equivalent size).</p>
+<div class="arithmatex">\[
+D_\text{eq} = \left(\frac{6V}{\pi}\right)^{1/3}
+\]</div>
+<p><strong>Sphericity <span class="arithmatex">\(\Psi\)</span></strong></p>
+<p><span class="arithmatex">\(\Psi\)</span> is the ratio of the surface area of that equivalent sphere to the actual surface area <span class="arithmatex">\(S\)</span> (1 for a perfect sphere, lower for faceted or irregular shapes).</p>
+<div class="arithmatex">\[
+\Psi = \dfrac{\pi^{1/3}(6V)^{2/3}}{S}
+\]</div>
+<div class="admonition info">
+<p class="admonition-title">Understanding Sphericity (Wadell Definition)</p>
+<p><strong>Sphericity values for common shapes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>Sphericity (Ψ)</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sphere</td>
+<td>1.000</td>
+<td>Perfect sphericity</td>
+</tr>
+<tr>
+<td>Cylinder (h=d)</td>
+<td>0.874</td>
+<td>Equal height and diameter</td>
+</tr>
+<tr>
+<td>Cube</td>
+<td>0.806</td>
+<td>Regular hexahedron</td>
+</tr>
+<tr>
+<td>Regular tetrahedron</td>
+<td>0.671</td>
+<td>Four equilateral triangular faces</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Visual comparison:</strong>
+</p><div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Sphere (Ψ=1.0)          Cube (Ψ=0.81)         Cuboidal γ' (Ψ≈0.001)
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     ●●●                   ┌───┐                    ┌─────────┐
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   ●●   ●●                 │   │                    │         │
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  ●●     ●●                │   │                    └─────────┘
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  ●●     ●●                │   │                   (highly elongated)
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   ●●   ●●                 └───┘
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>     ●●●
+</code></pre></div><p></p>
+<p><strong>For γ' precipitates in Ni-based superalloys:</strong></p>
+<p>The extremely low sphericity (≈0.0008) indicates highly faceted, cuboidal morphology.
+This is typical of coherent precipitates that minimize interfacial energy by aligning
+along preferred {100} crystallographic planes, resulting in elongated box-like shapes
+rather than compact equiaxed forms.</p>
+<p><strong>References:</strong></p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Sphericity">Wadell Sphericity - Wikipedia</a></li>
+<li><a href="https://www.sciencedirect.com/topics/engineering/sphericity">Sphericity calculation methods</a></li>
+<li><a href="https://github.com/geosharma/sphericity_and_roundness">Particle shape analysis tools</a></li>
+</ul>
+</div>
+<p>Summary statistics for this dataset:</p>
+<ul>
+<li>Mean volume: <strong><span class="arithmatex">\(2.367 \times 10^8\,\text{nm}^3\)</span></strong> (~<strong>8766.9</strong> voxels)</li>
+<li>Mean equivalent diameter: <strong>702.03 nm</strong></li>
+<li>Mean aspect ratio: <strong>2.38</strong></li>
+<li>Total <span class="arithmatex">\(\gamma'\)</span> surface area: <strong><span class="arithmatex">\(2.272 \times 10^9\,\text{nm}^2\)</span></strong></li>
+<li>Mean sphericity: <strong>0.0008</strong></li>
+</ul>
+<p>The figure <code>morphology_features.png</code> provides histograms of these morphology metrics
+for the entire precipitate population.</p>
+<h2 id="spatial-statistics">Spatial Statistics<a class="headerlink" href="#spatial-statistics" title="Permanent link">¶</a></h2>
+<h3 id="nearest-neighbor-distribution">Nearest-Neighbor Distribution<a class="headerlink" href="#nearest-neighbor-distribution" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../NN_distribution.png" data-desc-position="bottom"><img align="right" alt="Nearest-neighbor distribution" src="../NN_distribution.png" width="45%"></a></p>
+<p>Precipitate centroids are computed in physical units (nm), and a KD-tree is used to
+evaluate the distance to the nearest neighbor for each precipitate. The resulting
+distribution characterizes the mean spacing between cuboids:</p>
+<ul>
+<li>Mean nearest-neighbor distance: <strong>612.35 nm</strong></li>
+<li>Standard deviation: <strong>107.64 nm</strong></li>
+</ul>
+<p>These statistics are visualized in <code>NN_distribution.png</code>.</p>
+<h3 id="pair-correlation-function-gr">Pair Correlation Function <span class="arithmatex">\(g(r)\)</span><a class="headerlink" href="#pair-correlation-function-gr" title="Permanent link">¶</a></h3>
+<p><a class="glightbox" data-type="image" data-width="auto" data-height="auto" href="../g_r.png" data-desc-position="bottom"><img align="right" alt="Pair correlation g(r)" src="../g_r.png" width="45%"></a></p>
+<p>Pair correlation <span class="arithmatex">\(g(r)\)</span> is computed by counting precipitate pairs in shells <span class="arithmatex">\([r, r+\Delta r]\)</span>
+and normalizing by the expected count for number density <span class="arithmatex">\(\rho\)</span>:</p>
+<div class="arithmatex">\[
+g(r) = \frac{1}{N \rho\, V_\text{shell}(r)}
+\sum_{i=1}^{N} \sum_{j \neq i}
+\Theta\big(|\mathbf{r}_i - \mathbf{r}_j| - r\big)\,
+\Theta\big(r + \Delta r - |\mathbf{r}_i - \mathbf{r}_j|\big)
+\]</div>
+<ul>
+<li>Bin width: <span class="arithmatex">\(\Delta r = 30\,\text{nm}\)</span></li>
+<li>Maximum radius: <span class="arithmatex">\(r_\text{max} = 1800\,\text{nm}\)</span></li>
+</ul>
+<p><span class="arithmatex">\(V_\text{shell}(r)\)</span> is the spherical-shell volume; <span class="arithmatex">\(\Theta\)</span> is the Heaviside step function. <code>g_r.png</code> shows the result.</p>
+<h2 id="output-files">Output Files<a class="headerlink" href="#output-files" title="Permanent link">¶</a></h2>
+<p>The analysis generates the following files in the <code>Cuboid</code> directory:</p>
+<ul>
+<li><code>NN_distribution.png</code> – histogram of nearest-neighbor distances</li>
+<li><code>g_r.png</code> – pair correlation function <span class="arithmatex">\(g(r)\)</span> vs. distance</li>
+<li><code>morphology_features.png</code> – histograms of volume, aspect ratio, sphericity, and equivalent diameter</li>
+<li><code>precipitate_features.csv</code> – per-precipitate features
+  (<code>volume_nm3, volume_voxels, aspect_ratio, sphericity, equiv_diameter_nm, nearest_neighbor_nm</code>)</li>
+<li><code>pair_correlation.csv</code> – radial positions and <span class="arithmatex">\(g(r)\)</span> (<code>r_nm, g_r</code>)</li>
+<li><code>global_summary.csv</code> – single-row summary of global statistics</li>
+</ul>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">¶</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>MachineLearning/Superalloys/Cuboid
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>python3<span class="w"> </span>Cuboid_Feature.py
+</code></pre></div>
+<p>Make sure that <code>PF_Initial.vts</code> is present in the same directory and contains the
+phase-field variable <code>PhaseFraction_1</code> on a <span class="arithmatex">\(256^3\)</span> grid with <span class="arithmatex">\(dx = 30\,\text{nm}\)</span>.</p>
+<h2 id="applications">Applications<a class="headerlink" href="#applications" title="Permanent link">¶</a></h2>
+<ul>
+<li>Quantifying <span class="arithmatex">\(\gamma'\)</span> morphology in phase-field simulations of superalloys</li>
+<li>Calibrating phase-field models against experimental tomographic data</li>
+<li>Providing feature vectors for machine-learning models (e.g. microstructure–property links)</li>
+<li>Comparing precipitate statistics across heat-treatment conditions or alloy chemistries</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["toc.follow", "content.code.annotate", "content.tabs.link", "content.action.edit", "navigation.path", "navigation.indexes", "navigation.sections", "navigation.expand"], "search": "../../../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+        <script src="../../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="../../../../javascripts/width-control.js"></script>
+      
+    
+  
+<script id="init-glightbox">const lightbox = GLightbox({"touchNavigation": true, "loop": false, "zoomable": true, "draggable": true, "openEffect": "zoom", "closeEffect": "zoom", "slideEffect": "slide"});
+document$.subscribe(()=>{ lightbox.reload(); });
+</script></body></html>

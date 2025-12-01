@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/mnt/e/RUB/OpenPhase/python/trunk/MachineLearning/Superalloys/Sphericity_Roundness/FastRS_Feature.py", line 19, in <module>
+    from fast_rs import rs
+ModuleNotFoundError: No module named 'fast_rs'
