@@ -66,7 +66,7 @@ TAB_CONFIGS = [
             {
                 "id": "crss",
                 "label": "CRSS",
-                "file_glob": "VTK/CRSS_*.vts",
+                "file_glob": "VTK/CRSS_00001000.vts",
                 "scalars": [
                     {'label': f"CRSS {i}", 'array': f"CRSS_0_{i}"}
                     for i in range(12)

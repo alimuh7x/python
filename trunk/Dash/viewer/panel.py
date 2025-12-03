@@ -235,25 +235,25 @@ class ViewerPanel:
 
             colorscale = colorscale,
             zmid       = state.threshold,        # Center the color scale around the threshold
-            zmin       = state.range_min, 
+            zmin       = state.range_min,
             zmax       = state.range_max,
             zsmooth    = self.config["zsmooth"], # 'best' | 'fast' | 'none'
-        
+
             colorbar = dict(
                     title = dict(
                         text = state.scalar_label,
                         side = "right",
                         font = dict(size=24, family="Verdana, Helvetica, Arial", color="black", weight="bold")
                     ),
-                    len           = 0.6,             # height of colorbar relative to plot
+                    len           = 0.6,             # height of colorbar relative to plot (stays consistent)
                     lenmode       = 'fraction',      # 'pixels' | 'fraction'
                     thickness     = 14,              # Colorbar thickness
                     thicknessmode = 'pixels',        # 'pixels' | 'fraction'
-                    x             = 0.85,             # x position in plot fraction
-                    y             = 0.0,             # y position in plot fraction
+                    x             = 0.0,            # Fixed position relative to plot area (right edge)
+                    y             = 0.5,             # Centered vertically
                     xpad          = 0,               # Padding in pixels
-                    xanchor       = 'left',          # 'left' | 'center' | 'right'
-                    yanchor       = 'bottom',        # 'top' | 'middle' | 'bottom'
+                    xanchor       = 'right',          # Anchor at left edge of colorbar
+                    yanchor       = 'middle',        # Anchor at middle
                     tickmode      = "linear",        # 'auto' | 'linear' | 'array'
                     tick0         = state.range_min, # Starting tick value
                     dtick         = (state.range_max - state.range_min) /
@@ -262,30 +262,168 @@ class ViewerPanel:
                 ),
                 hovertemplate = 'Value: %{z:.4f}<extra></extra>'))
 
+        # Fixed figure dimensions
+        fig_width = 600
+        fig_height = 500
+        margins = dict(t=00, b=00, l=00, r=00, autoexpand=False)
+
+        # Calculate data aspect ratio
+        data_width = X_grid[0, -1] - X_grid[0, 0] + 1
+        data_height = Y_grid[-1, 0] - Y_grid[0, 0] + 1
+        data_aspect = data_width / data_height if data_height > 0 else 1.0
+        # -------------------------------
+        # AUTO DOMAIN BASED ON ASPECT
+        # -------------------------------
+        
+        fig_aspect  = fig_width / fig_height
+        print("--------------------------------------------------------------------------")
+        print("-------------------Start Printing-----------------------------------------")
+        print("--------------------------------------------------------------------------")
+        print(f"data_width: {data_width}")
+        print(f"data_height: {data_height}")
+        print(f"data_aspect: {data_aspect}")
+        print(f"fig_width: {fig_width}")
+        print(f"fig_height: {fig_height}")
+        print(f"fig_aspect: {fig_aspect}")
+        # 1. Aspect of data and figure
+        
+        # 2. Reserve fixed space on right for colorbar (fraction)
+        cbar_space = 0.25
+        right_domain = 1 - cbar_space
+        
+        y_min_local = 0.1
+        y_max_local = 0.9
+        fig.update_xaxes(domain=[0.0, right_domain])
+        fig.update_yaxes(domain=[y_min_local, y_max_local])
+
+        if(data_aspect > fig_aspect):  # PF
+            colorbar_x = right_domain + 0.02
+        elif data_aspect != 1.0:        # CRSS
+            fig.update_xaxes(domain=[0.0, 1.0])
+            real_right = self.compute_real_heatmap_edge(fig_width, fig_height, data_width, data_height,
+                domain=[0.0, 1.0])
+            colorbar_x = real_right
+            print(f"real_right: {real_right}")
+            fig.update_yaxes(domain=[0, y_max_local])
+        else:                           # Mechanis
+            colorbar_x = right_domain + 0.02 - y_min_local / 2.0
+
+
+        fig.update_traces(colorbar=dict(
+            x=colorbar_x,
+            y=0.5,
+            xanchor="left",
+            yanchor="middle",
+            len=0.6,
+            thickness=14
+        ))
+
+        print(f"data_width: {data_width}, data_height: {data_height}")
+
+        # Compute domain manually to understand plot area geometry
+        left  = margins['l']
+        right = margins['r']
+        top   = margins['t']
+        bottom= margins['b']
+
+        x0 = left / fig_width           # 0.1   |---
+        x1 = 1 - (right / fig_width)    # 0.9   ---|
+        y0 = bottom / fig_height        # 0.1   |
+        y1 = 1 - (top / fig_height)     # 0.9   |
+
+        # Convert domain → pixel geometry
+        plot_left   = x0 * fig_width    # 50
+        plot_right  = x1 * fig_width    # 450
+
+        plot_top    = y1 * fig_height   # 50
+        plot_bottom = y0 * fig_height   # 450
+
+        plot_width  = plot_right - plot_left # 400
+        plot_height = plot_top - plot_bottom # 400
+
+        actual_plot_width = plot_width
+        actual_plot_height = plot_width / data_aspect
+        vertical_padding = (plot_height - actual_plot_height) / 2
+        horizontal_padding = (plot_width - actual_plot_width) / 2
+
+        logo_size_px = 40  # Logo size in pixels
+        if(horizontal_padding):
+            horizontal_padding += logo_size_px / 2.0
+        if(vertical_padding):
+            vertical_padding += logo_size_px / 2.0
+        logo_x_px = 5 + horizontal_padding # 5px from left edge
+        logo_y_px = 5 + vertical_padding # At the actual plot bottom
+
+        # Convert to paper coordinates
+        logo_x_paper = logo_x_px / fig_width
+        logo_y_paper = logo_y_px / fig_height
+        logo_size_paper = logo_size_px / fig_width
+
+        # print("--------------------------------------------------------------------------")
+        # print("-------------------Start Printing-----------------------------------------")
+        # print("--------------------------------------------------------------------------")
+        # print(f"data_width: {data_width}")
+        # print(f"data_height: {data_height}")
+        # print(f"data_aspect: {data_aspect}")
+        # print(f"fig_width: {fig_width}")
+        # print(f"fig_height: {fig_height}")
+        # print("--------------------------------------------------------------------------")
+        # print(f"margins: {margins}")
+        # print(f"left: {left}")
+        # print(f"right: {right}")
+        # print(f"top: {top}")
+        # print(f"bottom: {bottom}")
+        # print("--------------------------------------------------------------------------")
+        # print(f"x0: {x0}")
+        # print(f"x1: {x1}")
+        # print(f"y0: {y0}")
+        # print(f"y1: {y1}")
+        # print("--------------------------------------------------------------------------")
+        # print(f"plot_left: {plot_left}")
+        # print(f"plot_right: {plot_right}")
+        # print(f"plot_top: {plot_top}")
+        # print(f"plot_bottom: {plot_bottom}")
+        # print(f"plot_width (Area Available for plot)   : {plot_width}")
+        # print(f"plot_height ( Area Available for plot) : {plot_height}")
+
+        # print("--------------------------------------------------------------------------")
+        # print(f"actual_plot_width (Actual width):  {actual_plot_width}")
+        # print(f"actual_plot_height (Actual height): {actual_plot_height}")
+
+        # print(f"vertical_padding  (Layout - Figure) :   {vertical_padding}")
+        # print(f"horizontal_padding (layout - Figure): {horizontal_padding}")
+        # print("--------------------------------------------------------------------------")
+        # print(f"logo_size_px: {logo_size_px}")
+        # print(f"logo_x_px: {logo_x_px}")
+        # print(f"logo_y_px: {logo_y_px}")
+        # print(f"logo_x_paper: {logo_x_paper}")
+        # print(f"logo_y_paper: {logo_y_paper}")
+        # print(f"logo_size_paper: {logo_size_paper}")
+        # print("--------------------------------------------------------------------------")
+
         fig.update_layout(
             xaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, scaleanchor="y", scaleratio=1),
             yaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, constrain='domain'),
             template     = template,
             autosize     = False,
-            height       = 400,         # Paper layout
-            width        = 600,         # Paper width
+            height       = fig_height,
+            width        = fig_width,
             paper_bgcolor= bg_color,
             hovermode    = 'closest',
-            margin       = dict(t=45, b=35, l=55, r=55, autoexpand=False), # plot margin
+            margin       = margins,
             plot_bgcolor = bg_color
         )
-
-        """ NOTE: Add logo to the figure."""
-
+       # Force actual plot margins
+ 
         fig.add_layout_image(
             dict(
                 source  =  "/assets/OP_Logo.png",
-                xref    =  "x domain",
-                yref    =  "y domain",
-                x       =  0,
-                y       =  0,
-                sizex   =  0.1,
-                sizey   =  0.1,
+                xref    =  "paper",
+                yref    =  "paper",
+                x       =   0,
+                y       =   0,
+                sizex   =  logo_size_paper,
+                sizey   =  logo_size_paper,
                 xanchor =  "left",
                 yanchor =  "bottom",
                 sizing  =  "contain",
@@ -293,6 +431,7 @@ class ViewerPanel:
                 layer   =  "above"
             )
         )
+        print(f"x = {logo_x_paper}, y = {logo_y_paper}")
         return fig
 
     def _build_map_title(self, state: ViewerState):
@@ -351,6 +490,24 @@ class ViewerPanel:
             scale=scale,
             units=descriptor.get('units')
         )
+
+    def compute_real_heatmap_edge(self, fig_w, fig_h, data_w, data_h, domain):
+        data_aspect = data_w / data_h
+        fig_aspect = fig_w / fig_h
+        
+        domain_left, domain_right = domain
+        domain_width = domain_right - domain_left
+        
+        scale = data_aspect / fig_aspect
+        
+        real_w = domain_width * scale
+        
+        pad = (domain_width - real_w) / 2
+        
+        real_left = domain_left + pad
+        real_right = real_left + real_w
+        
+        return real_right
 
     def _default_slice_index(self, reader):
         if not reader.is_3d:
