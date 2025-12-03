@@ -44,18 +44,18 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                     step=0.001,
                     placeholder='Max'
                 ),
-                html.Button('Select Range', id=component_id(viewer_id, 'rangeButton'))
+                html.Button('Select Range', id=component_id(viewer_id, 'rangeButton'), className='secondary-btn'),
+                html.Button(
+                    [
+                        html.Span("↻", className='reset-icon'),
+                        "Reset Range"
+                    ],
+                    id=component_id(viewer_id, 'reset'),
+                    className='primary-btn reset-btn'
+                )
             ], className='range-row')
         ], className='field-block'),
         slice_controls(viewer_id, axis_label, slider_disabled, slider_max, state.slice_index),
-        html.Button(
-            [
-                html.Span("↻", className='reset-icon'),
-                "Refresh Data"
-            ],
-            id=component_id(viewer_id, 'reset'),
-            className='primary-btn reset-btn'
-        ),
     ], className='control-panel panel-card')
 
 
@@ -70,17 +70,12 @@ def build_graph_section(viewer_id: str):
                 config={
                     'displayModeBar': True,
                     'displaylogo': False,
-                    'responsive': True,
+                    'responsive': False,
                     'toImageButtonOptions': {'scale': 4}
                 },
-                style={'width': '100%', 'height': '70vh'}
+                style={'width': '500px', 'height': '400px'}
             ),
-            html.Div([
-                html.Img(src='/assets/OP_Logo.png', className='graph-logo', alt='OP logo')
-            ], className='graph-footer'),
-            html.Div([
-                html.Div(id=component_id(viewer_id, 'clickInfo'), className='click-info', style={'display': 'none'})
-            ], className='graph-footer')
+            html.Div(id=component_id(viewer_id, 'clickInfo'), style={'display': 'none'})
         ], className='graph-card')
     ], className='graph-wrapper')
 

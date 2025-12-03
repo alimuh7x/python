@@ -108,12 +108,13 @@ class ViewerPanel:
             Input(self.cid('sliceInput'), 'value'),
             Input(self.cid('reset'), 'n_clicks'),
             Input(self.cid('rangeButton'), 'n_clicks'),
+            Input(self.cid('graph'), 'clickData'),
             State(self.cid('state'), 'data'),
             State(self.cid('rangeMin'), 'value'),
             State(self.cid('rangeMax'), 'value'),
         )
         def _update_viewer(scalar_value, palette_value,
-                           slice_value, slice_input_value, reset_clicks, range_clicks,
+                           slice_value, slice_input_value, reset_clicks, range_clicks, click_data,
                            stored_state, min_val, max_val):
             reader = self.reader
             state_data = stored_state or {}
@@ -146,6 +147,9 @@ class ViewerPanel:
                 candidate = slice_value if triggered == self.cid('slice') else slice_input_value
                 if candidate is not None:
                     state.slice_index = self._clamp_slice(int(candidate), reader)
+
+            if triggered == self.cid('graph') and click_data:
+                state = self._handle_click(state, click_data)
 
             if triggered == self.cid('rangeButton') and min_val is not None and max_val is not None:
                 lo, hi = sorted([min_val, max_val])
@@ -209,6 +213,8 @@ class ViewerPanel:
                 slice_disabled
             )
 
+    """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
+
     def _build_figure(self, X_grid, Y_grid, Z_grid, state: ViewerState):
         colors = self.PALETTES.get(state.palette, self.PALETTES["aqua-fire"])
         colorscale = [
@@ -218,36 +224,74 @@ class ViewerPanel:
             [0.75, colors[3]],
             [1.0, colors[4]]
         ]
+
         template = 'plotly_white'
         bg_color = '#ffffff'
+
         fig = go.Figure(data=go.Heatmap(
-            x=X_grid[0, :],
-            y=Y_grid[:, 0],
-            z=Z_grid,
-            colorscale=colorscale,
-            zmid=state.threshold,
-            zmin=state.range_min,
-            zmax=state.range_max,
-            zsmooth=self.config["zsmooth"],
-            colorbar=dict(
-                title=dict(text=state.scalar_label, side="right", font=dict(size=20, family="Arial")),
-                len=0.6,
-                tickmode="linear",
-                tick0=state.range_min,
-                dtick=(state.range_max - state.range_min) / 5 if state.range_max != state.range_min else 1,
-                tickfont=dict(size=14, color='#2c3e50')
-            ),
-            hovertemplate='Value: %{z:.4f}<extra></extra>'
-        ))
+            x = X_grid[0, :],
+            y = Y_grid[:, 0],
+            z = Z_grid,
+
+            colorscale = colorscale,
+            zmid       = state.threshold,        # Center the color scale around the threshold
+            zmin       = state.range_min, 
+            zmax       = state.range_max,
+            zsmooth    = self.config["zsmooth"], # 'best' | 'fast' | 'none'
+        
+            colorbar = dict(
+                    title = dict(
+                        text = state.scalar_label,
+                        side = "right",
+                        font = dict(size=24, family="Verdana, Helvetica, Arial", color="black", weight="bold")
+                    ),
+                    len           = 0.6,             # height of colorbar relative to plot
+                    lenmode       = 'fraction',      # 'pixels' | 'fraction'
+                    thickness     = 14,              # Colorbar thickness
+                    thicknessmode = 'pixels',        # 'pixels' | 'fraction'
+                    x             = 0.85,             # x position in plot fraction
+                    y             = 0.0,             # y position in plot fraction
+                    xpad          = 0,               # Padding in pixels
+                    xanchor       = 'left',          # 'left' | 'center' | 'right'
+                    yanchor       = 'bottom',        # 'top' | 'middle' | 'bottom'
+                    tickmode      = "linear",        # 'auto' | 'linear' | 'array'
+                    tick0         = state.range_min, # Starting tick value
+                    dtick         = (state.range_max - state.range_min) /
+                    5 if state.range_max != state.range_min else 1,
+                    tickfont = dict(size=18, family="Verdana, Helvetica, Arial", color='#2c3e50')
+                ),
+                hovertemplate = 'Value: %{z:.4f}<extra></extra>'))
+
         fig.update_layout(
-            xaxis=dict(showticklabels=False, showgrid=False, zeroline=False, title=None, scaleanchor="y", scaleratio=1),
-            yaxis=dict(showticklabels=False, showgrid=False, zeroline=False, title=None, constrain='domain'),
-            template=template,
-            autosize=True,
-            hovermode='closest',
-            margin=dict(t=24, b=24, l=24, r=90),
-            paper_bgcolor=bg_color,
-            plot_bgcolor=bg_color
+            xaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, scaleanchor="y", scaleratio=1),
+            yaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, constrain='domain'),
+            template     = template,
+            autosize     = False,
+            height       = 400,         # Paper layout
+            width        = 600,         # Paper width
+            paper_bgcolor= bg_color,
+            hovermode    = 'closest',
+            margin       = dict(t=45, b=35, l=55, r=55, autoexpand=False), # plot margin
+            plot_bgcolor = bg_color
+        )
+
+        """ NOTE: Add logo to the figure."""
+
+        fig.add_layout_image(
+            dict(
+                source  =  "/assets/OP_Logo.png",
+                xref    =  "x domain",
+                yref    =  "y domain",
+                x       =  0,
+                y       =  0,
+                sizex   =  0.1,
+                sizey   =  0.1,
+                xanchor =  "left",
+                yanchor =  "bottom",
+                sizing  =  "contain",
+                opacity =  0.95,
+                layer   =  "above"
+            )
         )
         return fig
 
