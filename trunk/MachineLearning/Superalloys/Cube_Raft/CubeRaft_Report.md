@@ -96,7 +96,7 @@ Line trends for area fraction, mean diameter, aspect ratio, sphericity, roundnes
 - `numpy`
 - `matplotlib`
 - `scipy`
-- `fast_rs`
+- `fast_rs` pip install fast_rs
 - `pandas`
 
 

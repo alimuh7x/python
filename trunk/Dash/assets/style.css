@@ -1,0 +1,142 @@
+/* VTK 2D Slice Viewer - Custom Styles */
+
+/* General styling */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fa;
+}
+
+/* Control panel styling */
+.control-panel {
+    background-color: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.control-panel h3 {
+    color: #2c3e50;
+    margin-top: 0;
+}
+
+.control-panel h4 {
+    color: #34495e;
+    margin-top: 15px;
+}
+
+/* Input styling */
+input[type="text"],
+input[type="number"] {
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Slider styling */
+.rc-slider {
+    margin: 15px 0;
+}
+
+.rc-slider-track {
+    background-color: #3498db;
+}
+
+.rc-slider-handle {
+    border-color: #3498db;
+}
+
+.rc-slider-handle:hover {
+    border-color: #2980b9;
+}
+
+/* Button hover effect */
+button:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Statistics display */
+#stats-display p {
+    margin: 8px 0;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+/* Click info styling */
+#click-info {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+/* Heatmap container */
+.js-plotly-plot {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: white;
+}
+
+/* Header styling */
+h1 {
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .control-panel {
+        margin-bottom: 20px;
+    }
+}
+
+/* Label styling */
+label {
+    display: block;
+    color: #34495e;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* Slider container */
+#slice-container {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #e1e4e8;
+}
+
+/* Disabled slider */
+.rc-slider-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Tooltip styling */
+.rc-slider-tooltip {
+    font-size: 12px;
+}
+
+/* Color input preview */
+input[type="text"][id*="color"] {
+    font-family: monospace;
+    font-weight: bold;
+}
