@@ -116,64 +116,61 @@ app.layout = html.Div([
                     )
                 ], style={'marginBottom': '20px'}),
 
-                # Min Color picker
+                # Hidden inputs for colors and threshold (still needed for callbacks)
                 html.Div([
-                    html.Label("Min Color (Below Threshold):", style={'fontWeight': 'bold'}),
-                    dcc.Input(
-                        id='color-a-input',
-                        type='text',
-                        value=current_data['colorA'],
-                        style={'width': '100%', 'padding': '8px', 'marginTop': '5px'},
-                        placeholder='e.g., blue, #0000FF, rgb(0,0,255)'
-                    )
-                ], style={'marginBottom': '20px'}),
+                    dcc.Input(id='color-a-input', type='text', value=current_data['colorA'], style={'display': 'none'}),
+                    dcc.Input(id='color-b-input', type='text', value=current_data['colorB'], style={'display': 'none'}),
+                    dcc.Input(id='threshold-input', type='number', value=current_data['threshold'], style={'display': 'none'})
+                ]),
 
-                # Max Color picker
+                # Min and Max value inputs with Rescale button (single row)
                 html.Div([
-                    html.Label("Max Color (Above Threshold):", style={'fontWeight': 'bold'}),
-                    dcc.Input(
-                        id='color-b-input',
-                        type='text',
-                        value=current_data['colorB'],
-                        style={'width': '100%', 'padding': '8px', 'marginTop': '5px'},
-                        placeholder='e.g., red, #FF0000, rgb(255,0,0)'
-                    )
-                ], style={'marginBottom': '20px'}),
+                    html.Label("Range:", style={'fontWeight': 'bold', 'marginBottom': '5px', 'display': 'block'}),
+                    html.Div([
+                        # Min input
+                        html.Div([
+                            dcc.Input(
+                                id='min-input',
+                                type='number',
+                                value=current_data['range_min'],
+                                step=0.001,
+                                placeholder='Min',
+                                style={'width': '100%', 'padding': '6px', 'fontSize': '12px'}
+                            )
+                        ], style={'width': '35%', 'display': 'inline-block'}),
 
-                # Min value input
-                html.Div([
-                    html.Label("Min Value:", style={'fontWeight': 'bold'}),
-                    dcc.Input(
-                        id='min-input',
-                        type='number',
-                        value=current_data['range_min'],
-                        step=0.001,
-                        style={'width': '100%', 'padding': '8px', 'marginTop': '5px'}
-                    )
-                ], style={'marginBottom': '20px'}),
+                        # Max input
+                        html.Div([
+                            dcc.Input(
+                                id='max-input',
+                                type='number',
+                                value=current_data['range_max'],
+                                step=0.001,
+                                placeholder='Max',
+                                style={'width': '100%', 'padding': '6px', 'fontSize': '12px'}
+                            )
+                        ], style={'width': '35%', 'display': 'inline-block', 'marginLeft': '5px'}),
 
-                # Max value input
-                html.Div([
-                    html.Label("Max Value:", style={'fontWeight': 'bold'}),
-                    dcc.Input(
-                        id='max-input',
-                        type='number',
-                        value=current_data['range_max'],
-                        step=0.001,
-                        style={'width': '100%', 'padding': '8px', 'marginTop': '5px'}
-                    )
-                ], style={'marginBottom': '20px'}),
-
-                # Threshold input
-                html.Div([
-                    html.Label("Threshold Value:", style={'fontWeight': 'bold'}),
-                    dcc.Input(
-                        id='threshold-input',
-                        type='number',
-                        value=current_data['threshold'],
-                        step=0.001,
-                        style={'width': '100%', 'padding': '8px', 'marginTop': '5px'}
-                    )
+                        # Select Range button
+                        html.Div([
+                            html.Button(
+                                'Select Range on Figure',
+                                id='rescale-button',
+                                n_clicks=0,
+                                style={
+                                    'width': '100%',
+                                    'padding': '6px',
+                                    'backgroundColor': '#3498db',
+                                    'color': 'white',
+                                    'border': 'none',
+                                    'borderRadius': '3px',
+                                    'cursor': 'pointer',
+                                    'fontSize': '12px',
+                                    'fontWeight': 'bold'
+                                }
+                            )
+                        ], style={'width': '25%', 'display': 'inline-block', 'marginLeft': '5px'})
+                    ], style={'display': 'flex', 'alignItems': 'center'})
                 ], style={'marginBottom': '20px'}),
 
                 # Slice selector (only for 3D data)
@@ -261,12 +258,13 @@ app.layout = html.Div([
      Input('max-input', 'value'),
      Input('slice-slider', 'value'),
      Input('reset-button', 'n_clicks'),
+     Input('rescale-button', 'n_clicks'),
      Input('heatmap', 'clickData')],
     [State('threshold-input', 'value'),
      State('color-a-input', 'value'),
      State('color-b-input', 'value')]
 )
-def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val, max_val, slice_idx, reset_clicks, click_data,
+def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val, max_val, slice_idx, reset_clicks, rescale_clicks, click_data,
                         current_threshold, current_colorA, current_colorB):
     """Update visualization based on user interactions"""
     global current_data, vtk_reader
@@ -336,33 +334,42 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
             current_data['slice_index'] = slice_idx
             current_data['clicked_value'] = None
 
-    # Handle click on heatmap - set min/max range with two clicks
-    if triggered_id == 'heatmap' and click_data:
+    # Handle Select Range button - activate selection mode
+    if triggered_id == 'rescale-button':
+        # Activate selection mode - reset click counter
+        current_data['click_count'] = 0
+        current_data['first_click'] = None
+        current_data['selection_mode'] = True
+        current_data['clicked_value'] = "Selection mode active - click on image twice to select range"
+
+    # Handle click on heatmap - only if selection mode is active
+    if triggered_id == 'heatmap' and click_data and current_data.get('selection_mode', False):
         try:
             point_data = click_data['points'][0]
             clicked_z = point_data['z']
 
             if current_data['click_count'] == 0:
-                # First click - set as potential min or max
+                # First click - store value
                 current_data['first_click'] = clicked_z
                 current_data['click_count'] = 1
-                current_data['clicked_value'] = f"First click: {clicked_z:.4f}"
+                current_data['clicked_value'] = f"First click: {clicked_z:.4f} (click again to set range)"
             else:
-                # Second click - determine min and max
+                # Second click - set min and max
                 val1 = current_data['first_click']
                 val2 = clicked_z
                 current_data['range_min'] = min(val1, val2)
                 current_data['range_max'] = max(val1, val2)
                 current_data['click_count'] = 0
                 current_data['first_click'] = None
-                current_data['clicked_value'] = f"Range set: [{current_data['range_min']:.4f}, {current_data['range_max']:.4f}]"
-                # Reset threshold to midpoint of new range
+                current_data['selection_mode'] = False  # Deactivate selection mode
+                current_data['clicked_value'] = f"Range selected from image: [{current_data['range_min']:.4f}, {current_data['range_max']:.4f}]"
+                # Update threshold to midpoint of new range
                 threshold_manual = (current_data['range_min'] + current_data['range_max']) / 2
                 current_data['threshold'] = threshold_manual
         except (KeyError, IndexError):
             pass
 
-    # Handle manual min/max input changes
+    # Handle manual min/max input changes - auto-apply
     if triggered_id in ['min-input', 'max-input']:
         if min_val is not None and max_val is not None:
             current_data['range_min'] = min(min_val, max_val)
@@ -370,6 +377,8 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
             # Update threshold to midpoint
             threshold_manual = (current_data['range_min'] + current_data['range_max']) / 2
             current_data['threshold'] = threshold_manual
+            current_data['clicked_value'] = f"Manual range applied: [{current_data['range_min']:.4f}, {current_data['range_max']:.4f}]"
+            current_data['selection_mode'] = False  # Deactivate selection mode if active
 
     # Update colors
     current_data['colorA'] = colorA
@@ -383,6 +392,9 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
         [1.0, colorB]
     ]
 
+    # Get current scalar field name for colorbar title
+    current_scalar_name = current_data.get('current_scalar', 'Scalar Value')
+
     # Create heatmap figure with optimized settings and custom range
     fig = go.Figure(data=go.Heatmap(
         x=current_data['X_grid'][0, :],
@@ -394,17 +406,22 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
         zmax=current_data.get('range_max', current_data['stats']['max']),
         zsmooth='best',  # Enable smoothing for high-quality rendering
         colorbar=dict(
-            title=dict(text="Scalar Value", side="right"),
+            title=dict(
+                text=current_scalar_name,
+                side="right",
+                font=dict(size=25, family="Arial Black")  # Bold font for title
+            ),
+            len=0.6,  # Reduced height of colorbar (60% of plot height)
             tickmode="linear",
             tick0=current_data.get('range_min', current_data['stats']['min']),
             dtick=(current_data.get('range_max', current_data['stats']['max']) -
-                   current_data.get('range_min', current_data['stats']['min'])) / 5
+                   current_data.get('range_min', current_data['stats']['min'])) / 5,
+            tickfont=dict(size=18)  # Larger font size for tick values
         ),
         hovertemplate='Value: %{z:.4f}<extra></extra>'
     ))
 
     fig.update_layout(
-        title=f"2D Slice Visualization (Threshold: {threshold_manual:.4f})",
         xaxis=dict(
             showticklabels=False,
             showgrid=False,
@@ -423,7 +440,8 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
         template="plotly_white",
         height=700,
         width=700,  # Make square
-        hovermode='closest'
+        hovermode='closest',
+        margin=dict(t=20, b=20, l=20, r=100)  # Reduced top margin, added right margin for colorbar
     )
 
     # Statistics panel
@@ -438,9 +456,9 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
     ]
 
     # Click info with indicator
-    if current_data.get('click_count', 0) == 1:
+    if current_data.get('selection_mode', False) and current_data.get('click_count', 0) == 1:
         click_info_element = html.Div([
-            html.Span("Waiting for 2nd click (MAX) | First value: ", style={'color': '#856404'}),
+            html.Span("Waiting for 2nd click | First value: ", style={'color': '#856404'}),
             html.Span(f"{current_data['first_click']:.4f}", style={'color': '#856404', 'fontWeight': 'bold'})
         ], style={'backgroundColor': '#fff3cd', 'padding': '10px', 'borderRadius': '5px'})
     elif current_data['clicked_value'] is not None:
@@ -450,10 +468,9 @@ def update_visualization(scalar_field, colorA, colorB, threshold_manual, min_val
         )
     else:
         click_info_element = html.Div([
-            html.Span("Click on heatmap: ", style={'color': '#2c3e50'}),
-            html.Span("1st click = MIN", style={'color': '#007bff', 'fontWeight': 'bold'}),
-            html.Span(" | ", style={'color': '#2c3e50'}),
-            html.Span("2nd click = MAX", style={'color': '#dc3545', 'fontWeight': 'bold'})
+            html.Span("Type Min/Max to apply instantly, or click ", style={'color': '#2c3e50'}),
+            html.Span("\"Select Range\"", style={'color': '#3498db', 'fontWeight': 'bold'}),
+            html.Span(" then click image twice", style={'color': '#2c3e50'})
         ], style={'backgroundColor': '#ecf0f1', 'padding': '10px', 'borderRadius': '5px'})
 
     return (
