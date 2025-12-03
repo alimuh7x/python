@@ -1,17 +1,18 @@
-# VTK 2D Slice Viewer
+# VTK Multi-Field Slice Viewer
 
-A production-ready interactive Dash application for visualizing VTK files with two-color threshold visualization.
+A configuration-driven Dash/Plotly application for visualizing multiple VTK files across scientific fields (phase field, temperature, mechanics, plasticity, ...).
 
 ## Features
 
 - Load VTK files (.vtk, .vti, .vtp, .vtr, .vts)
 - Automatic detection of 2D/3D data
-- Interactive two-color threshold visualization
-- Click on heatmap to set threshold
-- Customizable colors (Color A for below threshold, Color B for above)
-- Slice selection for 3D datasets
-- Real-time statistics display
-- Reset to initial state
+- Automatic detection of newest snapshots inside `VTK/` per dataset (no manual dropdowns)
+- Configuration-driven tabs (Phase Field, Temperature, Mechanics, Plasticity by default)
+- Shared two-click range selection logic per tab with manual overrides
+- Dropdown-based color presets for below/above threshold (no manual typing needed)
+- Consistent light theme with glass cards and top map titles
+- Slice slider + number input (auto-hidden for 2D data) with cached interpolation for smooth rendering
+- Reset button restores defaults for the active tab/file combination
 
 ## Installation
 
@@ -69,46 +70,75 @@ Then open your browser to: **http://127.0.0.1:8050**
 
 ### Controls
 
-**Left Panel:**
-- **Color A** - Color for values below threshold (e.g., "blue", "#0000FF", "rgb(0,0,255)")
-- **Color B** - Color for values above threshold (e.g., "red", "#FF0000", "rgb(255,0,0)")
-- **Threshold Value** - Manual threshold input
-- **Slice Index** - Select slice for 3D datasets (Y-axis by default)
-- **Reset Button** - Restore initial colors and threshold
+**Left Panel (per dataset):**
+- **Scalar Field Dropdown** – switch between available arrays inside the selected VTK file
+- **Color Presets** – choose colors for below/above threshold without typing codes
+- **Range Inputs** – set min/max numerically or by selecting two points on the heatmap
+- **Slice Slider/Input** – for 3D data; hidden automatically for 2D files
+- **Reset Button** – restore defaults (colors, range, slice, threshold)
 
 **Right Panel:**
-- **Heatmap** - Interactive 2D visualization
-- **Click anywhere** on the heatmap to set threshold to that scalar value
-- **Statistics** - Min, max, mean, std dev, and current threshold
-
-### Color Formats
-
-You can use:
-- Color names: `blue`, `red`, `green`, `yellow`, etc.
-- Hex codes: `#0000FF`, `#FF0000`
-- RGB: `rgb(0, 0, 255)`, `rgb(255, 0, 0)`
+- **Heatmap** – 2D visualization with white transition at the threshold and smoothing
+- **Map Title** – Displays the active scalar and units (e.g., `σxx (MPa)`)
+- **Click Helper** – Reminds when the viewer is waiting for the second click or shows the selected range
 
 ### Loading Your Own VTK Files
 
-1. Place your VTK file in the project directory
-2. Edit `app.py` line 53:
+1. Place your VTK files in the `VTK/` directory, preferably with a numbered suffix (e.g., `PhaseField_00005000.vts`).
+2. In `app.py`, add or edit a dataset entry inside the relevant tab and set its `file_glob` (e.g., `"file_glob": "VTK/MyData_*.vts"`).
+3. Restart the app – it automatically loads the most recent file that matches each glob. If no file matches, the dataset block is omitted.
+
+### Adding/Customizing Tabs
+
+Tabs are declared in `app.py` via `TAB_CONFIGS`. Each tab defines one or more dataset blocks by specifying a unique `id`, display `label`, and `file_glob`:
+
 ```python
-default_file = 'path/to/your/file.vti'
+{
+    "id": "mechanics",
+    "label": "Mechanics",
+    "datasets": [
+        {
+            "id": "stresses",
+            "label": "Stress Tensor",
+            "file_glob": "VTK/Stresses_*.vts",
+            "scale": 1e-6,
+            "units": "MPa",
+            "scalars": [
+                {"label": "Pressure", "array": "Pressure"},
+                {"label": "von Mises", "array": "von Mises"},
+                {"label": "σ_xx", "array": "Stresses", "component": 0}
+            ]
+        },
+        {
+            "id": "elastic",
+            "label": "Elastic Strains",
+            "file_glob": "VTK/ElasticStrains_*.vts",
+            "scalars": [{"label": "ε_xx", "array": "ElasticStrains", "component": 0}]
+        }
+    ]
+}
 ```
-3. Restart the application
+
+Each dataset inherits the shared controls (color presets, range selection, slice slider). If a glob matches no files the block is skipped automatically.
 
 ## Project Structure
 
 ```
 Dash/
 │
-├── app.py                          # Main Dash application
+├── app.py                          # Main Dash application & tab configuration
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
+├── viewer/
+│   ├── __init__.py                 # Exposes ViewerPanel
+│   ├── defaults.py                 # Shared defaults for all tabs
+│   ├── layout.py                   # Control/graph builders
+│   ├── panel.py                    # ViewerPanel class (callbacks + layout)
+│   └── state.py                    # Dataclass used in dcc.Store
 │
 ├── utils/
 │   ├── __init__.py
-│   └── vtk_reader.py              # VTK file loading and slicing
+│   └── vtk_reader.py              # Cached VTK file loading/slicing
 │
 ├── sample_data/
 │   ├── generate_sample_vti.py     # Sample data generator
@@ -124,35 +154,26 @@ Dash/
 
 ### Two-Color Threshold Logic
 
-The application uses Plotly's `zmid` parameter with a custom colorscale:
+Each tab shares the same Plotly `zmid` logic: colors below threshold use `colorA`, above threshold use `colorB`, and white at the midpoint for a crisp two-tone view. Thresholds automatically follow the currently selected data range (two-click selection or manual inputs).
 
-```python
-colorscale = [
-    [0.0, colorA],  # Start with Color A
-    [0.5, colorA],  # Continue to midpoint
-    [0.5, colorB],  # Switch to Color B at midpoint
-    [1.0, colorB]   # End with Color B
-]
-```
+### Viewer Package
 
-- Values < threshold → Color A
-- Values ≥ threshold → Color B
+- `ViewerPanel` owns layout + callbacks per tab.
+- `ViewerState` is stored in `dcc.Store`, ensuring each tab/user keeps isolated settings.
+- Shared behaviours (range selection, color updates, click helper) reside in `viewer/panel.py`.
 
-### 3D Slicing
+### Efficient Slicing
 
-For 3D datasets:
-- Default axis: Y
-- Default slice: Middle slice (Ny // 2)
-- Slicing uses PyVista's native slicing functionality
-- Data interpolated to regular grid for visualization
+- `VTKReader.get_interpolated_slice` caches interpolated grids per (scalar, axis, slice, resolution) making quick tab switching inexpensive.
+- Slice origins respect dataset bounds, so structured/rectilinear grids that do not start at zero are handled correctly.
 
 ### Data Flow
 
-1. **Load VTK** → PyVista reads file
-2. **Detect dimensions** → Determine 2D or 3D
-3. **Extract slice** → Get 2D data (directly or via slicing)
-4. **Interpolate** → Create regular grid using scipy
-5. **Visualize** → Plotly heatmap with two-color threshold
+1. **Load VTK** → `VTKReader` (per file with caching)
+2. **Tab Initialization** → Each tab merges shared defaults with overrides and instantiates `ViewerState`
+3. **Slice Extraction** → PyVista slice + SciPy interpolation (cached)
+4. **Dash Callback** → Shared handler updates state, figure, and click helper text
+5. **Visualization** → Plotly heatmap per tab, all reusing the same controls logic
 
 ## Troubleshooting
 
@@ -189,14 +210,12 @@ app.run_server(debug=True, host='127.0.0.1', port=8051)  # Change port
 
 ## Future Enhancements
 
-Possible extensions:
-- Multiple VTK file support
-- Volume rendering mode
-- Custom colormap editor
-- Export functions (PNG, MP4, GIF)
-- Axis selection (X, Y, Z)
-- Multiple scalar field selection
-- Isosurface extraction
+Possible extensions now that the viewer is modular:
+- Runtime file picker per tab
+- Volume rendering / 3D scenes in separate tabs
+- Axis selection dropdowns (leveraging the shared state object)
+- Export (PNG/GIF) utilities layered on top of the shared viewer hooks
+- Custom per-tab controls (e.g., units switch for temperature) without duplicating layout logic
 
 ## License
 

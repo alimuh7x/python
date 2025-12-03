@@ -1,0 +1,11 @@
+# Python cache/virtualenv
+__pycache__/
+.pytest_cache/
+venv*/
+*.pyc
+
+# Dash artifacts
+.DS_Store
+
+# Large simulation outputs
+sample_data/*.vti

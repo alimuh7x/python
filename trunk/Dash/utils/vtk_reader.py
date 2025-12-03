@@ -19,6 +19,7 @@ class VTKReader:
         self.scalar_name = None
         self.dimensions = None
         self.is_3d = False
+        self._interpolation_cache = {}
         self.load_file()
 
     def load_file(self):
@@ -50,7 +51,7 @@ class VTKReader:
             self.dimensions[2] > 1
         )
 
-    def get_slice(self, axis='y', index=None, scalar_name=None):
+    def get_slice(self, axis='y', index=None, scalar_name=None, component=None):
         """
         Extract 2D slice from mesh
 
@@ -66,8 +67,7 @@ class VTKReader:
         if scalar_name is None:
             scalar_name = self.scalar_name
         if not self.is_3d:
-            # Already 2D, return as-is
-            return self._extract_2d_data(scalar_name)
+            return self._extract_2d_data(scalar_name, component)
 
         # Determine slice index
         axis_map = {'x': 0, 'y': 1, 'z': 2}
@@ -80,27 +80,30 @@ class VTKReader:
         index = max(0, min(index, self.dimensions[axis_idx] - 1))
 
         # Extract slice using PyVista
+        bounds = self.mesh.bounds
+        x_mid = (bounds[0] + bounds[1]) * 0.5
+        y_mid = (bounds[2] + bounds[3]) * 0.5
+        z_mid = (bounds[4] + bounds[5]) * 0.5
+
         if axis.lower() == 'x':
-            bounds = self.mesh.bounds
             x_val = bounds[0] + (bounds[1] - bounds[0]) * index / max(1, self.dimensions[0] - 1)
-            slice_mesh = self.mesh.slice(normal='x', origin=(x_val, 0, 0))
+            slice_mesh = self.mesh.slice(normal='x', origin=(x_val, y_mid, z_mid))
         elif axis.lower() == 'y':
-            bounds = self.mesh.bounds
             y_val = bounds[2] + (bounds[3] - bounds[2]) * index / max(1, self.dimensions[1] - 1)
-            slice_mesh = self.mesh.slice(normal='y', origin=(0, y_val, 0))
+            slice_mesh = self.mesh.slice(normal='y', origin=(x_mid, y_val, z_mid))
         else:  # z
-            bounds = self.mesh.bounds
             z_val = bounds[4] + (bounds[5] - bounds[4]) * index / max(1, self.dimensions[2] - 1)
-            slice_mesh = self.mesh.slice(normal='z', origin=(0, 0, z_val))
+            slice_mesh = self.mesh.slice(normal='z', origin=(x_mid, y_mid, z_val))
 
-        return self._process_slice(slice_mesh, axis, scalar_name)
+        return self._process_slice(slice_mesh, axis, scalar_name, component)
 
-    def _extract_2d_data(self, scalar_name=None):
+    def _extract_2d_data(self, scalar_name=None, component=None):
         """Extract data from 2D mesh"""
         if scalar_name is None:
             scalar_name = self.scalar_name
         points = self.mesh.points
         scalars = self.mesh[scalar_name]
+        scalars = self._select_component(scalars, component)
 
         # Determine which two axes have variation
         std_devs = np.std(points, axis=0)
@@ -122,12 +125,13 @@ class VTKReader:
 
         return x_coords, y_coords, scalars, stats
 
-    def _process_slice(self, slice_mesh, axis, scalar_name=None):
+    def _process_slice(self, slice_mesh, axis, scalar_name=None, component=None):
         """Process sliced mesh to extract coordinates and scalars"""
         if scalar_name is None:
             scalar_name = self.scalar_name
         points = slice_mesh.points
         scalars = slice_mesh[scalar_name]
+        scalars = self._select_component(scalars, component)
 
         # Determine coordinate axes based on slice axis
         if axis.lower() == 'x':
@@ -159,19 +163,9 @@ class VTKReader:
     def interpolate_to_grid(self, x_coords, y_coords, scalars, resolution=100):
         """
         Interpolate scattered data to regular grid for heatmap
-
-        Args:
-            x_coords (array): X coordinates
-            y_coords (array): Y coordinates
-            scalars (array): Scalar values
-            resolution (int): Grid resolution
-
-        Returns:
-            tuple: (X_grid, Y_grid, Z_grid)
         """
         from scipy.interpolate import griddata
 
-        # Create regular grid
         x_min, x_max = np.min(x_coords), np.max(x_coords)
         y_min, y_max = np.min(y_coords), np.max(y_coords)
 
@@ -179,7 +173,6 @@ class VTKReader:
         yi = np.linspace(y_min, y_max, resolution)
         X_grid, Y_grid = np.meshgrid(xi, yi)
 
-        # Interpolate
         Z_grid = griddata(
             (x_coords, y_coords),
             scalars,
@@ -189,3 +182,36 @@ class VTKReader:
         )
 
         return X_grid, Y_grid, Z_grid
+
+    def get_interpolated_slice(self, axis='y', index=None, scalar_name=None, component=None, resolution=100):
+        """
+        Retrieve (and cache) interpolated grid + stats for a slice.
+        """
+        if scalar_name is None:
+            scalar_name = self.scalar_name
+
+        cache_key = (scalar_name, component, axis.lower(), index if index is not None else -1, resolution)
+
+        if cache_key in self._interpolation_cache:
+            return self._interpolation_cache[cache_key]
+
+        x_coords, y_coords, scalars, stats = self.get_slice(axis=axis, index=index, scalar_name=scalar_name, component=component)
+        X_grid, Y_grid, Z_grid = self.interpolate_to_grid(x_coords, y_coords, scalars, resolution=resolution)
+        result = (X_grid, Y_grid, Z_grid, stats)
+        self._interpolation_cache[cache_key] = result
+        return result
+
+    @property
+    def scalar_fields(self):
+        """List available scalar arrays."""
+        return list(self.mesh.array_names)
+
+    def _select_component(self, scalars, component):
+        """Return either a selected component or the scalar array as-is."""
+        if scalars.ndim == 1:
+            return scalars
+        if scalars.ndim == 2:
+            if component is not None and 0 <= component < scalars.shape[1]:
+                return scalars[:, component]
+            return np.linalg.norm(scalars, axis=1)
+        return scalars
