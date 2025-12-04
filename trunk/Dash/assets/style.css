@@ -296,12 +296,13 @@ input[type="text"],
 .Select-control,
 .Select-menu-outer {
     width: 100%;
-    padding: 10px 12px;
+    padding: 9px 12px;
     border-radius: var(--radius-sm) !important;
-    border: 1px solid #cbd5e1 !important;
+    border: 1.5px solid #cbd5e1 !important;
     background: white;
     transition: var(--transition);
     font-family: inherit;
+    font-size: 0.9rem;
     box-sizing: border-box;
     color: var(--text-main);
 }
@@ -310,7 +311,7 @@ input:focus,
 .Select-control.is-focused,
 .Select-control:hover {
     border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px rgba(197, 6, 35, 0.1);
+    box-shadow: 0 0 0 3px rgba(197, 6, 35, 0.08);
     outline: none;
 }
 
