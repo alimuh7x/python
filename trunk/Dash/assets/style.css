@@ -307,15 +307,21 @@ h1.app-title {
 
 /* Controls */
 .control-panel {
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    margin-bottom: 24px;
-    border: 1px solid var(--surface-border);
+    background: #f8f9fc;
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    border: 1px solid #dfe6f3;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .field-block {
-    margin-bottom: 16px;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .field-label {
@@ -345,26 +351,30 @@ h1.app-title {
 }
 
 .row-inline {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px 20px;
+    margin: 0;
 }
 
 .half-width {
-    flex: 1;
-    min-width: 200px;
+    min-width: 0;
 }
 
 .range-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    align-items: center;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    align-items: end;
 }
 
 .range-row.with-reset {
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+}
+
+.reset-btn {
+    padding: 8px 16px;
+    min-height: 42px;
 }
 
 /* Inputs */
@@ -373,9 +383,9 @@ input[type="text"],
 .Select-control,
 .Select-menu-outer {
     width: 100%;
-    padding: 9px 12px;
-    border-radius: var(--radius-sm) !important;
-    border: 1.5px solid #cbd5e1 !important;
+    padding: 8px 12px;
+    border-radius: 10px !important;
+    border: 1.4px solid #cbd5e1 !important;
     background: white;
     transition: var(--transition);
     font-family: inherit;
