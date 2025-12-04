@@ -18,6 +18,7 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                     options=scalar_options,
                     value=state.scalar_key,
                     clearable=False,
+                    searchable=False,
                 )
             ], className='dropdown-wrapper'),
             html.Label([
@@ -30,6 +31,7 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                     options=palette_options,
                     value=state.palette,
                     clearable=False,
+                    searchable=False,
                 )
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
