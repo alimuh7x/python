@@ -107,14 +107,13 @@ class ViewerPanel:
             Input(self.cid('slice'), 'value'),
             Input(self.cid('sliceInput'), 'value'),
             Input(self.cid('reset'), 'n_clicks'),
-            Input(self.cid('rangeButton'), 'n_clicks'),
             Input(self.cid('graph'), 'clickData'),
             State(self.cid('state'), 'data'),
             State(self.cid('rangeMin'), 'value'),
             State(self.cid('rangeMax'), 'value'),
         )
         def _update_viewer(scalar_value, palette_value,
-                           slice_value, slice_input_value, reset_clicks, range_clicks, click_data,
+                           slice_value, slice_input_value, reset_clicks, click_data,
                            stored_state, min_val, max_val):
             reader = self.reader
             state_data = stored_state or {}
@@ -151,7 +150,7 @@ class ViewerPanel:
             if triggered == self.cid('graph') and click_data:
                 state = self._handle_click(state, click_data)
 
-            if triggered == self.cid('rangeButton') and min_val is not None and max_val is not None:
+            if triggered in {self.cid('rangeMin'), self.cid('rangeMax')} and min_val is not None and max_val is not None:
                 lo, hi = sorted([min_val, max_val])
                 state.range_min = lo
                 state.range_max = hi
@@ -159,8 +158,6 @@ class ViewerPanel:
                 state.clicked_message = f"Range selected: [{lo:.4f}, {hi:.4f}]"
                 state.click_count = 0
                 state.first_click = None
-            elif triggered == self.cid('rangeButton'):
-                range_needs_reset = True
 
             state.palette = palette_value or fallback_state.palette
 
@@ -227,6 +224,8 @@ class ViewerPanel:
 
         template = 'plotly_white'
         bg_color = '#ffffff'
+        font_family = "Montserrat, Arial, sans-serif"
+        text_color = "#0f1b2b"
 
         fig = go.Figure(data=go.Heatmap(
             x = X_grid[0, :],
@@ -240,27 +239,26 @@ class ViewerPanel:
             zsmooth    = self.config["zsmooth"], # 'best' | 'fast' | 'none'
 
             colorbar = dict(
-                    title = dict(
-                        text = state.scalar_label,
-                        side = "right",
-                        font = dict(size=24, family="Verdana, Helvetica, Arial", color="black", weight="bold")
-                    ),
-                    len           = 0.6,             # height of colorbar relative to plot (stays consistent)
-                    lenmode       = 'fraction',      # 'pixels' | 'fraction'
-                    thickness     = 14,              # Colorbar thickness
-                    thicknessmode = 'pixels',        # 'pixels' | 'fraction'
-                    x             = 0.0,            # Fixed position relative to plot area (right edge)
-                    y             = 0.5,             # Centered vertically
-                    xpad          = 0,               # Padding in pixels
-                    xanchor       = 'right',          # Anchor at left edge of colorbar
-                    yanchor       = 'middle',        # Anchor at middle
-                    tickmode      = "linear",        # 'auto' | 'linear' | 'array'
-                    tick0         = state.range_min, # Starting tick value
-                    dtick         = (state.range_max - state.range_min) /
-                    5 if state.range_max != state.range_min else 1,
-                    tickfont = dict(size=18, family="Verdana, Helvetica, Arial", color='#2c3e50')
+                title = dict(
+                    text = state.scalar_label,
+                    side = "right",
+                    font = dict(size=18, family=font_family, color=text_color)
                 ),
-                hovertemplate = 'Value: %{z:.4f}<extra></extra>'))
+                len           = 0.6,             # height of colorbar relative to plot (stays consistent)
+                lenmode       = 'fraction',      # 'pixels' | 'fraction'
+                thickness     = 14,              # Colorbar thickness
+                thicknessmode = 'pixels',        # 'pixels' | 'fraction'
+                x             = 0.0,            # Fixed position relative to plot area (right edge)
+                y             = 0.5,             # Centered vertically
+                xpad          = 0,               # Padding in pixels
+                xanchor       = 'right',          # Anchor at left edge of colorbar
+                yanchor       = 'middle',        # Anchor at middle
+                tickmode      = "linear",        # 'auto' | 'linear' | 'array'
+                tick0         = state.range_min, # Starting tick value
+                dtick         = ((state.range_max - state.range_min) / 5) if state.range_max != state.range_min else 1,
+                tickfont = dict(size=14, family=font_family, color=text_color)
+            ),
+            hovertemplate = 'Value: %{z:.4f}<extra></extra>'))
 
         # Fixed figure dimensions
         fig_width = 600
@@ -411,7 +409,8 @@ class ViewerPanel:
             paper_bgcolor= bg_color,
             hovermode    = 'closest',
             margin       = margins,
-            plot_bgcolor = bg_color
+            plot_bgcolor = bg_color,
+            font         = dict(family=font_family, color=text_color)
         )
        # Force actual plot margins
  
@@ -442,8 +441,8 @@ class ViewerPanel:
 
     def _build_click_info(self, state: ViewerState):
         if state.clicked_message:
-            return _click_box(state.clicked_message, color='#155724', background='#d4edda')
-        return html.Span()
+            return _click_box(state.clicked_message, color='#0f1b2b', background='#ffffff')
+        return html.Span(className='toast-empty')
 
     def _handle_click(self, state: ViewerState, click_data):
         try:
@@ -568,5 +567,6 @@ class ViewerPanel:
 def _click_box(message, color, background):
     return html.Div(
         message,
-        style={'backgroundColor': background, 'color': color, 'padding': '10px', 'borderRadius': '5px', 'fontWeight': 'bold'}
+        className='toast',
+        style={'backgroundColor': background, 'color': color}
     )

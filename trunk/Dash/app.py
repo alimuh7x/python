@@ -132,13 +132,17 @@ def build_tab_children(tab_id):
     panels = tab_datasets[tab_id]["panels"]
     if not panels:
         return [html.Div("No datasets available for this tab.", className='dataset-empty')]
-    return [
+    cards = [
         html.Div([
-            html.H3(label, className='dataset-title'),
-            panel.build_layout()
+            html.Div([
+                html.Span(className='dataset-accent'),
+                html.H3(label, className='dataset-title')
+            ], className='dataset-header'),
+            html.Div(panel.build_layout(), className='dataset-body')
         ], className='dataset-block')
         for label, panel in panels
     ]
+    return [html.Div(cards, className='dataset-grid')]
 
 
 TAB_ORDER = [tab['id'] for tab in TAB_CONFIGS]
@@ -152,9 +156,17 @@ def get_default_active_tab():
 
 
 def build_tab_bar():
+    icons = {
+        "phase-field": "⛶",
+        "mechanics": "⚙",
+        "plasticity": "🧪",
+    }
     return [
         html.Button(
-            tab_datasets.get(tab_id, {}).get("label", tab_id.title()),
+            [
+                html.Span(icons.get(tab_id, "•"), className="tab-icon"),
+                html.Span(tab_datasets.get(tab_id, {}).get("label", tab_id.title()), className="tab-label")
+            ],
             id={'type': 'tab-button', 'tab': tab_id},
             n_clicks=0,
             className='custom-tab'
@@ -170,18 +182,28 @@ app.layout = html.Div(
     id='app-container',
     className='theme-light',
     children=[
+        dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
+        dcc.Store(id='theme-store', data='theme-light'),
         html.Div([
             html.Div([
-                html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
-                html.H1(APP_TITLE, className='app-title')
+                html.Div([
+                    html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
+                    html.H1(APP_TITLE, className='app-title')
+                ], className='top-left'),
+                html.Div([
+                    html.Button("☾", id='theme-toggle', n_clicks=0, className='icon-btn'),
+                ], className='top-actions')
             ], className='top-bar')
         ], className='app-header'),
-        dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
-        html.Div(build_tab_bar(), className='tab-container'),
-        html.Div(
-            id='tab-content',
-            children=build_tab_children(INITIAL_ACTIVE_TAB) if INITIAL_ACTIVE_TAB else []
-        )
+        html.Div([
+            html.Div(build_tab_bar(), className='sidebar'),
+            html.Div([
+                html.Div(
+                    id='tab-content',
+                    children=build_tab_children(INITIAL_ACTIVE_TAB) if INITIAL_ACTIVE_TAB else []
+                )
+            ], className='main-panel')
+        ], className='layout-shell')
     ]
 )
 
@@ -213,6 +235,25 @@ def render_active_tab(active_tab):
         for tab_id in TAB_ORDER
     ]
     return children, classes
+
+
+@app.callback(
+    Output('theme-store', 'data'),
+    Input('theme-toggle', 'n_clicks'),
+    State('theme-store', 'data'),
+)
+def toggle_theme(n_clicks, current):
+    if n_clicks is None:
+        return current or 'theme-light'
+    return 'theme-dark' if (n_clicks % 2 == 1) else 'theme-light'
+
+
+@app.callback(
+    Output('app-container', 'className'),
+    Input('theme-store', 'data')
+)
+def apply_theme(theme_name):
+    return theme_name or 'theme-light'
 
 
 if __name__ == '__main__':

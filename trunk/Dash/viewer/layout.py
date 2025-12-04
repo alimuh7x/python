@@ -7,7 +7,11 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
     return html.Div([
         html.Div([
             html.Div([
-                html.Label("Scalar Field:", className='field-label'),
+                html.Label([
+                    html.Span("S", className="label-icon"),
+                    "Scalar Field:",
+                    html.Span("?", className="tooltip-icon", title="Choose the scalar to display")
+                ], className='field-label'),
                 dcc.Dropdown(
                     id=component_id(viewer_id, 'scalar'),
                     options=scalar_options,
@@ -17,7 +21,11 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                 )
             ], className='field-block half-width'),
             html.Div([
-                html.Label("Color Map:", className='field-label'),
+                html.Label([
+                    html.Img(src='/assets/color-scale.png', className="label-img"),
+                    "Color Map:",
+                    html.Span("?", className="tooltip-icon", title="Pick a color palette")
+                ], className='field-label'),
                 dcc.Dropdown(
                     id=component_id(viewer_id, 'palette'),
                     options=palette_options,
@@ -28,7 +36,11 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
             ], className='field-block half-width')
         ], className='row-inline'),
         html.Div([
-            html.Label("Range:", className='field-label'),
+            html.Label([
+                html.Img(src='/assets/bar-chart.png', className="label-img"),
+                "Range:",
+                html.Span("?", className="tooltip-icon", title="Adjust min/max or click the heatmap to set a range")
+            ], className='field-label'),
             html.Div([
                 dcc.Input(
                     id=component_id(viewer_id, 'rangeMin'),
@@ -44,16 +56,12 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                     step=0.001,
                     placeholder='Max'
                 ),
-                html.Button('Select Range', id=component_id(viewer_id, 'rangeButton'), className='secondary-btn'),
                 html.Button(
-                    [
-                        html.Span("↻", className='reset-icon'),
-                        "Reset Range"
-                    ],
+                    ["⟳", " Reset Range"],
                     id=component_id(viewer_id, 'reset'),
-                    className='primary-btn reset-btn'
+                    className='btn btn-danger reset-btn'
                 )
-            ], className='range-row')
+            ], className='range-row with-reset')
         ], className='field-block'),
         slice_controls(viewer_id, axis_label, slider_disabled, slider_max, state.slice_index),
     ], className='control-panel panel-card')
@@ -64,20 +72,24 @@ def build_graph_section(viewer_id: str):
     return html.Div([
         html.Div([
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
-            dcc.Graph(
-                id=component_id(viewer_id, 'graph'),
-                className='heatmap-graph',
-                config={
-                    'displayModeBar': True,
-                    'displaylogo': False,
-                    'responsive': False,
-                    'toImageButtonOptions': {'scale': 4}
-                },
-                style={'width': '500px', 'height': '400px'}
-            ),
-            html.Div(id=component_id(viewer_id, 'clickInfo'), style={'display': 'none'})
-        ], className='graph-card')
-    ], className='graph-wrapper')
+            html.Div([
+                html.Button("⤓", title="Download image", className="icon-btn"),
+                html.Button("⤢", title="Fit view", className="icon-btn"),
+                html.Button("⟲", title="Reset view", className="icon-btn"),
+            ], className="graph-actions")
+        ], className="graph-topbar"),
+        dcc.Graph(
+            id=component_id(viewer_id, 'graph'),
+            className='heatmap-graph',
+            config={
+                'displayModeBar': True,
+                'displaylogo': False,
+                'responsive': False,
+                'toImageButtonOptions': {'scale': 4}
+            }
+        ),
+        html.Div(id=component_id(viewer_id, 'clickInfo'), className='toast-anchor')
+    ], className='graph-card')
 
 
 def build_tab_layout(viewer_id: str, scalar_options, state, slider_disabled, slider_max, axis_label, palette_options):
