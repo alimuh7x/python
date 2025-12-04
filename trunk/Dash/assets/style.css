@@ -152,8 +152,9 @@ h1.app-title {
 .custom-tab {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 6px;
+    padding: 14px 16px 14px 12px;
+    box-sizing: border-box;
     border-radius: var(--radius-md);
     background: rgba(24, 53, 104, 0.03);
     border: 1px solid rgba(24, 53, 104, 0.08);
@@ -162,31 +163,41 @@ h1.app-title {
     font-size: 1.15rem;
     cursor: pointer;
     transition: var(--transition);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.custom-tab .tab-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .custom-tab:hover {
     background: rgba(24, 53, 104, 0.08);
     color: var(--primary);
     transform: translateX(4px);
-    border-left: 3px solid var(--primary);
-    padding-left: 13px;
+    box-shadow: inset 3px 0 0 var(--primary);
 }
 
 .custom-tab.active-tab {
     background: linear-gradient(135deg, var(--accent), var(--accent-dark));
     color: white;
     box-shadow: var(--shadow-md);
-    border: none;
-    border-left: 4px solid white;
-    padding-left: 12px;
+    border: 1px solid rgba(24, 53, 104, 0.15);
+    box-shadow: var(--shadow-md), inset 4px 0 0 rgba(255, 255, 255, 0.9);
 }
 
 .tab-icon {
     font-size: 1.2rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 24px;
+    justify-content: flex-start;
+    width: auto;
+    margin-right: 2px;
+    flex-shrink: 0;
 }
 
 /* Main Panel */
@@ -221,7 +232,7 @@ h1.app-title {
 }
 
 .dataset-header {
-    background: linear-gradient(to right, rgba(24, 53, 104, 0.05), rgba(255, 255, 255, 0));
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     padding: 16px 24px;
     border-bottom: 3px solid var(--accent);
     display: flex;
@@ -232,7 +243,7 @@ h1.app-title {
 .dataset-accent {
     width: 6px;
     height: 6px;
-    background: var(--accent);
+    background: #ffffff;
     border-radius: 50%;
 }
 
@@ -240,7 +251,7 @@ h1.app-title {
     margin: 0;
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #ffffff;
 }
 
 .dataset-body {
@@ -464,23 +475,68 @@ input:focus,
     }
 }
 
+@media (max-width: 1200px) {
+    /* Hide tab labels, show only icons */
+    .custom-tab .tab-label {
+        display: none;
+    }
+
+    .layout-shell {
+        grid-template-columns: 80px 1fr;
+    }
+
+    .sidebar {
+        padding: 24px 8px;
+    }
+
+    .custom-tab {
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .tab-icon {
+        font-size: 1.5rem;
+        width: 32px;
+    }
+}
+
 @media (max-width: 1024px) {
     .app-header {
         padding: 16px 24px;
     }
 
+    .top-bar {
+        padding: 16px 24px;
+    }
+
+    .dataset-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
     .layout-shell {
         grid-template-columns: 1fr;
-        padding: 24px;
+        padding: 0;
     }
 
     .sidebar {
         position: static;
         max-height: none;
-        margin-bottom: 24px;
+        margin-bottom: 0;
+        min-height: auto;
+        height: auto;
+        display: flex;
+        flex-direction: row;
+        padding: 12px 8px;
+        overflow-x: auto;
     }
 
-    .dataset-grid {
-        grid-template-columns: 1fr;
+    .custom-tab {
+        padding: 12px;
+    }
+
+    .main-panel {
+        padding: 16px;
     }
 }
