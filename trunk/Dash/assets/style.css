@@ -117,12 +117,13 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border-radius: var(--radius-md);
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-muted);
     font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: var(--transition);
 }
@@ -196,7 +197,7 @@ body {
 
 .dataset-title {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--primary);
 }
@@ -239,10 +240,10 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.875rem;
-    font-weight: 700;
+    font-size: 0.8rem;
+    font-weight: 600;
     color: var(--primary);
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -381,6 +382,7 @@ input:focus,
 
 .map-title {
     font-weight: 700;
+    font-size: 1.05rem;
     color: var(--primary);
 }
 
