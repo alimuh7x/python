@@ -152,6 +152,13 @@ body {
     gap: 24px;
 }
 
+/* Dataset Grid - 2x2 Layout */
+.dataset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
 .dataset-block {
     background: var(--surface);
     backdrop-filter: var(--glass-blur);
@@ -160,6 +167,8 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow-md);
     transition: var(--transition);
+    display: flex;
+    flex-direction: column;
 }
 
 .dataset-block:hover {
@@ -191,6 +200,23 @@ body {
 
 .dataset-body {
     padding: 24px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.viewer-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.stacked-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
 }
 
 /* Controls */
@@ -335,6 +361,10 @@ input:focus,
     padding: 16px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .graph-topbar {
@@ -353,7 +383,8 @@ input:focus,
 
 .heatmap-graph {
     width: 100% !important;
-    height: 440px !important;
+    height: 380px !important;
+    flex: 1;
 }
 
 /* Toast */
@@ -422,6 +453,12 @@ input:focus,
 }
 
 /* Responsive */
+@media (max-width: 1400px) {
+    .dataset-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 1024px) {
     .layout-shell {
         grid-template-columns: 1fr;
@@ -431,5 +468,9 @@ input:focus,
         position: static;
         max-height: none;
         margin-bottom: 24px;
+    }
+
+    .dataset-grid {
+        grid-template-columns: 1fr;
     }
 }
