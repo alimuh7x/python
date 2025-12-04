@@ -337,6 +337,16 @@ h1.app-title {
     background-color: rgba(24, 53, 104, 0.02);
 }
 
+/* Extended range row with Min, Max, Reset */
+.range-row-extended {
+    grid-template-columns: auto 1fr 1fr auto;
+}
+
+/* Extended slice row */
+.slice-row-extended {
+    grid-template-columns: auto 1fr auto;
+}
+
 /* Dropdown wrapper to contain Dash dropdown components */
 .dropdown-wrapper {
     min-width: 0;

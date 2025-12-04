@@ -42,52 +42,52 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                 html.Img(src='/assets/bar-chart.png', className="label-img"),
                 "Range:",
             ], className='field-label grid-label'),
-            html.Div([
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMin'),
-                    type='number',
-                    value=state.range_min,
-                    step=0.001,
-                    placeholder='Min'
-                ),
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMax'),
-                    type='number',
-                    value=state.range_max,
-                    step=0.001,
-                    placeholder='Max'
-                ),
-                html.Button(
-                    ["⟳", " Reset"],
-                    id=component_id(viewer_id, 'reset'),
-                    className='btn btn-danger reset-btn'
-                )
-            ], className='range-inputs'),
-            html.Label(axis_label, className='field-label grid-label', style={'display': 'none' if slider_disabled else 'flex'}),
-            html.Div([
-                dcc.Slider(
-                    id=component_id(viewer_id, 'slice'),
-                    min=0,
-                    max=slider_max,
-                    value=state.slice_index,
-                    marks=None,
-                    tooltip={"placement": "bottom", "always_visible": True},
-                    disabled=slider_disabled,
-                    className='slice-slider'
-                ),
-                dcc.Input(
-                    id=component_id(viewer_id, 'sliceInput'),
-                    type='number',
-                    value=state.slice_index,
-                    min=0,
-                    max=slider_max,
-                    step=1,
-                    placeholder='Slice',
-                    disabled=slider_disabled,
-                    className='slice-input'
-                )
-            ], className='slice-inputs', style={'display': 'none' if slider_disabled else 'flex'}, id=component_id(viewer_id, 'sliceContainer'))
-        ], className='controls-grid-row'),
+            dcc.Input(
+                id=component_id(viewer_id, 'rangeMin'),
+                type='number',
+                value=state.range_min,
+                step=0.001,
+                placeholder='Min'
+            ),
+            dcc.Input(
+                id=component_id(viewer_id, 'rangeMax'),
+                type='number',
+                value=state.range_max,
+                step=0.001,
+                placeholder='Max'
+            ),
+            html.Button(
+                ["⟳", " Reset"],
+                id=component_id(viewer_id, 'reset'),
+                className='btn btn-danger reset-btn'
+            )
+        ], className='controls-grid-row range-row-extended'),
+
+        # Row 2b: Slice controls (when visible)
+        html.Div([
+            html.Label(axis_label, className='field-label grid-label'),
+            dcc.Slider(
+                id=component_id(viewer_id, 'slice'),
+                min=0,
+                max=slider_max,
+                value=state.slice_index,
+                marks=None,
+                tooltip={"placement": "bottom", "always_visible": True},
+                disabled=slider_disabled,
+                className='slice-slider'
+            ),
+            dcc.Input(
+                id=component_id(viewer_id, 'sliceInput'),
+                type='number',
+                value=state.slice_index,
+                min=0,
+                max=slider_max,
+                step=1,
+                placeholder='Slice',
+                disabled=slider_disabled,
+                className='slice-input'
+            )
+        ], className='controls-grid-row slice-row-extended', style={'display': 'none' if slider_disabled else 'grid'}, id=component_id(viewer_id, 'sliceContainer')),
 
         # Row 3: Range slider
         html.Div([
