@@ -29,17 +29,21 @@
 
 body {
     margin: 0;
+    padding: 0;
     font-family: 'Inter', sans-serif;
     background: var(--bg-gradient);
     color: var(--text-main);
     min-height: 100vh;
     line-height: 1.5;
+    overflow-x: hidden;
 }
 
 #app-container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    margin: 0;
+    padding: 0;
 }
 
 /* Header */
@@ -48,17 +52,21 @@ body {
     padding: 0;
     box-shadow: var(--shadow-md);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
-    color: white;
+    color: white !important;
     width: 100vw;
     box-sizing: border-box;
     margin: 0;
+    border-radius: 0;
+    position: relative;
+    left: 0;
+    right: 0;
 }
 
 .top-bar {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
     padding: 16px 48px;
@@ -68,6 +76,10 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
+}
+
+.top-left * {
+    color: white !important;
 }
 
 .app-logo {
@@ -80,7 +92,7 @@ body {
 .app-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: white;
+    color: white !important;
     margin: 0;
     letter-spacing: 0.02em;
     text-transform: uppercase;
