@@ -119,7 +119,7 @@ h1.app-title {
 /* Layout Shell */
 .layout-shell {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 220px 1fr;
     gap: 0;
     align-items: start;
     width: 100vw;
@@ -159,7 +159,7 @@ h1.app-title {
     border: 1px solid rgba(24, 53, 104, 0.08);
     color: var(--text-main);
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     cursor: pointer;
     transition: var(--transition);
 }
