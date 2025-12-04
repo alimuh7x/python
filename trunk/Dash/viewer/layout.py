@@ -36,53 +36,33 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
 
-        # Row 2: Range inputs and Slice
+        # Row 2: Range inputs
         html.Div([
             html.Label([
                 html.Img(src='/assets/bar-chart.png', className="label-img"),
                 "Range:",
             ], className='field-label grid-label'),
             html.Div([
-                html.Div([
-                    dcc.Input(
-                        id=component_id(viewer_id, 'rangeMin'),
-                        type='number',
-                        value=state.range_min,
-                        step=0.001,
-                        placeholder='Min'
-                    ),
-                    dcc.Input(
-                        id=component_id(viewer_id, 'rangeMax'),
-                        type='number',
-                        value=state.range_max,
-                        step=0.001,
-                        placeholder='Max'
-                    ),
-                    html.Button(
-                        ["⟳", " Reset"],
-                        id=component_id(viewer_id, 'reset'),
-                        className='btn btn-danger reset-btn'
-                    )
-                ], className='range-inputs'),
-                # Visual range slider with two handles
-                html.Div([
-                    dcc.RangeSlider(
-                        id=component_id(viewer_id, 'rangeSlider'),
-                        min=state.range_min,
-                        max=state.range_max,
-                        value=[state.range_min, state.range_max],
-                        marks=None,
-                        tooltip={"placement": "bottom", "always_visible": True},
-                        className='range-slider-dual',
-                        allowCross=False
-                    )
-                ], style={'width': '100%', 'padding': '0'}),
-                # Hidden display elements for callback compatibility
-                html.Div([
-                    html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), style={'display': 'none'}),
-                    html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), style={'display': 'none'}),
-                ], style={'display': 'none'})
-            ], className='range-container'),
+                dcc.Input(
+                    id=component_id(viewer_id, 'rangeMin'),
+                    type='number',
+                    value=state.range_min,
+                    step=0.001,
+                    placeholder='Min'
+                ),
+                dcc.Input(
+                    id=component_id(viewer_id, 'rangeMax'),
+                    type='number',
+                    value=state.range_max,
+                    step=0.001,
+                    placeholder='Max'
+                ),
+                html.Button(
+                    ["⟳", " Reset"],
+                    id=component_id(viewer_id, 'reset'),
+                    className='btn btn-danger reset-btn'
+                )
+            ], className='range-inputs'),
             html.Label(axis_label, className='field-label grid-label', style={'display': 'none' if slider_disabled else 'flex'}),
             html.Div([
                 dcc.Slider(
@@ -108,6 +88,25 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                 )
             ], className='slice-inputs', style={'display': 'none' if slider_disabled else 'flex'}, id=component_id(viewer_id, 'sliceContainer'))
         ], className='controls-grid-row'),
+
+        # Row 3: Range slider
+        html.Div([
+            dcc.RangeSlider(
+                id=component_id(viewer_id, 'rangeSlider'),
+                min=state.range_min,
+                max=state.range_max,
+                value=[state.range_min, state.range_max],
+                marks=None,
+                tooltip={"placement": "bottom", "always_visible": True},
+                className='range-slider-dual',
+                allowCross=False
+            ),
+            # Hidden display elements for callback compatibility
+            html.Div([
+                html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), style={'display': 'none'}),
+                html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), style={'display': 'none'}),
+            ], style={'display': 'none'})
+        ], className='range-slider-row'),
     ], className='control-panel panel-card')
 
 

@@ -367,6 +367,26 @@ h1.app-title {
     gap: 6px;
 }
 
+.range-container-with-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slice-container-with-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.controls-row-stacked {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 4px 6px;
+    border-radius: 6px;
+}
+
 .range-inputs {
     display: flex;
     gap: 6px;
@@ -427,6 +447,12 @@ h1.app-title {
     height: 6px;
     background: linear-gradient(90deg, #3aa0c8 0%, #fffbdf 50%, #f47068 100%);
     border-radius: 3px;
+}
+
+/* Range slider row - full width below inputs */
+.range-slider-row {
+    padding: 0 6px;
+    margin-top: -4px;
 }
 
 /* RangeSlider styling */
@@ -644,9 +670,9 @@ input[type="text"] {
 
 .Select-control {
     width: 100% !important;
-    padding: 1px 8px;
+    padding: 0px 8px;
     border-radius: 7px !important;
-    border: 1.5px solid #d1dce8 !important;
+    border: 1.5px solid #cbd5e1 !important;
     background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
     transition: var(--transition);
     font-family: inherit;
@@ -654,8 +680,8 @@ input[type="text"] {
     font-weight: 500;
     box-sizing: border-box;
     color: var(--text-main);
-    min-height: 20px !important;
-    height: 20px;
+    min-height: 16px !important;
+    height: 16px;
     overflow: visible !important;
     box-shadow: inset 0 1px 2px rgba(24, 53, 104, 0.04);
 }
@@ -666,9 +692,14 @@ input[type="text"] {
     box-shadow: var(--shadow-sm);
 }
 
+.Select-menu-outer .Select-option {
+    font-size: 0.55rem !important;
+    padding: 2px 2px !important;
+}
+
 .Select-placeholder,
 .Select-value-label {
-    line-height: 20px !important;
+    line-height: 16px !important;
 }
 
 input:focus,
