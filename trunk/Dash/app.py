@@ -194,7 +194,10 @@ app.layout = html.Div(
             ], className='top-bar')
         ], className='app-header'),
         html.Div([
-            html.Div(build_tab_bar(), className='sidebar'),
+            html.Div([
+                html.Span("Modules", className='sidebar-title'),
+                html.Div(build_tab_bar(), className='sidebar-tabs')
+            ], className='sidebar'),
             html.Div([
                 html.Div(
                     id='tab-content',
