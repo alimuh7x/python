@@ -321,16 +321,17 @@ input:focus,
 
 /* Buttons */
 .btn {
-    padding: 10px 20px;
+    padding: 9px 18px;
     border-radius: var(--radius-sm);
     font-weight: 600;
+    font-size: 0.9rem;
     border: none;
     cursor: pointer;
     transition: var(--transition);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .btn-danger {
@@ -341,7 +342,7 @@ input:focus,
 .btn-danger:hover {
     background: var(--accent-dark);
     box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 }
 
 .icon-btn {
