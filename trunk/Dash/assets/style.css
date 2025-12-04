@@ -261,6 +261,72 @@ h1.app-title {
     flex-direction: column;
 }
 
+.textdata-card .dataset-body {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.textdata-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+    border-radius: 10px;
+    border: 1px solid #e0e7f3;
+    box-shadow: 0 2px 8px rgba(24, 53, 104, 0.04);
+    padding: 10px 12px;
+}
+
+.textdata-control {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.textdata-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+}
+
+.textdata-input {
+    width: 100%;
+}
+
+.textdata-radio {
+    display: flex;
+    gap: 12px;
+}
+
+.textdata-radio label {
+    font-weight: 600;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.textdata-graphs {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.textdata-plot {
+    min-height: 300px;
+    width: 100%;
+    background: #f9fbff;
+    border: 1px solid rgba(24, 53, 104, 0.15);
+    border-radius: 10px;
+    padding: 6px 10px;
+    box-shadow: 0 6px 18px rgba(24, 53, 104, 0.08);
+}
+
 .dataset-header {
     background: #172f5c;
     padding: 12px 20px;
@@ -741,8 +807,8 @@ input:focus,
 }
 
 .btn-icon {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     display: inline-block;
     object-fit: contain;
 }
