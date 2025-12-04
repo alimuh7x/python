@@ -238,15 +238,15 @@ h1.app-title {
 .main-panel {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 24px 32px;
+    gap: 18px;
+    padding: 18px 24px;
 }
 
 /* Dataset Grid - 2x2 Layout */
 .dataset-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    gap: 18px;
 }
 
 .dataset-block {
@@ -263,11 +263,11 @@ h1.app-title {
 
 .dataset-header {
     background: #172f5c;
-    padding: 16px 24px;
+    padding: 12px 20px;
     border-bottom: 3px solid var(--accent);
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .dataset-accent {
@@ -279,13 +279,13 @@ h1.app-title {
 
 .dataset-title {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #ffffff;
 }
 
 .dataset-body {
-    padding: 24px;
+    padding: 16px;
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -301,39 +301,110 @@ h1.app-title {
 .stacked-card {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     height: 100%;
 }
 
 /* Controls */
 .control-panel {
     background: #f8f9fc;
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
     border: 1px solid #dfe6f3;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+}
+
+.controls-grid-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: 8px 12px;
+    align-items: center;
+}
+
+/* Dropdown wrapper to contain Dash dropdown components */
+.dropdown-wrapper {
+    min-width: 0;
+    width: 100%;
+    display: block;
+}
+
+.dropdown-wrapper > div {
+    width: 100%;
+}
+
+.dropdown-wrapper .Select,
+.dropdown-wrapper .dash-dropdown {
+    width: 100%;
+}
+
+.grid-label {
+    margin-bottom: 0 !important;
+    white-space: nowrap;
+}
+
+.range-inputs {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.range-inputs input {
+    flex: 1;
+    min-width: 60px;
+}
+
+.slice-inputs {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.slice-slider {
+    flex: 1;
+    min-width: 0;
+}
+
+.slice-input {
+    width: 70px !important;
+    flex-shrink: 0;
 }
 
 .field-block {
     margin-bottom: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
 }
 
 .field-label {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
+    gap: 6px;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--primary);
-    margin-bottom: 10px;
+    margin-bottom: 4px;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
+}
+
+.inline-label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.inline-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.inline-dropdown {
+    flex: 1;
+    min-width: 0;
 }
 
 .label-icon,
@@ -342,8 +413,8 @@ h1.app-title {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
 }
 
 .label-img {
@@ -356,7 +427,7 @@ h1.app-title {
 
 .row-inline {
     display: flex;
-    gap: 16px;
+    gap: 10px;
     margin: 0;
     justify-content: flex-start;
     flex-wrap: wrap;
@@ -365,7 +436,7 @@ h1.app-title {
 .row-inline .field-block,
 .half-width {
     flex: 1;
-    min-width: 240px;
+    min-width: 180px;
 }
 
 .inline-range {
@@ -379,39 +450,63 @@ h1.app-title {
 }
 .range-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 6px;
     align-items: end;
 }
 
 .range-row.with-reset {
-    grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr) auto;
+    grid-template-columns: 1fr 1fr auto;
 }
 
 .reset-btn {
-    padding: 4px 14px;
-    min-height: 34px;
-    height: 34px;
+    padding: 0 12px;
+    min-height: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* Slice Controls */
+.slice-slider-container {
+    flex: 1;
+    min-width: 0;
+    margin-right: 8px;
 }
 
 /* Inputs */
 input[type="number"],
-input[type="text"],
-.Select-control {
+input[type="text"] {
     width: 100%;
-    padding: 2px 10px;
-    border-radius: 10px !important;
+    padding: 4px 10px;
+    border-radius: 8px !important;
     border: 1.4px solid #cbd5e1 !important;
     background: white;
     transition: var(--transition);
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     box-sizing: border-box;
     color: var(--text-main);
-    min-height: 34px !important;
-    height: 34px;
+    min-height: 32px !important;
+    height: 32px;
+}
+
+.Select-control {
+    width: 100% !important;
+    padding: 4px 10px;
+    border-radius: 8px !important;
+    border: 1.4px solid #cbd5e1 !important;
+    background: white;
+    transition: var(--transition);
+    font-family: inherit;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+    color: var(--text-main);
+    min-height: 32px !important;
+    height: 32px;
+    overflow: visible !important;
 }
 
 .Select-menu-outer {
@@ -422,7 +517,7 @@ input[type="text"],
 
 .Select-placeholder,
 .Select-value-label {
-    line-height: 28px !important;
+    line-height: 24px !important;
 }
 
 input:focus,
@@ -439,17 +534,17 @@ input:focus,
 
 /* Buttons */
 .btn {
-    padding: 9px 18px;
+    padding: 6px 14px;
     border-radius: var(--radius-sm);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     border: none;
     cursor: pointer;
     transition: var(--transition);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .btn-danger {
@@ -464,9 +559,9 @@ input:focus,
 }
 
 .icon-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: var(--radius-sm);
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
     border: 1px solid var(--surface-border);
     background: white;
     color: var(--text-muted);
@@ -475,6 +570,7 @@ input:focus,
     justify-content: center;
     cursor: pointer;
     transition: var(--transition);
+    font-size: 0.9rem;
 }
 
 .icon-btn:hover {
@@ -487,7 +583,7 @@ input:focus,
 .graph-card {
     background: white;
     border-radius: var(--radius-md);
-    padding: 16px;
+    padding: 12px;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
     flex: 1;
@@ -500,14 +596,14 @@ input:focus,
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
     border-bottom: 1px solid #e2e8f0;
 }
 
 .map-title {
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     color: var(--primary);
 }
 
@@ -522,12 +618,12 @@ input:focus,
     background: var(--surface);
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--surface-border);
-    border-left: 4px solid var(--accent);
-    padding: 12px 16px;
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-md);
-    margin-top: 12px;
-    font-size: 0.9rem;
+    border-left: 3px solid var(--accent);
+    padding: 8px 12px;
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+    margin-top: 8px;
+    font-size: 0.8rem;
     color: var(--text-main);
 }
 
