@@ -54,7 +54,7 @@ body {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    color: white !important;
+    color: #ffffff !important;
     width: 100vw;
     box-sizing: border-box;
     margin: 0;
@@ -62,6 +62,10 @@ body {
     position: relative;
     left: 0;
     right: 0;
+}
+
+.app-header * {
+    color: #ffffff !important;
 }
 
 .top-bar {
@@ -92,10 +96,18 @@ body {
 .app-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: white !important;
+    color: #ffffff !important;
     margin: 0;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+}
+
+h1.app-title {
+    color: #ffffff !important;
+}
+
+.app-header h1 {
+    color: #ffffff !important;
 }
 
 .top-actions {
@@ -123,14 +135,17 @@ body {
     background: var(--surface);
     backdrop-filter: var(--glass-blur);
     border-right: 2px solid var(--surface-border);
+    border-radius: 0;
     padding: 24px 16px;
     box-shadow: 2px 0 12px rgba(24, 53, 104, 0.08);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: calc(100vh - 80px);
+    min-height: 100vh;
+    height: 100%;
     overflow-y: auto;
     z-index: 10;
+    margin: 0;
 }
 
 /* Tabs */
