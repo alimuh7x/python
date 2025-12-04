@@ -64,29 +64,22 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
                 ], className='range-inputs'),
                 # Visual range slider with two handles
                 html.Div([
-                    html.Div([
-                        dcc.RangeSlider(
-                            id=component_id(viewer_id, 'rangeSlider'),
-                            min=state.range_min,
-                            max=state.range_max,
-                            value=[state.range_min, state.range_max],
-                            marks=None,
-                            tooltip={"placement": "bottom", "always_visible": True},
-                            className='range-slider-dual',
-                            allowCross=False
-                        )
-                    ], style={'width': '100%', 'padding': '0'}),
-                    html.Div([
-                        html.Div([
-                            html.Span("MIN", className='range-marker range-marker-min'),
-                            html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), className='range-value'),
-                        ], className='range-point range-point-min'),
-                        html.Div([
-                            html.Span("MAX", className='range-marker range-marker-max'),
-                            html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), className='range-value'),
-                        ], className='range-point range-point-max'),
-                    ], className='range-labels')
-                ], className='range-visual', style={'flexDirection': 'column', 'gap': '4px'})
+                    dcc.RangeSlider(
+                        id=component_id(viewer_id, 'rangeSlider'),
+                        min=state.range_min,
+                        max=state.range_max,
+                        value=[state.range_min, state.range_max],
+                        marks=None,
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        className='range-slider-dual',
+                        allowCross=False
+                    )
+                ], style={'width': '100%', 'padding': '0'}),
+                # Hidden display elements for callback compatibility
+                html.Div([
+                    html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), style={'display': 'none'}),
+                    html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), style={'display': 'none'}),
+                ], style={'display': 'none'})
             ], className='range-container'),
             html.Label(axis_label, className='field-label grid-label', style={'display': 'none' if slider_disabled else 'flex'}),
             html.Div([
