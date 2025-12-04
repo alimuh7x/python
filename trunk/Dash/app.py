@@ -180,19 +180,14 @@ INITIAL_ACTIVE_TAB = get_default_active_tab()
 
 app.layout = html.Div(
     id='app-container',
-    className='theme-light',
     children=[
         dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
-        dcc.Store(id='theme-store', data='theme-light'),
         html.Div([
             html.Div([
                 html.Div([
                     html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
                     html.H1(APP_TITLE, className='app-title')
                 ], className='top-left'),
-                html.Div([
-                    html.Button("☾", id='theme-toggle', n_clicks=0, className='icon-btn'),
-                ], className='top-actions')
             ], className='top-bar')
         ], className='app-header'),
         html.Div([
@@ -237,23 +232,6 @@ def render_active_tab(active_tab):
     return children, classes
 
 
-@app.callback(
-    Output('theme-store', 'data'),
-    Input('theme-toggle', 'n_clicks'),
-    State('theme-store', 'data'),
-)
-def toggle_theme(n_clicks, current):
-    if n_clicks is None:
-        return current or 'theme-light'
-    return 'theme-dark' if (n_clicks % 2 == 1) else 'theme-light'
-
-
-@app.callback(
-    Output('app-container', 'className'),
-    Input('theme-store', 'data')
-)
-def apply_theme(theme_name):
-    return theme_name or 'theme-light'
 
 
 if __name__ == '__main__':
