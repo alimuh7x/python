@@ -165,7 +165,10 @@ def build_tab_bar():
         html.Button(
             [
                 html.Span(icons.get(tab_id, "•"), className="tab-icon"),
-                html.Span(tab_datasets.get(tab_id, {}).get("label", tab_id.title()), className="tab-label")
+                html.Span(
+                    tab_datasets.get(tab_id, {}).get("label", tab_id.title()),
+                    className="tab-label"
+                ),
             ],
             id={'type': 'tab-button', 'tab': tab_id},
             n_clicks=0,
