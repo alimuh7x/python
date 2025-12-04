@@ -2,6 +2,16 @@
 from dash import dcc, html
 
 
+def format_range_value(value: float):
+    """Format range values to 6 decimals, switch to scientific notation beyond ±9999."""
+    if value is None:
+        return value
+    abs_val = abs(value)
+    if abs_val == 0 or 1e-6 <= abs_val < 1e4:
+        return round(value, 6)
+    return float(f"{value:.6e}")
+
+
 def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slider_max, axis_label, palette_options):
     """Return control panel stacked above the graph."""
 
@@ -45,19 +55,22 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
             dcc.Input(
                 id=component_id(viewer_id, 'rangeMin'),
                 type='number',
-                value=state.range_min,
+                value=format_range_value(state.range_min),
                 step=0.001,
                 placeholder='Min'
             ),
             dcc.Input(
                 id=component_id(viewer_id, 'rangeMax'),
                 type='number',
-                value=state.range_max,
+                value=format_range_value(state.range_max),
                 step=0.001,
                 placeholder='Max'
             ),
             html.Button(
-                ["⟳", " Reset"],
+                [
+                    html.Img(src='/assets/Reset.png', alt='Reset', className='btn-icon'),
+                    "Reset"
+                ],
                 id=component_id(viewer_id, 'reset'),
                 className='btn btn-danger reset-btn'
             )
@@ -93,9 +106,9 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
         html.Div([
             dcc.RangeSlider(
                 id=component_id(viewer_id, 'rangeSlider'),
-                min=state.range_min,
-                max=state.range_max,
-                value=[state.range_min, state.range_max],
+                min=format_range_value(state.range_min),
+                max=format_range_value(state.range_max),
+                value=[format_range_value(state.range_min), format_range_value(state.range_max)],
                 marks=None,
                 tooltip={"placement": "bottom", "always_visible": True},
                 className='range-slider-dual',

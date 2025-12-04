@@ -11,6 +11,15 @@ from .layout import build_tab_layout, component_id
 from .state import ViewerState, initial_state
 
 
+def _formatted_range_value(value):
+    if value is None:
+        return value
+    abs_val = abs(value)
+    if abs_val == 0 or 1e-6 <= abs_val < 1e4:
+        return float(f"{value:.6f}")
+    return float(f"{value:.6e}")
+
+
 class ViewerPanel:
     """Encapsulates layout + callback logic for a single viewer."""
 
@@ -161,7 +170,7 @@ class ViewerPanel:
                 state.range_min = lo
                 state.range_max = hi
                 state.threshold = (lo + hi) / 2
-                state.clicked_message = f"Range selected: [{lo:.4f}, {hi:.4f}]"
+                state.clicked_message = f"Range selected: [{lo:.6f}, {hi:.6f}]"
                 state.click_count = 0
                 state.first_click = None
 
@@ -169,7 +178,7 @@ class ViewerPanel:
                 state.range_min = slider_range[0]
                 state.range_max = slider_range[1]
                 state.threshold = (slider_range[0] + slider_range[1]) / 2
-                state.clicked_message = f"Range selected: [{slider_range[0]:.4f}, {slider_range[1]:.4f}]"
+                state.clicked_message = f"Range selected: [{slider_range[0]:.6f}, {slider_range[1]:.6f}]"
                 state.click_count = 0
                 state.first_click = None
 
@@ -208,8 +217,10 @@ class ViewerPanel:
             store_data = state.to_dict()
 
             # Format display values
-            min_display = f"{state.range_min:.3f}"
-            max_display = f"{state.range_max:.3f}"
+            formatted_min = _formatted_range_value(state.range_min)
+            formatted_max = _formatted_range_value(state.range_max)
+            min_display = f"{formatted_min:.6f}" if formatted_min is not None else ""
+            max_display = f"{formatted_max:.6f}" if formatted_max is not None else ""
 
             return (
                 figure,
@@ -218,8 +229,8 @@ class ViewerPanel:
                 store_data,
                 state.scalar_key,
                 state.slice_index,
-                state.range_min,
-                state.range_max,
+                formatted_min,
+                formatted_max,
                 state.palette,
                 state.slice_index,
                 slice_max,
@@ -229,9 +240,9 @@ class ViewerPanel:
                 slice_disabled,
                 min_display,
                 max_display,
-                [state.range_min, state.range_max],
-                scaled_stats['min'],
-                scaled_stats['max']
+                [formatted_min, formatted_max],
+                _formatted_range_value(scaled_stats['min']),
+                _formatted_range_value(scaled_stats['max'])
             )
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
@@ -282,7 +293,7 @@ class ViewerPanel:
                 dtick         = ((state.range_max - state.range_min) / 5) if state.range_max != state.range_min else 1,
                 tickfont = dict(size=14, family=font_family, color=text_color)
             ),
-            hovertemplate = 'Value: %{z:.4f}<extra></extra>'))
+            hovertemplate = 'Value: %{z:.6f}<extra></extra>'))
 
         # Fixed figure dimensions
         fig_width = 600
@@ -477,7 +488,7 @@ class ViewerPanel:
         if state.click_count == 0:
             state.first_click = clicked_value
             state.click_count = 1
-            state.clicked_message = f"First click: {clicked_value:.4f} (click again to finish range)"
+            state.clicked_message = f"First click: {clicked_value:.6f} (click again to finish range)"
         else:
             lo, hi = sorted([state.first_click, clicked_value])
             state.range_min = lo
@@ -485,7 +496,7 @@ class ViewerPanel:
             state.threshold = (lo + hi) / 2
             state.click_count = 0
             state.first_click = None
-            state.clicked_message = f"Range selected: [{lo:.4f}, {hi:.4f}]"
+            state.clicked_message = f"Range selected: [{lo:.6f}, {hi:.6f}]"
         return state
 
     def _build_state(self, reader, file_path, scalar_key):

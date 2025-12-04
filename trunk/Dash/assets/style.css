@@ -740,6 +740,13 @@ input:focus,
     gap: 4px;
 }
 
+.btn-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    object-fit: contain;
+}
+
 .btn-danger {
     background: var(--accent);
     color: white;
