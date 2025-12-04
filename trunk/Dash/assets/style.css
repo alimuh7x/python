@@ -129,9 +129,11 @@ body {
 }
 
 .custom-tab:hover {
-    background: rgba(24, 53, 104, 0.05);
+    background: rgba(24, 53, 104, 0.08);
     color: var(--primary);
-    transform: translateY(-1px);
+    transform: translateX(4px);
+    border-left: 3px solid var(--primary);
+    padding-left: 13px;
 }
 
 .custom-tab.active-tab {
@@ -139,6 +141,8 @@ body {
     color: white;
     box-shadow: var(--shadow-md);
     border: none;
+    border-left: 4px solid white;
+    padding-left: 12px;
 }
 
 .tab-icon {
