@@ -4,65 +4,68 @@ from dash import dcc, html
 
 def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slider_max, axis_label, palette_options):
     """Return control panel stacked above the graph."""
+    scalar_block = html.Div([
+        html.Label([
+            html.Span("S", className="label-icon"),
+            "Scalar Field:",
+            html.Span("?", className="tooltip-icon", title="Choose the scalar to display")
+        ], className='field-label'),
+        dcc.Dropdown(
+            id=component_id(viewer_id, 'scalar'),
+            options=scalar_options,
+            value=state.scalar_key,
+            clearable=False,
+            className='full-width'
+        )
+    ], className='field-block half-width')
+
+    palette_block = html.Div([
+        html.Label([
+            html.Img(src='/assets/color-scale.png', className="label-img"),
+            "Color Map:",
+            html.Span("?", className="tooltip-icon", title="Pick a color palette")
+        ], className='field-label'),
+        dcc.Dropdown(
+            id=component_id(viewer_id, 'palette'),
+            options=palette_options,
+            value=state.palette,
+            clearable=False,
+            className='full-width'
+        )
+    ], className='field-block half-width')
+
+    range_block = html.Div([
+        html.Label([
+            html.Img(src='/assets/bar-chart.png', className="label-img"),
+            "Range:",
+            html.Span("?", className="tooltip-icon", title="Adjust min/max or click the heatmap to set a range")
+        ], className='field-label'),
+        html.Div([
+            dcc.Input(
+                id=component_id(viewer_id, 'rangeMin'),
+                type='number',
+                value=state.range_min,
+                step=0.001,
+                placeholder='Min'
+            ),
+            dcc.Input(
+                id=component_id(viewer_id, 'rangeMax'),
+                type='number',
+                value=state.range_max,
+                step=0.001,
+                placeholder='Max'
+            ),
+            html.Button(
+                ["⟳", " Reset Range"],
+                id=component_id(viewer_id, 'reset'),
+                className='btn btn-danger reset-btn'
+            )
+        ], className='range-row with-reset')
+    ], className='field-block')
+
     return html.Div([
-        html.Div([
-            html.Div([
-                html.Label([
-                    html.Span("S", className="label-icon"),
-                    "Scalar Field:",
-                    html.Span("?", className="tooltip-icon", title="Choose the scalar to display")
-                ], className='field-label'),
-                dcc.Dropdown(
-                    id=component_id(viewer_id, 'scalar'),
-                    options=scalar_options,
-                    value=state.scalar_key,
-                    clearable=False,
-                    className='full-width'
-                )
-            ], className='field-block half-width'),
-            html.Div([
-                html.Label([
-                    html.Img(src='/assets/color-scale.png', className="label-img"),
-                    "Color Map:",
-                    html.Span("?", className="tooltip-icon", title="Pick a color palette")
-                ], className='field-label'),
-                dcc.Dropdown(
-                    id=component_id(viewer_id, 'palette'),
-                    options=palette_options,
-                    value=state.palette,
-                    clearable=False,
-                    className='full-width'
-                )
-            ], className='field-block half-width')
-        ], className='row-inline'),
-        html.Div([
-            html.Label([
-                html.Img(src='/assets/bar-chart.png', className="label-img"),
-                "Range:",
-                html.Span("?", className="tooltip-icon", title="Adjust min/max or click the heatmap to set a range")
-            ], className='field-label'),
-            html.Div([
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMin'),
-                    type='number',
-                    value=state.range_min,
-                    step=0.001,
-                    placeholder='Min'
-                ),
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMax'),
-                    type='number',
-                    value=state.range_max,
-                    step=0.001,
-                    placeholder='Max'
-                ),
-                html.Button(
-                    ["⟳", " Reset Range"],
-                    id=component_id(viewer_id, 'reset'),
-                    className='btn btn-danger reset-btn'
-                )
-            ], className='range-row with-reset')
-        ], className='field-block'),
+        html.Div([scalar_block, palette_block], className='row-inline'),
+        range_block,
         slice_controls(viewer_id, axis_label, slider_disabled, slider_max, state.slice_index),
     ], className='control-panel panel-card')
 
