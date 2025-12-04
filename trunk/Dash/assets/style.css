@@ -45,14 +45,23 @@ body {
 /* Header */
 .app-header {
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    padding: 16px 48px;
+    padding: 0;
     box-shadow: var(--shadow-md);
     display: flex;
     justify-content: space-between;
     align-items: center;
     color: white;
-    width: 100%;
+    width: 100vw;
     box-sizing: border-box;
+    margin: 0;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 16px 48px;
 }
 
 .top-left {
@@ -89,7 +98,7 @@ body {
     grid-template-columns: 240px 1fr;
     gap: 0;
     align-items: start;
-    max-width: 100%;
+    width: 100vw;
     margin: 0;
     padding: 0;
     flex: 1;
