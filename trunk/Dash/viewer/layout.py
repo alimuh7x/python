@@ -34,33 +34,60 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
 
-        # Row 2: Range and Slice
+        # Row 2: Range inputs and Slice
         html.Div([
             html.Label([
                 html.Img(src='/assets/bar-chart.png', className="label-img"),
                 "Range:",
             ], className='field-label grid-label'),
             html.Div([
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMin'),
-                    type='number',
-                    value=state.range_min,
-                    step=0.001,
-                    placeholder='Min'
-                ),
-                dcc.Input(
-                    id=component_id(viewer_id, 'rangeMax'),
-                    type='number',
-                    value=state.range_max,
-                    step=0.001,
-                    placeholder='Max'
-                ),
-                html.Button(
-                    ["⟳", " Reset"],
-                    id=component_id(viewer_id, 'reset'),
-                    className='btn btn-danger reset-btn'
-                )
-            ], className='range-inputs'),
+                html.Div([
+                    dcc.Input(
+                        id=component_id(viewer_id, 'rangeMin'),
+                        type='number',
+                        value=state.range_min,
+                        step=0.001,
+                        placeholder='Min'
+                    ),
+                    dcc.Input(
+                        id=component_id(viewer_id, 'rangeMax'),
+                        type='number',
+                        value=state.range_max,
+                        step=0.001,
+                        placeholder='Max'
+                    ),
+                    html.Button(
+                        ["⟳", " Reset"],
+                        id=component_id(viewer_id, 'reset'),
+                        className='btn btn-danger reset-btn'
+                    )
+                ], className='range-inputs'),
+                # Visual range slider with two handles
+                html.Div([
+                    html.Div([
+                        dcc.RangeSlider(
+                            id=component_id(viewer_id, 'rangeSlider'),
+                            min=state.range_min,
+                            max=state.range_max,
+                            value=[state.range_min, state.range_max],
+                            marks=None,
+                            tooltip={"placement": "bottom", "always_visible": True},
+                            className='range-slider-dual',
+                            allowCross=False
+                        )
+                    ], style={'width': '100%', 'padding': '0'}),
+                    html.Div([
+                        html.Div([
+                            html.Span("MIN", className='range-marker range-marker-min'),
+                            html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), className='range-value'),
+                        ], className='range-point range-point-min'),
+                        html.Div([
+                            html.Span("MAX", className='range-marker range-marker-max'),
+                            html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), className='range-value'),
+                        ], className='range-point range-point-max'),
+                    ], className='range-labels')
+                ], className='range-visual', style={'flexDirection': 'column', 'gap': '4px'})
+            ], className='range-container'),
             html.Label(axis_label, className='field-label grid-label', style={'display': 'none' if slider_disabled else 'flex'}),
             html.Div([
                 dcc.Slider(

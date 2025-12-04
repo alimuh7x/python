@@ -102,19 +102,25 @@ class ViewerPanel:
             Output(self.cid('sliceContainer'), 'style'),
             Output(self.cid('sliceInput'), 'max'),
             Output(self.cid('sliceInput'), 'disabled'),
+            Output(self.cid('rangeMinDisplay'), 'children'),
+            Output(self.cid('rangeMaxDisplay'), 'children'),
+            Output(self.cid('rangeSlider'), 'value'),
+            Output(self.cid('rangeSlider'), 'min'),
+            Output(self.cid('rangeSlider'), 'max'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
             Input(self.cid('sliceInput'), 'value'),
             Input(self.cid('reset'), 'n_clicks'),
             Input(self.cid('graph'), 'clickData'),
+            Input(self.cid('rangeMin'), 'value'),
+            Input(self.cid('rangeMax'), 'value'),
+            Input(self.cid('rangeSlider'), 'value'),
             State(self.cid('state'), 'data'),
-            State(self.cid('rangeMin'), 'value'),
-            State(self.cid('rangeMax'), 'value'),
         )
         def _update_viewer(scalar_value, palette_value,
                            slice_value, slice_input_value, reset_clicks, click_data,
-                           stored_state, min_val, max_val):
+                           min_val, max_val, slider_range, stored_state):
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -159,6 +165,14 @@ class ViewerPanel:
                 state.click_count = 0
                 state.first_click = None
 
+            if triggered == self.cid('rangeSlider') and slider_range is not None:
+                state.range_min = slider_range[0]
+                state.range_max = slider_range[1]
+                state.threshold = (slider_range[0] + slider_range[1]) / 2
+                state.clicked_message = f"Range selected: [{slider_range[0]:.4f}, {slider_range[1]:.4f}]"
+                state.click_count = 0
+                state.first_click = None
+
             state.palette = palette_value or fallback_state.palette
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
@@ -192,6 +206,11 @@ class ViewerPanel:
             click_info = self._build_click_info(state)
 
             store_data = state.to_dict()
+
+            # Format display values
+            min_display = f"{state.range_min:.3f}"
+            max_display = f"{state.range_max:.3f}"
+
             return (
                 figure,
                 map_title,
@@ -207,7 +226,12 @@ class ViewerPanel:
                 slice_disabled,
                 slice_style,
                 slice_max,
-                slice_disabled
+                slice_disabled,
+                min_display,
+                max_display,
+                [state.range_min, state.range_max],
+                scaled_stats['min'],
+                scaled_stats['max']
             )
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
