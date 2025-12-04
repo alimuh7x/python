@@ -9,4 +9,6 @@ site/
 venv/
 venv312/
 trunk/Dash/venv312/
+venv_py312/
+trunk/Dash/venv_py312/
 
