@@ -144,7 +144,7 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
 
 
 def build_graph_section(viewer_id: str):
-    """Graph container."""
+    """Graph container - just the main heatmap."""
     return html.Div([
         html.Div([
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
@@ -166,6 +166,89 @@ def build_graph_section(viewer_id: str):
         ),
         html.Div(id=component_id(viewer_id, 'clickInfo'), className='toast-anchor')
     ], className='graph-card')
+
+
+def build_line_scan_card(viewer_id: str):
+    """Build line scan analysis card."""
+    return html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('Line Scan Analysis', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            html.Div([
+                html.Label('Click Mode', className='textdata-label'),
+                dcc.RadioItems(
+                    id=component_id(viewer_id, 'clickMode'),
+                    options=[
+                        {'label': 'Range Selection', 'value': 'range'},
+                        {'label': 'Line Scan', 'value': 'linescan'}
+                    ],
+                    value='range',
+                    inline=True,
+                    className='textdata-radio',
+                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
+                    inputStyle={'marginRight': '4px'}
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Scan Direction', className='textdata-label'),
+                dcc.RadioItems(
+                    id=component_id(viewer_id, 'lineScanDir'),
+                    options=[
+                        {'label': 'Horizontal', 'value': 'horizontal'},
+                        {'label': 'Vertical', 'value': 'vertical'}
+                    ],
+                    value='horizontal',
+                    inline=True,
+                    className='textdata-radio',
+                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
+                    inputStyle={'marginRight': '4px'}
+                )
+            ], className='textdata-control'),
+        ], className='textdata-controls'),
+        html.Div([
+            dcc.Graph(id=component_id(viewer_id, 'lineScanPlot'), className='textdata-plot')
+        ], className='textdata-graphs'),
+        html.Div(id=component_id(viewer_id, 'lineScanInfo'), className='toast-anchor', style={'marginTop': '8px', 'fontSize': '12px', 'color': '#666'})
+    ], className='dataset-block textdata-card')
+
+
+def build_histogram_card(viewer_id: str):
+    """Build histogram analysis card."""
+    return html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('Histogram Analysis', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            html.Div([
+                html.Label('Field', className='textdata-label'),
+                dcc.Dropdown(
+                    id=component_id(viewer_id, 'histogramField'),
+                    options=[],  # Will be populated dynamically
+                    value=None,
+                    clearable=False,
+                    className='textdata-input'
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Number of Bins', className='textdata-label'),
+                dcc.Slider(
+                    id=component_id(viewer_id, 'histogramBins'),
+                    min=10,
+                    max=100,
+                    step=5,
+                    value=30,
+                    marks={10: '10', 50: '50', 100: '100'},
+                    tooltip={"placement": "bottom", "always_visible": False}
+                )
+            ], className='textdata-control'),
+        ], className='textdata-controls'),
+        html.Div([
+            dcc.Graph(id=component_id(viewer_id, 'histogramPlot'), className='textdata-plot')
+        ], className='textdata-graphs')
+    ], className='dataset-block textdata-card')
 
 
 def build_tab_layout(viewer_id: str, scalar_options, state, slider_disabled, slider_max, axis_label, palette_options):

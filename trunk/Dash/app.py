@@ -794,16 +794,24 @@ def build_tab_children(tab_id):
     panels = tab_datasets[tab_id]["panels"]
     if not panels:
         return [html.Div("No datasets available for this tab.", className='dataset-empty')]
-    cards = [
-        html.Div([
+    cards = []
+
+    # Add main viewer cards with line scan and histogram cards
+    for label, panel in panels:
+        # Main viewer card
+        cards.append(html.Div([
             html.Div([
                 html.Span(className='dataset-accent'),
                 html.H3(label, className='dataset-title')
             ], className='dataset-header'),
             html.Div(panel.build_layout(), className='dataset-body')
-        ], className='dataset-block')
-        for label, panel in panels
-    ]
+        ], className='dataset-block'))
+
+        # Line scan card
+        cards.append(panel.build_line_scan_card())
+
+        # Histogram card
+        cards.append(panel.build_histogram_card())
     if tab_id == 'phase-field':
         for builder in (build_size_details_card, build_grain_distribution_card):
             card = builder()

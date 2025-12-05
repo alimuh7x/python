@@ -26,6 +26,10 @@ class ViewerState:
     first_click: Optional[float] = None
     clicked_message: Optional[str] = None
     colorscale_mode: str = "normal"  # "normal" or "dynamic"
+    line_scan_y: Optional[float] = None  # Y position for horizontal line scan
+    line_scan_x: Optional[float] = None  # X position for vertical line scan
+    line_scan_direction: str = "horizontal"  # "horizontal" or "vertical"
+    click_mode: str = "range"  # "range" or "linescan" - what clicking does
 
     def to_dict(self) -> Dict[str, Any]:
         """Return JSON-serialisable dict."""

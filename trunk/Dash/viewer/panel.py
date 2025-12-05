@@ -210,6 +210,16 @@ class ViewerPanel:
             palette_options=self.palette_options
         )
 
+    def build_line_scan_card(self):
+        """Return line scan analysis card."""
+        from viewer.layout import build_line_scan_card
+        return build_line_scan_card(self.id)
+
+    def build_histogram_card(self):
+        """Return histogram analysis card."""
+        from viewer.layout import build_histogram_card
+        return build_histogram_card(self.id)
+
     def register_callbacks(self):
         """Register Dash callbacks for this dataset panel."""
 
@@ -235,6 +245,8 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'min'),
             Output(self.cid('rangeSlider'), 'max'),
             Output(self.cid('colorscaleMode'), 'value'),
+            Output(self.cid('lineScanDir'), 'value'),
+            Output(self.cid('clickMode'), 'value'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -245,11 +257,13 @@ class ViewerPanel:
             Input(self.cid('rangeMax'), 'value'),
             Input(self.cid('rangeSlider'), 'value'),
             Input(self.cid('colorscaleMode'), 'value'),
+            Input(self.cid('lineScanDir'), 'value'),
+            Input(self.cid('clickMode'), 'value'),
             State(self.cid('state'), 'data'),
         )
         def _update_viewer(scalar_value, palette_value,
                            slice_value, slice_input_value, reset_clicks, click_data,
-                           min_val, max_val, slider_range, colorscale_mode_value, stored_state):
+                           min_val, max_val, slider_range, colorscale_mode_value, line_scan_dir, click_mode, stored_state):
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -287,7 +301,11 @@ class ViewerPanel:
                     state.slice_index = self._clamp_slice(int(candidate), reader)
 
             if triggered == self.cid('graph') and click_data:
-                state = self._handle_click(state, click_data)
+                # Handle click based on current mode
+                if state.click_mode == 'range':
+                    state = self._handle_click(state, click_data)
+                elif state.click_mode == 'linescan':
+                    state = self._handle_line_scan_click(state, click_data)
 
             if triggered in {self.cid('rangeMin'), self.cid('rangeMax')} and min_val is not None and max_val is not None:
                 lo, hi = sorted([min_val, max_val])
@@ -308,6 +326,8 @@ class ViewerPanel:
 
             state.palette = palette_value or fallback_state.palette
             state.colorscale_mode = colorscale_mode_value or fallback_state.colorscale_mode
+            state.line_scan_direction = line_scan_dir or fallback_state.line_scan_direction
+            state.click_mode = click_mode or fallback_state.click_mode
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
             scale = descriptor.get('scale', 1.0) or 1.0
@@ -368,8 +388,99 @@ class ViewerPanel:
                 [formatted_min, formatted_max],
                 _formatted_range_value(scaled_stats['min']),
                 _formatted_range_value(scaled_stats['max']),
-                state.colorscale_mode
+                state.colorscale_mode,
+                state.line_scan_direction,
+                state.click_mode
             )
+
+        # Line scan callback
+        @self.app.callback(
+            Output(self.cid('lineScanPlot'), 'figure'),
+            Output(self.cid('lineScanInfo'), 'children'),
+            Output(self.cid('state'), 'data', allow_duplicate=True),
+            Input(self.cid('graph'), 'clickData'),
+            Input(self.cid('lineScanDir'), 'value'),
+            Input(self.cid('clickMode'), 'value'),
+            State(self.cid('state'), 'data'),
+            prevent_initial_call=True
+        )
+        def _update_line_scan(click_data, scan_direction, click_mode, stored_state):
+            state_data = stored_state or {}
+            state = ViewerState.from_dict(state_data, self.base_state)
+
+            # Update scan direction
+            state.line_scan_direction = scan_direction or 'horizontal'
+            state.click_mode = click_mode or 'range'
+
+            # Get click position if available and in linescan mode
+            info_msg = ""
+            if click_data and 'points' in click_data and len(click_data['points']) > 0 and state.click_mode == 'linescan':
+                point = click_data['points'][0]
+                if 'x' in point and 'y' in point:
+                    if state.line_scan_direction == 'horizontal':
+                        state.line_scan_y = point['y']
+                        info_msg = f"Horizontal scan at Y = {point['y']:.2f}"
+                    else:
+                        state.line_scan_x = point['x']
+                        info_msg = f"Vertical scan at X = {point['x']:.2f}"
+            elif state.click_mode == 'linescan':
+                info_msg = "Click heatmap to set line scan position"
+            else:
+                info_msg = "Switch to 'Line Scan' mode to set position by clicking"
+
+            # Get current data
+            descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
+            X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
+                axis=state.axis,
+                index=state.slice_index,
+                scalar_name=descriptor['array'],
+                component=descriptor.get('component'),
+                resolution=self.config["interpolation_resolution"]
+            )
+            Z_grid = Z_grid * state.scale
+
+            # Create line scan plot
+            fig = self._build_line_scan_figure(X_grid, Y_grid, Z_grid, state)
+
+            return fig, info_msg, state.to_dict()
+
+        # Histogram callback
+        @self.app.callback(
+            Output(self.cid('histogramPlot'), 'figure'),
+            Output(self.cid('histogramField'), 'options'),
+            Output(self.cid('histogramField'), 'value'),
+            Input(self.cid('scalar'), 'value'),
+            Input(self.cid('histogramField'), 'value'),
+            Input(self.cid('histogramBins'), 'value'),
+            State(self.cid('state'), 'data'),
+        )
+        def _update_histogram(scalar_value, histogram_field, bins, stored_state):
+            state_data = stored_state or {}
+            state = ViewerState.from_dict(state_data, self.base_state)
+
+            # Update histogram field options based on available scalars
+            field_options = self.scalar_options
+
+            # Set default histogram field
+            if histogram_field is None or ctx.triggered_id == self.cid('scalar'):
+                histogram_field = scalar_value or self.scalar_defs[0]['value']
+
+            # Get histogram data
+            descriptor = self.scalar_map.get(histogram_field, self.scalar_defs[0])
+            X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
+                axis=state.axis,
+                index=state.slice_index,
+                scalar_name=descriptor['array'],
+                component=descriptor.get('component'),
+                resolution=self.config["interpolation_resolution"]
+            )
+            scale = descriptor.get('scale', 1.0) or 1.0
+            Z_grid = Z_grid * scale
+
+            # Create histogram
+            fig = self._build_histogram_figure(Z_grid, descriptor['label'], bins or 30)
+
+            return fig, field_options, histogram_field
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
 
@@ -616,6 +727,27 @@ class ViewerPanel:
                 layer   =  "above"
             )
         )
+
+        # Add line scan indicator
+        if state.line_scan_direction == 'horizontal' and state.line_scan_y is not None:
+            # Horizontal line
+            fig.add_shape(
+                type="line",
+                x0=X_grid[0, 0], x1=X_grid[0, -1],
+                y0=state.line_scan_y, y1=state.line_scan_y,
+                line=dict(color="yellow", width=2, dash="dash"),
+                layer="above"
+            )
+        elif state.line_scan_direction == 'vertical' and state.line_scan_x is not None:
+            # Vertical line
+            fig.add_shape(
+                type="line",
+                x0=state.line_scan_x, x1=state.line_scan_x,
+                y0=Y_grid[0, 0], y1=Y_grid[-1, 0],
+                line=dict(color="yellow", width=2, dash="dash"),
+                layer="above"
+            )
+
         print(f"x = {logo_x_paper}, y = {logo_y_paper}")
         return fig
 
@@ -630,7 +762,114 @@ class ViewerPanel:
             return _click_box(state.clicked_message, color='#0f1b2b', background='#ffffff')
         return html.Span(className='toast-empty')
 
+    def _build_line_scan_figure(self, X_grid, Y_grid, Z_grid, state: ViewerState):
+        """Build line scan plot figure."""
+        font_family = "Montserrat, Arial, sans-serif"
+        text_color = "#0f1b2b"
+
+        if state.line_scan_direction == 'horizontal':
+            # Horizontal scan: extract row at y position
+            if state.line_scan_y is not None:
+                # Find closest y index
+                y_values = Y_grid[:, 0]
+                y_idx = np.argmin(np.abs(y_values - state.line_scan_y))
+                x_data = X_grid[y_idx, :]
+                z_data = Z_grid[y_idx, :]
+                x_label = "X Position"
+                title = f"Horizontal Scan at Y={state.line_scan_y:.2f}"
+            else:
+                # Default: middle row
+                y_idx = Z_grid.shape[0] // 2
+                x_data = X_grid[y_idx, :]
+                z_data = Z_grid[y_idx, :]
+                x_label = "X Position"
+                title = "Horizontal Scan (click heatmap to set position)"
+        else:
+            # Vertical scan: extract column at x position
+            if state.line_scan_x is not None:
+                # Find closest x index
+                x_values = X_grid[0, :]
+                x_idx = np.argmin(np.abs(x_values - state.line_scan_x))
+                x_data = Y_grid[:, x_idx]
+                z_data = Z_grid[:, x_idx]
+                x_label = "Y Position"
+                title = f"Vertical Scan at X={state.line_scan_x:.2f}"
+            else:
+                # Default: middle column
+                x_idx = Z_grid.shape[1] // 2
+                x_data = Y_grid[:, x_idx]
+                z_data = Z_grid[:, x_idx]
+                x_label = "Y Position"
+                title = "Vertical Scan (click heatmap to set position)"
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=x_data,
+            y=z_data,
+            mode='lines',
+            line=dict(color='#c50623', width=2),
+            name='Line Scan'
+        ))
+
+        fig.update_layout(
+            title=dict(text=title, font=dict(size=12, family=font_family, color=text_color)),
+            xaxis=dict(
+                title=x_label,
+                title_font=dict(size=12, family=font_family, color=text_color),
+                tickfont=dict(size=10, family=font_family, color=text_color)
+            ),
+            yaxis=dict(
+                title=state.scalar_label + (f" ({state.units})" if state.units else ""),
+                title_font=dict(size=12, family=font_family, color=text_color),
+                tickfont=dict(size=10, family=font_family, color=text_color)
+            ),
+            margin=dict(l=50, r=20, t=40, b=40),
+            template='plotly_white',
+            showlegend=False
+        )
+
+        return fig
+
+    def _build_histogram_figure(self, Z_grid, label, bins):
+        """Build histogram figure."""
+        font_family = "Montserrat, Arial, sans-serif"
+        text_color = "#0f1b2b"
+
+        # Flatten and remove NaN values
+        data = Z_grid.flatten()
+        data = data[~np.isnan(data)]
+
+        fig = go.Figure()
+        fig.add_trace(go.Histogram(
+            x=data,
+            nbinsx=bins,
+            marker_color='#183568',
+            opacity=0.7,
+            name='Histogram'
+        ))
+
+        fig.update_layout(
+            title=dict(text=f"Distribution of {label}", font=dict(size=12, family=font_family, color=text_color)),
+            xaxis=dict(
+                title=label,
+                title_font=dict(size=12, family=font_family, color=text_color),
+                tickfont=dict(size=10, family=font_family, color=text_color)
+            ),
+            yaxis=dict(
+                title="Frequency",
+                title_font=dict(size=12, family=font_family, color=text_color),
+                tickfont=dict(size=10, family=font_family, color=text_color)
+            ),
+            margin=dict(l=50, r=20, t=40, b=40),
+            template='plotly_white',
+            showlegend=False,
+            bargap=0.05
+        )
+
+        return fig
+
     def _handle_click(self, state: ViewerState, click_data):
+        """Handle clicks in range selection mode."""
         try:
             clicked_value = click_data['points'][0]['z']
         except (KeyError, IndexError):
@@ -648,6 +887,21 @@ class ViewerPanel:
             state.click_count = 0
             state.first_click = None
             state.clicked_message = f"Range selected: [{lo:.6f}, {hi:.6f}]"
+        return state
+
+    def _handle_line_scan_click(self, state: ViewerState, click_data):
+        """Handle clicks in line scan mode."""
+        try:
+            point = click_data['points'][0]
+            if 'x' in point and 'y' in point:
+                if state.line_scan_direction == 'horizontal':
+                    state.line_scan_y = point['y']
+                    state.clicked_message = f"Line scan set at Y = {point['y']:.2f}"
+                else:
+                    state.line_scan_x = point['x']
+                    state.clicked_message = f"Line scan set at X = {point['x']:.2f}"
+        except (KeyError, IndexError):
+            pass
         return state
 
     def _build_state(self, reader, file_path, scalar_key):
