@@ -370,7 +370,7 @@ def compute_average_series(series_dict):
     return np.mean(stacked, axis=0)
 
 
-def build_histogram_figure(values, x_label, bins=None):
+def build_histogram_figure(values, x_label, bins=None, fit=False):
     if values is None:
         return go.Figure(), "No data available"
     arr = np.asarray(values, dtype=float)
@@ -393,28 +393,28 @@ def build_histogram_figure(values, x_label, bins=None):
         x_min -= 1
         x_max += 1
     x_vals = np.linspace(x_min, x_max, 400)
-    best_fit = fit_best_distribution(arr)
-    pdf_line = None
-    summary = "No valid fit"
-    if best_fit:
-        pdf_vals = best_fit['dist'].pdf(x_vals, *best_fit['params'])
-        counts, edges = np.histogram(arr, bins=nbins)
-        bin_width = edges[1] - edges[0]
-        pdf_scaled = pdf_vals * arr.size * bin_width
-        pdf_line = go.Scatter(
-            x=x_vals,
-            y=pdf_scaled,
-            mode='lines',
-            line=dict(color='#0d2244', width=2),
-            name=f"{best_fit['name']} PDF"
-        )
-        params_str = ", ".join(f"{p:.3g}" for p in best_fit['params'])
-        summary = (f"Best Fit: {best_fit['name']} | Params: {params_str} | "
-                   f"AIC: {best_fit['aic']:.2f}, BIC: {best_fit['bic']:.2f}")
-
+    summary = "_Enable **Best-fit PDF** to evaluate distributions._"
     traces = [hist]
-    if pdf_line:
-        traces.append(pdf_line)
+
+    if fit:
+        best_fit = fit_best_distribution(arr)
+        if best_fit:
+            pdf_vals = best_fit['dist'].pdf(x_vals, *best_fit['params'])
+            counts, edges = np.histogram(arr, bins=nbins)
+            bin_width = edges[1] - edges[0]
+            pdf_scaled = pdf_vals * arr.size * bin_width
+            pdf_line = go.Scatter(
+                x=x_vals,
+                y=pdf_scaled,
+                mode='lines',
+                line=dict(color='#0d2244', width=2),
+                name=f"{best_fit['name']} PDF"
+            )
+            traces.append(pdf_line)
+            summary = format_fit_summary(best_fit)
+        else:
+            summary = "_No valid fit available._"
+
     fig = go.Figure(data=traces)
     fig.update_layout(
         margin=dict(l=50, r=20, t=30, b=50),
@@ -469,6 +469,27 @@ def strain_series_values(component):
     return np.asarray(values) if values is not None else None
 
 
+def build_grain_histogram(time_value, bins, fit=False):
+    data = SIZE_DETAILS_DATA
+    if not data:
+        return go.Figure(), "_No data available._"
+    times = data['times']
+    values = data['values']
+    if not times or not values:
+        return go.Figure(), "_No data available._"
+    try:
+        time_value = float(time_value)
+    except (TypeError, ValueError):
+        time_value = times[0]
+    row_index = min(range(len(times)), key=lambda idx: abs(times[idx] - time_value))
+    row_values = values[row_index]
+    if not row_values:
+        return go.Figure(), "_No data available._"
+    fig, summary = build_histogram_figure(row_values, "Grain Size", bins, fit=fit)
+    summary = f"**Time:** {times[row_index]:.3f}\n\n" + summary
+    return fig, summary
+
+
 def fit_best_distribution(data):
     """Fit candidate distributions and select best via BIC."""
     if data is None:
@@ -506,10 +527,29 @@ def fit_best_distribution(data):
                 "aic": aic,
                 "bic": bic
             }
-    if best:
-        print(f"[Histogram Fit] Best: {best['name']} params={best['params']}, "
-              f"AIC={best['aic']:.2f}, BIC={best['bic']:.2f}")
     return best
+
+
+def format_fit_summary(best_fit):
+    if not best_fit:
+        return "_No valid fit available._"
+    label_map = {
+        "Normal": ["\\mu", "\\sigma"],
+        "Lognormal": ["s", "\\mu", "\\sigma"],
+        "Weibull": ["k", "\\lambda", "\\theta"],
+        "Gamma": ["k", "\\theta", "\\lambda"]
+    }
+    labels = label_map.get(best_fit["name"]) or [f"\\theta_{i+1}" for i in range(len(best_fit["params"]))]
+    param_lines = []
+    for label, value in zip(labels, best_fit["params"]):
+        param_lines.append(f"{label} &= {value:.3g}")
+    params_block = " \\\\ ".join(param_lines)
+    return (
+        f"**Best Fit:** $\\text{{{best_fit['name']}}}$\n\n"
+        f"$$\\begin{{aligned}}{params_block}\\end{{aligned}}$$\n\n"
+        f"$$\\mathrm{{AIC}} = {best_fit['aic']:.2f}\\quad "
+        f"\\mathrm{{BIC}} = {best_fit['bic']:.2f}$$"
+    )
 
 
 tab_datasets = {}
@@ -680,6 +720,9 @@ def build_grain_distribution_card():
             label = f"{t:.3f}".rstrip('0').rstrip('.')
         time_options.append({'label': label, 'value': str(t)})
     default_time = time_options[0]['value']
+    default_time_val = float(default_time)
+    default_bins = 15
+    default_fig, default_summary = build_grain_histogram(default_time_val, default_bins)
     return html.Div([
         html.Div([
             html.Span(className='dataset-accent'),
@@ -703,15 +746,25 @@ def build_grain_distribution_card():
                     min=5,
                     max=50,
                     step=5,
-                    value=15,
+                    value=default_bins,
                     marks={10: '10', 25: '25', 40: '40'},
                     tooltip={"placement": "bottom", "always_visible": False}
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Analysis', className='textdata-label'),
+                dcc.Checklist(
+                    id='grain-dist-fit',
+                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                    value=[],
+                    className='hist-toggle'
                 )
             ], className='textdata-control')
         ], className='textdata-controls'),
         html.Div([
-            dcc.Graph(id='grain-dist-fig', className='textdata-plot')
-        ], className='textdata-graphs')
+            dcc.Graph(id='grain-dist-fig', figure=default_fig, className='textdata-plot')
+        ], className='textdata-graphs'),
+        dcc.Markdown(default_summary, id='grain-dist-summary', className='hist-summary', mathjax=True)
     ], className='dataset-block textdata-card')
 
 
@@ -792,12 +845,21 @@ def build_stress_hist_card():
                     marks={10: '10', 50: '50', 90: '90'},
                     tooltip={"placement": "bottom", "always_visible": False}
                 )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Analysis', className='textdata-label'),
+                dcc.Checklist(
+                    id='stress-hist-fit',
+                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                    value=[],
+                    className='hist-toggle'
+                )
             ], className='textdata-control')
         ], className='textdata-controls'),
         html.Div([
             dcc.Graph(id='stress-hist-fig', figure=figure, className='textdata-plot')
         ], className='textdata-graphs'),
-        html.Div(summary, id='stress-hist-summary', className='hist-summary')
+        dcc.Markdown(summary, id='stress-hist-summary', className='hist-summary', mathjax=True)
     ], className='dataset-block textdata-card')
 
 
@@ -839,12 +901,21 @@ def build_strain_hist_card():
                     marks={10: '10', 50: '50', 90: '90'},
                     tooltip={"placement": "bottom", "always_visible": False}
                 )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Analysis', className='textdata-label'),
+                dcc.Checklist(
+                    id='strain-hist-fit',
+                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                    value=[],
+                    className='hist-toggle'
+                )
             ], className='textdata-control')
         ], className='textdata-controls'),
         html.Div([
             dcc.Graph(id='strain-hist-fig', figure=figure, className='textdata-plot')
         ], className='textdata-graphs'),
-        html.Div(summary, id='strain-hist-summary', className='hist-summary')
+        dcc.Markdown(summary, id='strain-hist-summary', className='hist-summary', mathjax=True)
     ], className='dataset-block textdata-card')
 
 
@@ -927,12 +998,21 @@ def build_crss_hist_card():
                     marks={10: '10', 50: '50', 90: '90'},
                     tooltip={"placement": "bottom", "always_visible": False}
                 )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Analysis', className='textdata-label'),
+                dcc.Checklist(
+                    id='crss-hist-fit',
+                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                    value=[],
+                    className='hist-toggle'
+                )
             ], className='textdata-control')
         ], className='textdata-controls'),
         html.Div([
             dcc.Graph(id='crss-hist-fig', figure=figure, className='textdata-plot')
         ], className='textdata-graphs'),
-        html.Div(summary, id='crss-hist-summary', className='hist-summary')
+        dcc.Markdown(summary, id='crss-hist-summary', className='hist-summary', mathjax=True)
     ], className='dataset-block textdata-card')
 
 
@@ -1187,47 +1267,15 @@ if SIZE_DETAILS_DATA:
 
     @app.callback(
         Output('grain-dist-fig', 'figure'),
+        Output('grain-dist-summary', 'children'),
         Input('grain-dist-time', 'value'),
-        Input('grain-dist-bins', 'value')
+        Input('grain-dist-bins', 'value'),
+        Input('grain-dist-fit', 'value')
     )
-    def update_grain_distribution(selected_time, bins):
-        data = SIZE_DETAILS_DATA
-        times = data['times']
-        values = data['values']
-        if not times or not values:
-            return go.Figure()
-        try:
-            time_value = float(selected_time)
-        except (TypeError, ValueError):
-            time_value = times[0]
-        row_index = min(range(len(times)), key=lambda idx: abs(times[idx] - time_value))
-        row_values = values[row_index]
-        if not row_values:
-            return go.Figure()
-        bin_count = int(bins) if bins else 15
-        hist, edges = np.histogram(row_values, bins=bin_count)
-        centers = (edges[:-1] + edges[1:]) / 2
-        fig = go.Figure(
-            data=[
-                go.Bar(x=centers, y=hist, marker_color='#183568')
-            ]
-        )
-        fig.update_layout(
-            margin=dict(l=50, r=30, t=40, b=60),
-            height=320,
-            template='plotly_white'
-        )
-        fig.update_xaxes(
-            title="Grain Size",
-            title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
-            tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
-        )
-        fig.update_yaxes(
-            title="Frequency",
-            title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
-            tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
-        )
-        return fig
+    def update_grain_distribution(selected_time, bins, fit_value):
+        fit_enabled = bool(fit_value and 'fit' in fit_value)
+        fig, summary = build_grain_histogram(selected_time, bins, fit=fit_enabled)
+        return fig, summary
 
 
 if STRESS_STRAIN_DATA:
@@ -1292,22 +1340,26 @@ if STRESS_STRAIN_DATA:
         Output('stress-hist-fig', 'figure'),
         Output('stress-hist-summary', 'children'),
         Input('stress-hist-component', 'value'),
-        Input('stress-hist-bins', 'value')
+        Input('stress-hist-bins', 'value'),
+        Input('stress-hist-fit', 'value')
     )
-    def update_stress_hist(selected_component, bins):
+    def update_stress_hist(selected_component, bins, fit_value):
         values = stress_series_values(selected_component)
-        fig, summary = build_histogram_figure(values, "Stress (MPa)", bins)
+        fit_enabled = bool(fit_value and 'fit' in fit_value)
+        fig, summary = build_histogram_figure(values, "Stress (MPa)", bins, fit=fit_enabled)
         return fig, summary
 
     @app.callback(
         Output('strain-hist-fig', 'figure'),
         Output('strain-hist-summary', 'children'),
         Input('strain-hist-component', 'value'),
-        Input('strain-hist-bins', 'value')
+        Input('strain-hist-bins', 'value'),
+        Input('strain-hist-fit', 'value')
     )
-    def update_strain_hist(selected_component, bins):
+    def update_strain_hist(selected_component, bins, fit_value):
         values = strain_series_values(selected_component)
-        fig, summary = build_histogram_figure(values, "Strain", bins)
+        fit_enabled = bool(fit_value and 'fit' in fit_value)
+        fig, summary = build_histogram_figure(values, "Strain", bins, fit=fit_enabled)
         return fig, summary
 
 
@@ -1324,11 +1376,13 @@ if CRSS_DATA:
         Output('crss-hist-fig', 'figure'),
         Output('crss-hist-summary', 'children'),
         Input('crss-hist-component', 'value'),
-        Input('crss-hist-bins', 'value')
+        Input('crss-hist-bins', 'value'),
+        Input('crss-hist-fit', 'value')
     )
-    def update_crss_hist(component, bins):
+    def update_crss_hist(component, bins, fit_value):
         values = crss_series_values(component)
-        fig, summary = build_histogram_figure(values, "CRSS (MPa)", bins)
+        fit_enabled = bool(fit_value and 'fit' in fit_value)
+        fig, summary = build_histogram_figure(values, "CRSS (MPa)", bins, fit=fit_enabled)
         return fig, summary
 
 

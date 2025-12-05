@@ -368,6 +368,17 @@ h1.app-title {
     color: #0d2244;
     font-size: 0.85rem;
     font-weight: 600;
+    line-height: 1.4;
+}
+
+.hist-summary p {
+    margin: 0;
+}
+
+.hist-toggle {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #0d2244;
 }
 
 .dataset-header {
