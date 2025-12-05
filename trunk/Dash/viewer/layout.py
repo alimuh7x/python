@@ -169,12 +169,14 @@ def build_graph_section(viewer_id: str):
 
 
 def build_line_scan_card(viewer_id: str):
-    """Build line scan analysis card."""
+    """Build combined line scan and histogram analysis card."""
     return html.Div([
         html.Div([
             html.Span(className='dataset-accent'),
-            html.H3('Line Scan Analysis', className='dataset-title')
+            html.H3('Line Scan & Histogram Analysis', className='dataset-title')
         ], className='dataset-header'),
+
+        # Line Scan Section
         html.Div([
             html.Div([
                 html.Label('Click Mode', className='textdata-label'),
@@ -210,20 +212,12 @@ def build_line_scan_card(viewer_id: str):
         html.Div([
             dcc.Graph(id=component_id(viewer_id, 'lineScanPlot'), className='textdata-plot')
         ], className='textdata-graphs'),
-        html.Div(id=component_id(viewer_id, 'lineScanInfo'), className='toast-anchor', style={'marginTop': '8px', 'fontSize': '12px', 'color': '#666'})
-    ], className='dataset-block textdata-card')
+        html.Div(id=component_id(viewer_id, 'lineScanInfo'), className='toast-anchor', style={'marginTop': '8px', 'marginBottom': '16px', 'fontSize': '12px', 'color': '#666'}),
 
-
-def build_histogram_card(viewer_id: str):
-    """Build histogram analysis card."""
-    return html.Div([
-        html.Div([
-            html.Span(className='dataset-accent'),
-            html.H3('Histogram Analysis', className='dataset-title')
-        ], className='dataset-header'),
+        # Histogram Section (below line scan)
         html.Div([
             html.Div([
-                html.Label('Field', className='textdata-label'),
+                html.Label('Histogram Field', className='textdata-label'),
                 dcc.Dropdown(
                     id=component_id(viewer_id, 'histogramField'),
                     options=[],  # Will be populated dynamically
@@ -249,6 +243,11 @@ def build_histogram_card(viewer_id: str):
             dcc.Graph(id=component_id(viewer_id, 'histogramPlot'), className='textdata-plot')
         ], className='textdata-graphs')
     ], className='dataset-block textdata-card')
+
+
+def build_histogram_card(viewer_id: str):
+    """Deprecated - histogram is now combined with line scan card."""
+    return None
 
 
 def build_tab_layout(viewer_id: str, scalar_options, state, slider_disabled, slider_max, axis_label, palette_options):
