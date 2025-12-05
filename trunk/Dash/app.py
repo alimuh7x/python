@@ -43,6 +43,31 @@ TAB_CONFIGS = [
         ],
     },
     {
+        "id": "composition",
+        "label": "Composition",
+        "datasets": [
+            {
+                "id": "composition",
+                "label": "Composition",
+                "file_glob": "VTK/Composition_*.vts",
+                "scalars": [
+                    {'label': 'Weight Fraction FE (Total)', 'array': 'WeightFractionsTotal_FE'},
+                    {'label': 'Mole Fraction FE (Total)', 'array': 'MoleFractionsTotal_FE'},
+                    {'label': 'Mole Fraction FE (Phase 0)', 'array': 'MoleFractionsPhase_FE(0)'},
+                    {'label': 'Mole Fraction FE (Phase 1)', 'array': 'MoleFractionsPhase_FE(1)'},
+                    {'label': 'Weight Fraction SOLVENT (Total)', 'array': 'WeightFractionsTotal_SOLVENT'},
+                    {'label': 'Mole Fraction SOLVENT (Total)', 'array': 'MoleFractionsTotal_SOLVENT'},
+                    {'label': 'Mole Fraction SOLVENT (Phase 0)', 'array': 'MoleFractionsPhase_SOLVENT(0)'},
+                    {'label': 'Mole Fraction SOLVENT (Phase 1)', 'array': 'MoleFractionsPhase_SOLVENT(1)'},
+                    {'label': 'Weight Fraction CL (Total)', 'array': 'WeightFractionsTotal_CL'},
+                    {'label': 'Mole Fraction CL (Total)', 'array': 'MoleFractionsTotal_CL'},
+                    {'label': 'Mole Fraction CL (Phase 0)', 'array': 'MoleFractionsPhase_CL(0)'},
+                    {'label': 'Mole Fraction CL (Phase 1)', 'array': 'MoleFractionsPhase_CL(1)'},
+                ]
+            }
+        ],
+    },
+    {
         "id": "mechanics",
         "label": "Mechanics",
         "datasets": [
@@ -810,6 +835,7 @@ def get_default_active_tab():
 def build_tab_bar():
     icons = {
         "phase-field": "⛶",
+        "composition": "⚛",
         "mechanics": "⚙",
         "plasticity": "🧪",
     }
