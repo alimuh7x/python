@@ -25,6 +25,7 @@ class ViewerState:
     click_count: int = 0
     first_click: Optional[float] = None
     clicked_message: Optional[str] = None
+    colorscale_mode: str = "normal"  # "normal" or "dynamic"
 
     def to_dict(self) -> Dict[str, Any]:
         """Return JSON-serialisable dict."""

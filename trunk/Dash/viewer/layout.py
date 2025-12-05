@@ -46,6 +46,26 @@ def build_controls(viewer_id: str, scalar_options, state, slider_disabled, slide
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
 
+        # Row 1b: Colorscale Mode
+        html.Div([
+            html.Label([
+                html.Span("⚡", className="label-icon"),
+                "Colorscale Mode:",
+            ], className='field-label grid-label'),
+            html.Div([
+                dcc.Dropdown(
+                    id=component_id(viewer_id, 'colorscaleMode'),
+                    options=[
+                        {'label': 'Normal', 'value': 'normal'},
+                        {'label': 'Dynamic', 'value': 'dynamic'}
+                    ],
+                    value=state.colorscale_mode,
+                    clearable=False,
+                    searchable=False,
+                )
+            ], className='dropdown-wrapper')
+        ], className='controls-grid-row'),
+
         # Row 2: Range inputs
         html.Div([
             html.Label([

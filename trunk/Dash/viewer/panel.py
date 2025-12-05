@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import numpy as np
 import plotly.graph_objects as go
 from dash import Input, Output, State, ctx, html
 
@@ -20,12 +21,129 @@ def _formatted_range_value(value):
     return float(f"{value:.6e}")
 
 
+ 
+def make_dynamic_colorscale(min_val, max_val, blue_cut, red_cut, colors):
+    """
+    Create a dynamic multi-segment colorscale based on blue and red breakpoints.
+
+    Args:
+        min_val (float): Minimum data value
+        max_val (float): Maximum data value
+        blue_cut (float): Blue breakpoint (user-selected minimum)
+        red_cut (float): Red breakpoint (user-selected maximum)
+        colors (list): 5-color palette [color0, color1, color2, color3, color4]
+                       where color2 is typically white
+
+    Returns:
+        list: Plotly-compatible colorscale array with [position, color] pairs
+
+    Logic:
+        - Default (blue_cut == min_val, red_cut == max_val):
+              Blue → White → Red
+
+        - If blue_cut > min_val:
+              Black → White → Blue → White → Red
+
+        - If red_cut < max_val:
+              Blue → White → Red → White → Green
+
+        - If both conditions are true:
+              Black → White → Blue → White → Red → White → Green
+    """
+    # Normalize positions to 0-1
+    data_range = max_val - min_val
+    if data_range == 0:
+        # Edge case: all data is the same value
+        return [[0.0, colors[2]], [1.0, colors[2]]]  # Just white
+
+    def normalize(val):
+        """Convert data value to 0-1 position."""
+        normalized = (val - min_val) / data_range
+        # Clamp to [0, 1] to avoid floating-point precision errors
+        return max(0.0, min(1.0, normalized))
+
+    # Determine which segments are needed
+    prepend_black = blue_cut > min_val
+    append_green = red_cut < max_val
+
+    # Build colorscale segments
+    colorscale = []
+
+    if prepend_black and append_green:
+        # Case 4: Black → White → Blue → White → Red → White → Green
+        # Positions
+        p_min = 0.0
+        p_blue = normalize(blue_cut)
+        p_red = normalize(red_cut)
+        p_max = 1.0
+
+        # Calculate midpoints for smooth transitions
+        p_black_white = (p_min + p_blue) / 2
+        p_blue_white = (p_blue + p_red) / 2
+        p_red_white = (p_red + p_max) / 2
+
+        colorscale = [
+            [p_min,         colors[0]],           # Black at minimum
+            [p_black_white, colors[2]],   # White midpoint
+            [p_blue,        colors[1]],          # Blue at blue_cut
+            [p_blue_white,  colors[2]],    # White midpoint
+            [p_red,         colors[3]],           # Red at red_cut
+            [p_red_white,   colors[2]],     # White midpoint
+            [p_max,         colors[4]]            # Green at maximum
+        ]
+
+    elif prepend_black:
+        # Case 2: Black → White → Blue → White → Red
+        p_min = 0.0
+        p_blue = normalize(blue_cut)
+        p_red = normalize(red_cut)  # Should equal 1.0
+
+        p_black_white = (p_min + p_blue) / 2
+        p_blue_white = (p_blue + p_red) / 2
+
+        colorscale = [
+            [p_min, colors[0]],           # Black at minimum
+            [p_black_white, colors[2]],   # White midpoint
+            [p_blue, colors[1]],          # Blue at blue_cut
+            [p_blue_white, colors[2]],    # White midpoint
+            [p_red, colors[3]]            # Red at red_cut (max)
+        ]
+
+    elif append_green:
+        # Case 3: Blue → White → Red → White → Green
+        p_min = 0.0  # Should equal blue_cut normalized
+        p_blue = normalize(blue_cut)
+        p_red = normalize(red_cut)
+        p_max = 1.0
+
+        p_blue_white = (p_blue + p_red) / 2
+        p_red_white = (p_red + p_max) / 2
+
+        colorscale = [
+            [p_min, colors[1]],           # Blue at minimum (blue_cut)
+            [p_blue_white, colors[2]],    # White midpoint
+            [p_red, colors[3]],           # Red at red_cut
+            [p_red_white, colors[2]],     # White midpoint
+            [p_max, colors[4]]            # Green at maximum
+        ]
+
+    else:
+        # Case 1: Normal mode - Blue → White → Red
+        colorscale = [
+            [0.0, colors[1]],             # Blue at minimum
+            [0.5, colors[2]],             # White at midpoint
+            [1.0, colors[3]]              # Red at maximum
+        ]
+
+    return colorscale
+
+
+
 class ViewerPanel:
     """Encapsulates layout + callback logic for a single viewer."""
 
     PALETTES = {
         # From provided presets (white centered)
-        "yellow-blue": ["#a5521a", "#fbbc3c", "#fffbe0", "#00afb8", "#00328f"],
         "blue-to-red": ["#a51717", "#fbbc3c", "#fffbe0", "#00afb8", "#00328f"],
         "spectral-lowblue": ["#5e4fa2", "#3f96b7", "#b3e0a3", "#fdd280", "#9e0142"],
         "cool-warm-extended": ["#000059", "#295698", "#fcf5e6", "#f7d5b2", "#590c36"],
@@ -116,6 +234,7 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'value'),
             Output(self.cid('rangeSlider'), 'min'),
             Output(self.cid('rangeSlider'), 'max'),
+            Output(self.cid('colorscaleMode'), 'value'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -125,11 +244,12 @@ class ViewerPanel:
             Input(self.cid('rangeMin'), 'value'),
             Input(self.cid('rangeMax'), 'value'),
             Input(self.cid('rangeSlider'), 'value'),
+            Input(self.cid('colorscaleMode'), 'value'),
             State(self.cid('state'), 'data'),
         )
         def _update_viewer(scalar_value, palette_value,
                            slice_value, slice_input_value, reset_clicks, click_data,
-                           min_val, max_val, slider_range, stored_state):
+                           min_val, max_val, slider_range, colorscale_mode_value, stored_state):
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -137,6 +257,10 @@ class ViewerPanel:
             if fallback_value not in self.scalar_map:
                 fallback_value = default_value
             fallback_state = self._build_state(reader, self.file_path, fallback_value)
+
+            # Ensure colorscale_mode is in state_data for backward compatibility
+            if stored_state and 'colorscale_mode' not in stored_state:
+                stored_state['colorscale_mode'] = 'normal'
 
             state = ViewerState.from_dict(stored_state, fallback_state)
             triggered = ctx.triggered_id
@@ -183,6 +307,7 @@ class ViewerPanel:
                 state.first_click = None
 
             state.palette = palette_value or fallback_state.palette
+            state.colorscale_mode = colorscale_mode_value or fallback_state.colorscale_mode
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
             scale = descriptor.get('scale', 1.0) or 1.0
@@ -242,20 +367,46 @@ class ViewerPanel:
                 max_display,
                 [formatted_min, formatted_max],
                 _formatted_range_value(scaled_stats['min']),
-                _formatted_range_value(scaled_stats['max'])
+                _formatted_range_value(scaled_stats['max']),
+                state.colorscale_mode
             )
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
 
     def _build_figure(self, X_grid, Y_grid, Z_grid, state: ViewerState):
         colors = self.PALETTES.get(state.palette, self.PALETTES["aqua-fire"])
-        colorscale = [
-            [0.0, colors[0]],
-            [0.25, colors[1]],
-            [0.5, colors[2]],
-            [0.75, colors[3]],
-            [1.0, colors[4]]
-        ]
+
+        # Determine colorscale based on mode
+        if state.colorscale_mode == "dynamic":
+            # Dynamic mode: create multi-segment colorscale
+            # Get actual data range (not clipped)
+            data_min = float(np.nanmin(Z_grid))
+            data_max = float(np.nanmax(Z_grid))
+
+            # Use user-selected range as blue/red breakpoints
+            blue_cut = state.range_min
+            red_cut = state.range_max
+
+            colorscale = make_dynamic_colorscale(data_min, data_max, blue_cut, red_cut, colors)
+
+            # In dynamic mode, show full data range
+            Z_grid_display = Z_grid
+            zmin_display = data_min
+            zmax_display = data_max
+            zmid_display = state.threshold
+        else:
+            # Normal mode: standard 5-color gradient
+            colorscale = [
+                [0.0, colors[0]],
+                [0.25, colors[1]],
+                [0.5, colors[2]],
+                [0.75, colors[3]],
+                [1.0, colors[4]]
+            ]
+            Z_grid_display = Z_grid
+            zmin_display = state.range_min
+            zmax_display = state.range_max
+            zmid_display = state.threshold
 
         template = 'plotly_white'
         bg_color = '#ffffff'
@@ -265,12 +416,12 @@ class ViewerPanel:
         fig = go.Figure(data=go.Heatmap(
             x = X_grid[0, :],
             y = Y_grid[:, 0],
-            z = Z_grid,
+            z = Z_grid_display,
 
             colorscale = colorscale,
-            zmid       = state.threshold,        # Center the color scale around the threshold
-            zmin       = state.range_min,
-            zmax       = state.range_max,
+            zmid       = zmid_display,           # Center the color scale around the threshold
+            zmin       = zmin_display,
+            zmax       = zmax_display,
             zsmooth    = self.config["zsmooth"], # 'best' | 'fast' | 'none'
 
             colorbar = dict(
@@ -289,8 +440,8 @@ class ViewerPanel:
                 xanchor       = 'right',          # Anchor at left edge of colorbar
                 yanchor       = 'middle',        # Anchor at middle
                 tickmode      = "linear",        # 'auto' | 'linear' | 'array'
-                tick0         = state.range_min, # Starting tick value
-                dtick         = ((state.range_max - state.range_min) / 5) if state.range_max != state.range_min else 1,
+                tick0         = zmin_display,    # Starting tick value
+                dtick         = ((zmax_display - zmin_display) / 5) if zmax_display != zmin_display else 1,
                 tickfont = dict(size=14, family=font_family, color=text_color)
             ),
             hovertemplate = 'Value: %{z:.6f}<extra></extra>'))
