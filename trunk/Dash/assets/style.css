@@ -287,6 +287,38 @@ h1.app-title {
     gap: 4px;
 }
 
+.crss-control {
+    flex: 1 1 100%;
+}
+
+.crss-checklist {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px 12px;
+    background: #ffffff;
+    border: 1px solid #e0e7f3;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 2px rgba(24, 53, 104, 0.06);
+}
+
+.crss-checklist label {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: #183568;
+    font-size: 0.82rem;
+}
+
+.crss-checklist input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #183568;
+}
+
 .textdata-label {
     font-size: 0.75rem;
     font-weight: 600;
@@ -325,6 +357,17 @@ h1.app-title {
     border-radius: 10px;
     padding: 6px 10px;
     box-shadow: 0 6px 18px rgba(24, 53, 104, 0.08);
+}
+
+.hist-summary {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #f8fbff;
+    border: 1px dashed rgba(13, 34, 68, 0.2);
+    color: #0d2244;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .dataset-header {

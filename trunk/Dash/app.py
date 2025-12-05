@@ -1,11 +1,13 @@
 """Multi-field VTK viewer with reusable tab panels."""
 import os
+import warnings
 from glob import glob
 from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
 from dash import ALL, Dash, Input, Output, State, ctx, dcc, html
+from scipy import stats
 
 from utils.vtk_reader import VTKReader
 from viewer import ViewerPanel
@@ -201,25 +203,37 @@ def load_stress_strain():
                 return columns[name]
         return None
 
-    strain = col('Epsilon_xx', 'EpsilonXX')
+    strain_components = {
+        name: columns[name]
+        for name in columns
+        if name.lower().startswith('epsilon')
+    }
+    strain = strain_components.get('Epsilon_xx') or strain_components.get('EpsilonXX')
+    if strain is None and strain_components:
+        strain = next(iter(strain_components.values()))
     time = col('Time', 'TimeStep')
     sigma_xx = col('Sigma_xx', 'SigmaXX')
     sigma_yy = col('Sigma_yy', 'SigmaYY')
     sigma_zz = col('Sigma_zz', 'SigmaZZ')
     mises = col('Mises', 'VonMises')
 
-    if not strain or not sigma_xx:
+    stress_components = {
+        key: value for key, value in {
+            "Sigma_xx": sigma_xx,
+            "Sigma_yy": sigma_yy,
+            "Sigma_zz": sigma_zz,
+            "Mises": mises,
+        }.items() if value is not None
+    }
+
+    if not strain or not stress_components:
         return None
 
     return {
         "strain": strain,
         "time": time,
-        "components": {
-            "Sigma_xx": sigma_xx,
-            "Sigma_yy": sigma_yy,
-            "Sigma_zz": sigma_zz,
-            "Mises": mises,
-        }
+        "components": stress_components,
+        "strain_components": strain_components
     }
 
 
@@ -336,6 +350,168 @@ def load_plastic_strain():
 
 PLASTIC_STRAIN_DATA = load_plastic_strain()
 
+
+def compute_average_series(series_dict):
+    """Return element-wise average across provided series."""
+    arrays = []
+    lengths = []
+    for values in series_dict.values():
+        if values is None:
+            continue
+        arr = np.asarray(values, dtype=float)
+        if arr.size == 0:
+            continue
+        arrays.append(arr)
+        lengths.append(arr.size)
+    if not arrays:
+        return None
+    min_len = min(lengths)
+    stacked = np.vstack([arr[:min_len] for arr in arrays])
+    return np.mean(stacked, axis=0)
+
+
+def build_histogram_figure(values, x_label, bins=None):
+    if values is None:
+        return go.Figure(), "No data available"
+    arr = np.asarray(values, dtype=float)
+    if arr.size == 0:
+        return go.Figure(), "No data available"
+    if bins is None:
+        nbins = max(10, min(60, int(np.sqrt(arr.size) * 3)))
+    else:
+        nbins = max(5, min(100, int(bins)))
+    hist = go.Histogram(
+        x=arr,
+        nbinsx=nbins,
+        marker_color='#c50623',
+        opacity=0.6,
+        name='Histogram'
+    )
+
+    x_min, x_max = arr.min(), arr.max()
+    if np.isclose(x_min, x_max):
+        x_min -= 1
+        x_max += 1
+    x_vals = np.linspace(x_min, x_max, 400)
+    best_fit = fit_best_distribution(arr)
+    pdf_line = None
+    summary = "No valid fit"
+    if best_fit:
+        pdf_vals = best_fit['dist'].pdf(x_vals, *best_fit['params'])
+        counts, edges = np.histogram(arr, bins=nbins)
+        bin_width = edges[1] - edges[0]
+        pdf_scaled = pdf_vals * arr.size * bin_width
+        pdf_line = go.Scatter(
+            x=x_vals,
+            y=pdf_scaled,
+            mode='lines',
+            line=dict(color='#0d2244', width=2),
+            name=f"{best_fit['name']} PDF"
+        )
+        params_str = ", ".join(f"{p:.3g}" for p in best_fit['params'])
+        summary = (f"Best Fit: {best_fit['name']} | Params: {params_str} | "
+                   f"AIC: {best_fit['aic']:.2f}, BIC: {best_fit['bic']:.2f}")
+
+    traces = [hist]
+    if pdf_line:
+        traces.append(pdf_line)
+    fig = go.Figure(data=traces)
+    fig.update_layout(
+        margin=dict(l=50, r=20, t=30, b=50),
+        height=320,
+        template='plotly_white',
+        bargap=0.05
+    )
+    fig.update_xaxes(
+        title=x_label,
+        title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
+        tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
+    )
+    fig.update_yaxes(
+        title="Frequency",
+        title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
+        tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
+    )
+    fig.update_traces(showlegend=False, selector=lambda t: isinstance(t, go.Histogram))
+    return fig, summary
+
+
+def crss_series_values(component):
+    data = CRSS_DATA
+    if not data:
+        return None
+    if component == 'Average':
+        return np.asarray(data['averages']) / 1e6
+    values = (data.get('series') or {}).get(component)
+    return np.asarray(values) / 1e6 if values is not None else None
+
+
+def stress_series_values(component):
+    data = STRESS_STRAIN_DATA
+    if not data:
+        return None
+    comps = data.get('components') or {}
+    if component == 'Average':
+        avg = compute_average_series(comps)
+        return avg / 1e6 if avg is not None else None
+    values = comps.get(component)
+    return np.asarray(values) / 1e6 if values is not None else None
+
+
+def strain_series_values(component):
+    data = STRESS_STRAIN_DATA
+    if not data:
+        return None
+    comps = data.get('strain_components') or {}
+    if component == 'Average':
+        return compute_average_series(comps)
+    values = comps.get(component)
+    return np.asarray(values) if values is not None else None
+
+
+def fit_best_distribution(data):
+    """Fit candidate distributions and select best via BIC."""
+    if data is None:
+        return None
+    arr = np.asarray(data, dtype=float)
+    if arr.size < 3 or np.allclose(arr.std(), 0):
+        return None
+    candidates = {
+        "Normal": stats.norm,
+        "Lognormal": stats.lognorm,
+        "Weibull": stats.weibull_min,
+        "Gamma": stats.gamma
+    }
+    best = None
+    n = arr.size
+    for name, dist in candidates.items():
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                params = dist.fit(arr)
+        except Exception:
+            continue
+        try:
+            loglik = np.sum(dist.logpdf(arr, *params))
+        except Exception:
+            continue
+        k = len(params)
+        aic = 2 * k - 2 * loglik
+        bic = np.log(n) * k - 2 * loglik
+        if not best or bic < best['bic']:
+            best = {
+                "name": name,
+                "dist": dist,
+                "params": params,
+                "aic": aic,
+                "bic": bic
+            }
+    if best:
+        print(f"[Histogram Fit] Best: {best['name']} params={best['params']}, "
+              f"AIC={best['aic']:.2f}, BIC={best['bic']:.2f}")
+    return best
+
+
 tab_datasets = {}
 for tab in TAB_CONFIGS:
     datasets = []
@@ -387,11 +563,12 @@ def build_tab_children(tab_id):
             if card:
                 cards.append(card)
     elif tab_id == 'mechanics':
-        stress_card = build_stress_strain_card()
-        if stress_card:
-            cards.append(stress_card)
+        for builder in (build_stress_strain_card, build_stress_hist_card, build_strain_hist_card):
+            card = builder()
+            if card:
+                cards.append(card)
     elif tab_id == 'plasticity':
-        for builder in (build_crss_card, build_plastic_strain_card):
+        for builder in (build_crss_card, build_crss_hist_card, build_plastic_strain_card):
             card = builder()
             if card:
                 cards.append(card)
@@ -572,13 +749,117 @@ def build_stress_strain_card():
     ], className='dataset-block textdata-card')
 
 
+def build_stress_hist_card():
+    data = STRESS_STRAIN_DATA
+    if not data or not data.get('components'):
+        return None
+    options_map = {
+        "Sigma_xx": "σ_xx",
+        "Sigma_yy": "σ_yy",
+        "Sigma_zz": "σ_zz",
+        "Mises": "von Mises",
+    }
+    options = [{'label': 'Average', 'value': 'Average'}]
+    for key in data['components'].keys():
+        options.append({'label': options_map.get(key, key), 'value': key})
+    default_value = options[0]['value']
+    default_bins = 30
+    figure, summary = build_histogram_figure(stress_series_values(default_value), "Stress (MPa)", bins=default_bins)
+    return html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('Stress Histograms', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            html.Div([
+                html.Label('Component', className='textdata-label'),
+                dcc.Dropdown(
+                    id='stress-hist-component',
+                    options=options,
+                    value=default_value,
+                    clearable=False,
+                    className='textdata-input'
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Bins', className='textdata-label'),
+                dcc.Slider(
+                    id='stress-hist-bins',
+                    min=5,
+                    max=100,
+                    step=5,
+                    value=default_bins,
+                    marks={10: '10', 50: '50', 90: '90'},
+                    tooltip={"placement": "bottom", "always_visible": False}
+                )
+            ], className='textdata-control')
+        ], className='textdata-controls'),
+        html.Div([
+            dcc.Graph(id='stress-hist-fig', figure=figure, className='textdata-plot')
+        ], className='textdata-graphs'),
+        html.Div(summary, id='stress-hist-summary', className='hist-summary')
+    ], className='dataset-block textdata-card')
+
+
+def build_strain_hist_card():
+    data = STRESS_STRAIN_DATA
+    strain_components = (data or {}).get('strain_components')
+    if not strain_components:
+        return None
+    options = [{'label': 'Average', 'value': 'Average'}]
+    for key in strain_components.keys():
+        options.append({'label': key.replace('_', ' ').title(), 'value': key})
+    default_value = options[0]['value']
+    default_bins = 30
+    figure, summary = build_histogram_figure(strain_series_values(default_value), "Strain", bins=default_bins)
+    return html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('Strain Histograms', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            html.Div([
+                html.Label('Component', className='textdata-label'),
+                dcc.Dropdown(
+                    id='strain-hist-component',
+                    options=options,
+                    value=default_value,
+                    clearable=False,
+                    className='textdata-input'
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Bins', className='textdata-label'),
+                dcc.Slider(
+                    id='strain-hist-bins',
+                    min=5,
+                    max=100,
+                    step=5,
+                    value=default_bins,
+                    marks={10: '10', 50: '50', 90: '90'},
+                    tooltip={"placement": "bottom", "always_visible": False}
+                )
+            ], className='textdata-control')
+        ], className='textdata-controls'),
+        html.Div([
+            dcc.Graph(id='strain-hist-fig', figure=figure, className='textdata-plot')
+        ], className='textdata-graphs'),
+        html.Div(summary, id='strain-hist-summary', className='hist-summary')
+    ], className='dataset-block textdata-card')
+
+
 def build_crss_card():
     data = CRSS_DATA
     if not data:
         return None
     series = data.get('series') or {}
+
+    def sort_key(name):
+        digits = ''.join(ch for ch in name if ch.isdigit())
+        return int(digits) if digits else name
+
     options = [{'label': 'Average', 'value': 'Average'}]
-    for name in sorted(series.keys()):
+    for name in sorted(series.keys(), key=sort_key):
         options.append({'label': name.replace('ss_', 'SS ').upper(), 'value': name})
     fig = build_crss_figure()
     return html.Div([
@@ -593,15 +874,65 @@ def build_crss_card():
                     id='crss-component-select',
                     options=options,
                     value=['Average'],
-                    className='textdata-radio',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
-                    inputStyle={'marginRight': '4px'}
+                    className='crss-checklist'
                 )
-            ], className='textdata-control')
+            ], className='textdata-control crss-control')
         ], className='textdata-controls'),
         html.Div([
             dcc.Graph(id='crss-avg-fig', figure=fig, className='textdata-plot')
         ], className='textdata-graphs')
+    ], className='dataset-block textdata-card')
+
+
+def build_crss_hist_card():
+    data = CRSS_DATA
+    if not data:
+        return None
+    series = data.get('series') or {}
+
+    def sort_key(name):
+        digits = ''.join(ch for ch in name if ch.isdigit())
+        return int(digits) if digits else name
+
+    options = [{'label': 'Average', 'value': 'Average'}]
+    for key in sorted(series.keys(), key=sort_key):
+        options.append({'label': key.replace('ss_', 'SS ').upper(), 'value': key})
+    default_value = options[0]['value']
+    default_bins = 30
+    figure, summary = build_histogram_figure(crss_series_values(default_value), "CRSS (MPa)", bins=default_bins)
+    return html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('CRSS Histograms', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            html.Div([
+                html.Label('Component', className='textdata-label'),
+                dcc.Dropdown(
+                    id='crss-hist-component',
+                    options=options,
+                    value=default_value,
+                    clearable=False,
+                    className='textdata-input'
+                )
+            ], className='textdata-control'),
+            html.Div([
+                html.Label('Bins', className='textdata-label'),
+                dcc.Slider(
+                    id='crss-hist-bins',
+                    min=5,
+                    max=100,
+                    step=5,
+                    value=default_bins,
+                    marks={10: '10', 50: '50', 90: '90'},
+                    tooltip={"placement": "bottom", "always_visible": False}
+                )
+            ], className='textdata-control')
+        ], className='textdata-controls'),
+        html.Div([
+            dcc.Graph(id='crss-hist-fig', figure=figure, className='textdata-plot')
+        ], className='textdata-graphs'),
+        html.Div(summary, id='crss-hist-summary', className='hist-summary')
     ], className='dataset-block textdata-card')
 
 
@@ -611,8 +942,14 @@ def build_crss_figure(selected=None):
         return go.Figure()
     times = data['times']
     series = data.get('series') or {}
+    available = {'Average'}
+    available.update({name for name, values in series.items() if values})
     if not selected:
         selected = ['Average']
+    filtered = [key for key in selected if key in available]
+    if not filtered:
+        filtered = ['Average'] if 'Average' in available else list(available)
+    selected = filtered
     traces = []
     for key in selected:
         if key == 'Average':
@@ -632,20 +969,15 @@ def build_crss_figure(selected=None):
         ))
     fig = go.Figure(data=traces)
     fig.update_layout(
-        title=dict(
-            text="CRSS vs Time",
-            x=0.5,
-            xanchor='center',
-            font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-        ),
-        margin=dict(l=50, r=150, t=60, b=60),
+        margin=dict(l=50, r=30, t=70, b=60),
         height=320,
         template='plotly_white',
         legend=dict(
-            orientation='v',
-            x=1.02,
+            orientation='h',
+            x=0,
             xanchor='left',
-            y=1,
+            y=1.18,
+            yanchor='bottom',
             bgcolor='rgba(255,255,255,0.8)',
             bordercolor='rgba(24,53,104,0.15)',
             borderwidth=1
@@ -708,24 +1040,14 @@ def build_plastic_strain_figures():
         ))
     strain_fig = go.Figure(data=strain_traces)
     strain_fig.update_layout(
-        title=dict(
-            text="Plastic Strain Components",
-            x=0.5,
-            font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-        ),
-        margin=dict(l=50, r=30, t=60, b=60),
+        margin=dict(l=50, r=30, t=40, b=60),
         height=320,
         template='plotly_white',
         legend=dict(orientation='h', yanchor='bottom', y=-0.3)
     )
     rate_fig = go.Figure(data=rate_traces)
     rate_fig.update_layout(
-        title=dict(
-            text="Plastic Strain Rates",
-            x=0.5,
-            font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-        ),
-        margin=dict(l=50, r=30, t=60, b=60),
+        margin=dict(l=50, r=30, t=40, b=60),
         height=320,
         template='plotly_white',
         legend=dict(orientation='h', yanchor='bottom', y=-0.3)
@@ -832,13 +1154,7 @@ if SIZE_DETAILS_DATA:
         else:
             main_fig.add_scatter(x=labels, y=row_values, mode='lines+markers', line=dict(color='#183568'))
         main_fig.update_layout(
-            title=dict(
-                text=f"Grain Sizes — Time {times[row_index]:.3f}",
-                x=0.5,
-                xanchor='center',
-                font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-            ),
-            margin=dict(l=50, r=30, t=60, b=60),
+            margin=dict(l=50, r=30, t=40, b=60),
             height=320,
             template='plotly_white'
         )
@@ -860,13 +1176,7 @@ if SIZE_DETAILS_DATA:
             data=[go.Scatter(x=avg_times, y=avg_values, mode='lines+markers', line=dict(color='#c50623'))]
         )
         line_fig.update_layout(
-            title=dict(
-                text="Average Grain Size Over Time",
-                x=0.5,
-                xanchor='center',
-                font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-            ),
-            margin=dict(l=50, r=30, t=60, b=60),
+            margin=dict(l=50, r=30, t=40, b=60),
             height=320,
             template='plotly_white'
         )
@@ -903,12 +1213,7 @@ if SIZE_DETAILS_DATA:
             ]
         )
         fig.update_layout(
-            title=dict(
-                text=f"Grain Size Distribution — Time {times[row_index]:.3f}",
-                x=0.5,
-                font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-            ),
-            margin=dict(l=50, r=30, t=60, b=60),
+            margin=dict(l=50, r=30, t=40, b=60),
             height=320,
             template='plotly_white'
         )
@@ -957,19 +1262,15 @@ if STRESS_STRAIN_DATA:
             ))
         fig = go.Figure(data=traces)
         fig.update_layout(
-            title=dict(
-                text="Stress–Strain Response",
-                x=0.5,
-                font=dict(size=20, family='Inter, sans-serif', color='#12294f')
-            ),
-            margin=dict(l=50, r=150, t=60, b=60),
+            margin=dict(l=50, r=30, t=90, b=60),
             height=320,
             template='plotly_white',
             legend=dict(
-                orientation='v',
-                x=1.02,
+                orientation='h',
+                x=0,
                 xanchor='left',
-                y=1,
+                y=1.18,
+                yanchor='bottom',
                 bgcolor='rgba(255,255,255,0.8)',
                 bordercolor='rgba(24,53,104,0.15)',
                 borderwidth=1
@@ -987,6 +1288,28 @@ if STRESS_STRAIN_DATA:
         )
         return fig
 
+    @app.callback(
+        Output('stress-hist-fig', 'figure'),
+        Output('stress-hist-summary', 'children'),
+        Input('stress-hist-component', 'value'),
+        Input('stress-hist-bins', 'value')
+    )
+    def update_stress_hist(selected_component, bins):
+        values = stress_series_values(selected_component)
+        fig, summary = build_histogram_figure(values, "Stress (MPa)", bins)
+        return fig, summary
+
+    @app.callback(
+        Output('strain-hist-fig', 'figure'),
+        Output('strain-hist-summary', 'children'),
+        Input('strain-hist-component', 'value'),
+        Input('strain-hist-bins', 'value')
+    )
+    def update_strain_hist(selected_component, bins):
+        values = strain_series_values(selected_component)
+        fig, summary = build_histogram_figure(values, "Strain", bins)
+        return fig, summary
+
 
 if CRSS_DATA:
 
@@ -996,6 +1319,17 @@ if CRSS_DATA:
     )
     def update_crss_plot(selected_components):
         return build_crss_figure(selected_components)
+
+    @app.callback(
+        Output('crss-hist-fig', 'figure'),
+        Output('crss-hist-summary', 'children'),
+        Input('crss-hist-component', 'value'),
+        Input('crss-hist-bins', 'value')
+    )
+    def update_crss_hist(component, bins):
+        values = crss_series_values(component)
+        fig, summary = build_histogram_figure(values, "CRSS (MPa)", bins)
+        return fig, summary
 
 
 
