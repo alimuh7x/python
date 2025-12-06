@@ -88,10 +88,9 @@ def build_controls(
                     className='btn btn-danger reset-btn'
                 ),
                 html.Div([
-                    html.Span("Click Mode", className='scan-option__label'),
                     dmc.Switch(
                         id=component_id(viewer_id, 'clickModeRange'),
-                        label="Range Selection",
+                        label="Range Selection on Map",
                         checked=state.click_mode == 'range',
                         labelPosition="right",
                         size="xs",
@@ -121,7 +120,6 @@ def build_controls(
                     ], style={'display': 'none'})
                 ], className='range-slider-track'),
                 html.Div([
-                    html.Span("Mode", className='scan-option__label'),
                     dmc.Switch(
                         id=component_id(viewer_id, 'colorscaleMode'),
                         label="Full Scale",
