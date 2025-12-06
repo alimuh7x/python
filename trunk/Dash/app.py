@@ -10,6 +10,7 @@ from dash import ALL, Dash, Input, Output, State, ctx, dcc, html
 from flask import render_template_string
 import markdown
 from scipy import stats
+import dash_mantine_components as dmc
 
 from utils.vtk_reader import VTKReader
 from viewer import ViewerPanel
@@ -1366,37 +1367,39 @@ def build_plastic_strain_figures():
     return strain_fig, rate_fig
 
 
-app.layout = html.Div(
-    id='app-container',
-    children=[
-        dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
-        html.Div([
+app.layout = dmc.MantineProvider(
+    html.Div(
+        id='app-container',
+        children=[
+            dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
             html.Div([
                 html.Div([
-                    html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
-                    html.H1([
-                        "OP",
-                        html.Span("view", className='app-title-sub')
-                    ], className='app-title')
-                ], className='top-left'),
+                    html.Div([
+                        html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
+                        html.H1([
+                            "OP",
+                            html.Span("view", className='app-title-sub')
+                        ], className='app-title')
+                    ], className='top-left'),
+                    html.Div([
+                        html.A("Documentation", href='/docs', target='_blank', className='doc-link')
+                    ], className='top-right')
+                ], className='top-bar')
+            ], className='app-header'),
+            html.Div([
                 html.Div([
-                    html.A("Documentation", href='/docs', target='_blank', className='doc-link')
-                ], className='top-right')
-            ], className='top-bar')
-        ], className='app-header'),
-        html.Div([
-            html.Div([
-                html.Span("Modules", className='sidebar-title'),
-                html.Div(build_tab_bar(), className='sidebar-tabs')
-            ], className='sidebar'),
-            html.Div([
-                html.Div(
-                    id='tab-content',
-                    children=build_tab_children(INITIAL_ACTIVE_TAB) if INITIAL_ACTIVE_TAB else []
-                )
-            ], className='main-panel')
-        ], className='layout-shell')
-    ]
+                    html.Span("Modules", className='sidebar-title'),
+                    html.Div(build_tab_bar(), className='sidebar-tabs')
+                ], className='sidebar'),
+                html.Div([
+                    html.Div(
+                        id='tab-content',
+                        children=build_tab_children(INITIAL_ACTIVE_TAB) if INITIAL_ACTIVE_TAB else []
+                    )
+                ], className='main-panel')
+            ], className='layout-shell')
+        ]
+    )
 )
 
 

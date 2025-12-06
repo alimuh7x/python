@@ -1,5 +1,6 @@
 """Dash layout helpers for viewer tabs."""
 from dash import dcc, html
+import dash_mantine_components as dmc
 
 
 def format_range_value(value: float):
@@ -163,26 +164,7 @@ def build_controls(
         )
     ], className='controls-grid-row slice-row-extended', style={'display': 'none' if slider_disabled else 'grid'}, id=component_id(viewer_id, 'sliceContainer')))
 
-    if include_hidden_line_toggle:
-        rows.append(html.Div([
-            dcc.RadioItems(
-                id=component_id(viewer_id, 'lineOverlay'),
-                options=[
-                    {'label': 'Show', 'value': 'show'},
-                    {'label': 'Hide', 'value': 'hide'}
-                ],
-                value='show',
-                style={'display': 'none'}
-            )
-        ], style={'display': 'none'}))
-        rows.append(html.Div([
-            dcc.RadioItems(
-                id=component_id(viewer_id, 'clickModeLine'),
-                options=[{'label': '', 'value': 'linescan'}],
-                value=None,
-                style={'display': 'none'}
-            )
-        ], style={'display': 'none'}))
+    # Note: Hidden line toggle RadioItems removed - now using DMC Switch components in line scan card
 
     return html.Div(rows, className='control-panel panel-card')
 
@@ -220,51 +202,50 @@ def build_line_scan_card(viewer_id: str, state):
             html.H3('Line Scan & Histogram Analysis', className='dataset-title')
         ], className='dataset-header'),
 
-        # Line Scan Section
+        # Line Scan Section - uniform toolbar
         html.Div([
             html.Div([
-                html.Label('Line Scan', className='textdata-label'),
-                dcc.RadioItems(
-                    id=component_id(viewer_id, 'clickModeLine'),
-                    options=[{'label': '', 'value': 'linescan'}],
-                    value='linescan' if getattr(state, 'click_mode', 'range') == 'linescan' else None,
-                    inline=True,
-                    className='textdata-radio',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
-                    inputStyle={'marginRight': '4px'}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Line Overlay', className='textdata-label'),
-                dcc.RadioItems(
-                    id=component_id(viewer_id, 'lineOverlay'),
-                    options=[
-                        {'label': 'Show Line', 'value': 'show'},
-                        {'label': 'Hide Line', 'value': 'hide'}
-                    ],
-                    value='show',
-                    inline=True,
-                    className='textdata-radio',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
-                    inputStyle={'marginRight': '4px'}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Scan Direction', className='textdata-label'),
-                dcc.RadioItems(
-                    id=component_id(viewer_id, 'lineScanDir'),
-                    options=[
-                        {'label': 'Horizontal', 'value': 'horizontal'},
-                        {'label': 'Vertical', 'value': 'vertical'}
-                    ],
-                    value='horizontal',
-                    inline=True,
-                    className='textdata-radio',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
-                    inputStyle={'marginRight': '4px'}
-                )
-            ], className='textdata-control'),
-        ], className='textdata-controls'),
+                html.Div([
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'clickModeLine'),
+                        label="Line Scan",
+                        checked=getattr(state, 'click_mode', 'range') == 'linescan',
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option'),
+                html.Div([
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'lineOverlay'),
+                        label="Show Line",
+                        checked=True,
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option'),
+                html.Div([
+                    html.Span("Scan Direction", className='scan-option__label'),
+                    dmc.SegmentedControl(
+                        id=component_id(viewer_id, 'lineScanDir'),
+                        value='horizontal' if getattr(state, 'line_scan_direction', 'horizontal') == 'horizontal' else 'vertical',
+                        data=[
+                            {'label': '↔ Horizontal', 'value': 'horizontal'},
+                            {'label': '↕ Vertical', 'value': 'vertical'},
+                        ],
+                        color="#5c7cfa",
+                        size="sm",
+                    )
+                ], className='scan-option scan-option--direction'),
+            ], className='scan-toolbar'),
+        ], className='modern-toggle-row'),
         html.Div([
             dcc.Graph(id=component_id(viewer_id, 'lineScanPlot'), className='textdata-plot')
         ], className='textdata-graphs'),

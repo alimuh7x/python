@@ -226,7 +226,8 @@ class ViewerPanel:
     def register_callbacks(self):
         """Register Dash callbacks for this dataset panel."""
 
-        @self.app.callback(
+        # Build outputs list - conditionally include DMC Switch outputs
+        outputs = [
             Output(self.cid('graph'), 'figure'),
             Output(self.cid('mapTitle'), 'children'),
             Output(self.cid('clickInfo'), 'children'),
@@ -249,7 +250,18 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'max'),
             Output(self.cid('colorscaleMode'), 'value'),
             Output(self.cid('clickModeRange'), 'value'),
-            Output(self.cid('clickModeLine'), 'value'),
+        ]
+
+        # Only add DMC Switch outputs if line scan is enabled
+        if self.enable_line_scan:
+            outputs.extend([
+                Output(self.cid('clickModeLine'), 'checked'),
+                Output(self.cid('lineOverlay'), 'checked'),
+                Output(self.cid('lineScanDir'), 'value'),  # SegmentedControl uses 'value' not 'checked'
+            ])
+
+        # Build inputs list - conditionally include DMC Switch inputs
+        inputs = [
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -259,17 +271,44 @@ class ViewerPanel:
             Input(self.cid('rangeMin'), 'value'),
             Input(self.cid('rangeMax'), 'value'),
             Input(self.cid('rangeSlider'), 'value'),
-            Input(self.cid('lineOverlay'), 'value'),
+        ]
+
+        # Only add DMC Switch inputs if line scan is enabled
+        if self.enable_line_scan:
+            inputs.extend([
+                Input(self.cid('lineOverlay'), 'checked'),
+            ])
+
+        inputs.extend([
             Input(self.cid('colorscaleMode'), 'value'),
             Input(self.cid('clickModeRange'), 'value'),
-            Input(self.cid('clickModeLine'), 'value'),
+        ])
+
+        if self.enable_line_scan:
+            inputs.extend([
+                Input(self.cid('clickModeLine'), 'checked'),
+                Input(self.cid('lineScanDir'), 'value'),  # SegmentedControl uses 'value' not 'checked'
+            ])
+
+        @self.app.callback(
+            *outputs,
+            *inputs,
             State(self.cid('state'), 'data'),
         )
-        def _update_viewer(scalar_value, palette_value,
-                           slice_value, slice_input_value, reset_clicks, click_data,
-                           min_val, max_val, slider_range, line_overlay_value,
-                           colorscale_mode_value, click_mode_range_value,
-                           click_mode_line_value, stored_state):
+        def _update_viewer(*args):
+            # Parse args based on whether line scan is enabled
+            if self.enable_line_scan:
+                (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
+                 click_data, min_val, max_val, slider_range, line_overlay_checked,
+                 colorscale_mode_value, click_mode_range_value,
+                 click_mode_line_checked, scan_direction_value, stored_state) = args
+            else:
+                (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
+                 click_data, min_val, max_val, slider_range,
+                 colorscale_mode_value, click_mode_range_value, stored_state) = args
+                line_overlay_checked = False
+                click_mode_line_checked = False
+                scan_direction_value = 'horizontal'
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -333,19 +372,11 @@ class ViewerPanel:
             state.palette = palette_value or fallback_state.palette
             full_scale_enabled = bool(colorscale_mode_value and 'full' in colorscale_mode_value)
             state.colorscale_mode = 'dynamic' if full_scale_enabled else 'normal'
-            overlay_choice = line_overlay_value or 'show'
-            state.line_overlay_visible = overlay_choice != 'hide'
 
-            if triggered in {self.cid('clickModeLine'), self.cid('clickModeRange')}:
-                if triggered == self.cid('clickModeLine'):
-                    state.click_mode = 'linescan' if click_mode_line_value == 'linescan' else 'range'
-                else:
-                    state.click_mode = 'range' if click_mode_range_value == 'range' else 'linescan'
-            else:
-                if click_mode_line_value == 'linescan':
-                    state.click_mode = 'linescan'
-                elif click_mode_range_value == 'range':
-                    state.click_mode = 'range'
+            # Handle DMC Switch boolean values and SegmentedControl string value
+            state.line_overlay_visible = bool(line_overlay_checked)
+            state.click_mode = 'linescan' if click_mode_line_checked else 'range'
+            state.line_scan_direction = scan_direction_value  # SegmentedControl returns 'horizontal' or 'vertical' directly
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
             scale = descriptor.get('scale', 1.0) or 1.0
@@ -385,7 +416,8 @@ class ViewerPanel:
             min_display = f"{formatted_min:.6f}" if formatted_min is not None else ""
             max_display = f"{formatted_max:.6f}" if formatted_max is not None else ""
 
-            return (
+            # Build base return tuple
+            base_return = (
                 figure,
                 map_title,
                 click_info,
@@ -408,8 +440,17 @@ class ViewerPanel:
                 _formatted_range_value(scaled_stats['max']),
                 ['full'] if state.colorscale_mode == 'dynamic' else [],
                 'range' if state.click_mode == 'range' else None,
-                'linescan' if state.click_mode == 'linescan' else None
             )
+
+            # Add DMC Switch values if line scan is enabled
+            if self.enable_line_scan:
+                return base_return + (
+                    state.click_mode == 'linescan',  # clickModeLine checked
+                    state.line_overlay_visible,      # lineOverlay checked
+                    state.line_scan_direction        # lineScanDir value ('horizontal' or 'vertical')
+                )
+            else:
+                return base_return
 
         # Line scan callback - only register if enabled
         if self.enable_line_scan:
@@ -418,28 +459,21 @@ class ViewerPanel:
                 Output(self.cid('lineScanInfo'), 'children'),
                 Output(self.cid('state'), 'data', allow_duplicate=True),
                 Input(self.cid('graph'), 'clickData'),
-                Input(self.cid('lineScanDir'), 'value'),
+                Input(self.cid('lineScanDir'), 'checked'),
                 Input(self.cid('clickModeRange'), 'value'),
-                Input(self.cid('clickModeLine'), 'value'),
+                Input(self.cid('clickModeLine'), 'checked'),
                 State(self.cid('state'), 'data'),
                 prevent_initial_call=True
             )
-            def _update_line_scan(click_data, scan_direction, click_mode_range, click_mode_line, stored_state):
+            def _update_line_scan(click_data, scan_direction_checked, click_mode_range, click_mode_line_checked, stored_state):
                 state_data = stored_state or {}
                 state = ViewerState.from_dict(state_data, self.base_state)
 
-                # Update scan direction
-                state.line_scan_direction = scan_direction or 'horizontal'
-                triggered_id = ctx.triggered_id
-                if triggered_id == self.cid('clickModeLine'):
-                    state.click_mode = 'linescan' if click_mode_line == 'linescan' else 'range'
-                elif triggered_id == self.cid('clickModeRange'):
-                    state.click_mode = 'range' if click_mode_range == 'range' else 'linescan'
-                else:
-                    if click_mode_line == 'linescan':
-                        state.click_mode = 'linescan'
-                    elif click_mode_range == 'range':
-                        state.click_mode = 'range'
+                # Update scan direction from DMC Switch (boolean)
+                state.line_scan_direction = 'horizontal' if scan_direction_checked else 'vertical'
+
+                # Update click mode from DMC Switch (boolean)
+                state.click_mode = 'linescan' if click_mode_line_checked else 'range'
 
                 # Get click position if available and in linescan mode
                 info_msg = ""
