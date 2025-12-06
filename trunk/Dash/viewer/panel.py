@@ -208,13 +208,15 @@ class ViewerPanel:
             slider_disabled=self.initial_slider_disabled,
             slider_max=self.initial_slider_max,
             axis_label=self.axis_label,
-            palette_options=self.palette_options
+            palette_options=self.palette_options,
+            include_range_section=True,
+            include_hidden_line_toggle=not self.enable_line_scan
         )
 
     def build_line_scan_card(self):
         """Return line scan analysis card."""
         from viewer.layout import build_line_scan_card
-        return build_line_scan_card(self.id)
+        return build_line_scan_card(self.id, self.base_state)
 
     def build_histogram_card(self):
         """Return histogram analysis card."""
@@ -246,6 +248,8 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'min'),
             Output(self.cid('rangeSlider'), 'max'),
             Output(self.cid('colorscaleMode'), 'value'),
+            Output(self.cid('clickModeRange'), 'value'),
+            Output(self.cid('clickModeLine'), 'value'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -255,12 +259,17 @@ class ViewerPanel:
             Input(self.cid('rangeMin'), 'value'),
             Input(self.cid('rangeMax'), 'value'),
             Input(self.cid('rangeSlider'), 'value'),
+            Input(self.cid('lineOverlay'), 'value'),
             Input(self.cid('colorscaleMode'), 'value'),
+            Input(self.cid('clickModeRange'), 'value'),
+            Input(self.cid('clickModeLine'), 'value'),
             State(self.cid('state'), 'data'),
         )
         def _update_viewer(scalar_value, palette_value,
                            slice_value, slice_input_value, reset_clicks, click_data,
-                           min_val, max_val, slider_range, colorscale_mode_value, stored_state):
+                           min_val, max_val, slider_range, line_overlay_value,
+                           colorscale_mode_value, click_mode_range_value,
+                           click_mode_line_value, stored_state):
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -322,7 +331,21 @@ class ViewerPanel:
                 state.first_click = None
 
             state.palette = palette_value or fallback_state.palette
-            state.colorscale_mode = colorscale_mode_value or fallback_state.colorscale_mode
+            full_scale_enabled = bool(colorscale_mode_value and 'full' in colorscale_mode_value)
+            state.colorscale_mode = 'dynamic' if full_scale_enabled else 'normal'
+            overlay_choice = line_overlay_value or 'show'
+            state.line_overlay_visible = overlay_choice != 'hide'
+
+            if triggered in {self.cid('clickModeLine'), self.cid('clickModeRange')}:
+                if triggered == self.cid('clickModeLine'):
+                    state.click_mode = 'linescan' if click_mode_line_value == 'linescan' else 'range'
+                else:
+                    state.click_mode = 'range' if click_mode_range_value == 'range' else 'linescan'
+            else:
+                if click_mode_line_value == 'linescan':
+                    state.click_mode = 'linescan'
+                elif click_mode_range_value == 'range':
+                    state.click_mode = 'range'
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
             scale = descriptor.get('scale', 1.0) or 1.0
@@ -383,7 +406,9 @@ class ViewerPanel:
                 [formatted_min, formatted_max],
                 _formatted_range_value(scaled_stats['min']),
                 _formatted_range_value(scaled_stats['max']),
-                state.colorscale_mode
+                ['full'] if state.colorscale_mode == 'dynamic' else [],
+                'range' if state.click_mode == 'range' else None,
+                'linescan' if state.click_mode == 'linescan' else None
             )
 
         # Line scan callback - only register if enabled
@@ -394,17 +419,27 @@ class ViewerPanel:
                 Output(self.cid('state'), 'data', allow_duplicate=True),
                 Input(self.cid('graph'), 'clickData'),
                 Input(self.cid('lineScanDir'), 'value'),
-                Input(self.cid('clickMode'), 'value'),
+                Input(self.cid('clickModeRange'), 'value'),
+                Input(self.cid('clickModeLine'), 'value'),
                 State(self.cid('state'), 'data'),
                 prevent_initial_call=True
             )
-            def _update_line_scan(click_data, scan_direction, click_mode, stored_state):
+            def _update_line_scan(click_data, scan_direction, click_mode_range, click_mode_line, stored_state):
                 state_data = stored_state or {}
                 state = ViewerState.from_dict(state_data, self.base_state)
 
                 # Update scan direction
                 state.line_scan_direction = scan_direction or 'horizontal'
-                state.click_mode = click_mode or 'range'
+                triggered_id = ctx.triggered_id
+                if triggered_id == self.cid('clickModeLine'):
+                    state.click_mode = 'linescan' if click_mode_line == 'linescan' else 'range'
+                elif triggered_id == self.cid('clickModeRange'):
+                    state.click_mode = 'range' if click_mode_range == 'range' else 'linescan'
+                else:
+                    if click_mode_line == 'linescan':
+                        state.click_mode = 'linescan'
+                    elif click_mode_range == 'range':
+                        state.click_mode = 'range'
 
                 # Get click position if available and in linescan mode
                 info_msg = ""
@@ -724,24 +759,23 @@ class ViewerPanel:
         )
 
         # Add line scan indicator
-        if state.line_scan_direction == 'horizontal' and state.line_scan_y is not None:
-            # Horizontal line
-            fig.add_shape(
-                type="line",
-                x0=X_grid[0, 0], x1=X_grid[0, -1],
-                y0=state.line_scan_y, y1=state.line_scan_y,
-                line=dict(color="yellow", width=2, dash="dash"),
-                layer="above"
-            )
-        elif state.line_scan_direction == 'vertical' and state.line_scan_x is not None:
-            # Vertical line
-            fig.add_shape(
-                type="line",
-                x0=state.line_scan_x, x1=state.line_scan_x,
-                y0=Y_grid[0, 0], y1=Y_grid[-1, 0],
-                line=dict(color="yellow", width=2, dash="dash"),
-                layer="above"
-            )
+        if state.line_overlay_visible:
+            if state.line_scan_direction == 'horizontal' and state.line_scan_y is not None:
+                fig.add_shape(
+                    type="line",
+                    x0=X_grid[0, 0], x1=X_grid[0, -1],
+                    y0=state.line_scan_y, y1=state.line_scan_y,
+                    line=dict(color="yellow", width=2, dash="dash"),
+                    layer="above"
+                )
+            elif state.line_scan_direction == 'vertical' and state.line_scan_x is not None:
+                fig.add_shape(
+                    type="line",
+                    x0=state.line_scan_x, x1=state.line_scan_x,
+                    y0=Y_grid[0, 0], y1=Y_grid[-1, 0],
+                    line=dict(color="yellow", width=2, dash="dash"),
+                    layer="above"
+                )
 
         print(f"x = {logo_x_paper}, y = {logo_y_paper}")
         return fig

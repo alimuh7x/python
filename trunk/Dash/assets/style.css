@@ -520,6 +520,83 @@ h1.app-title {
     grid-template-columns: auto 1fr 1fr auto;
 }
 
+.switch-row {
+    grid-template-columns: auto 1fr;
+}
+
+.single-radio-row {
+    grid-template-columns: auto auto;
+}
+
+.switch-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.fullscale-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fullscale-switch label {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.fullscale-switch input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.fullscale-switch span {
+    position: relative;
+    padding-left: 70px;
+    font-weight: 600;
+    color: #183568;
+}
+
+.fullscale-switch span::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px;
+    height: 26px;
+    border-radius: 999px;
+    background: rgba(13, 34, 68, 0.15);
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fullscale-switch span::after {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffffff;
+    top: 50%;
+    left: 3px;
+    transform: translateY(-50%);
+    transition: transform 0.2s ease;
+    box-shadow: 0 2px 8px rgba(15, 27, 43, 0.2);
+}
+
+.fullscale-switch input:checked + span::before {
+    background: linear-gradient(120deg, #c50623, #fa6566);
+    box-shadow: 0 4px 12px rgba(197, 6, 35, 0.35);
+}
+
+.fullscale-switch input:checked + span::after {
+    transform: translate(26px, -50%);
+}
+
 /* Extended slice row */
 .slice-row-extended {
     grid-template-columns: auto 1fr auto;

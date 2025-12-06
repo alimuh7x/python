@@ -30,6 +30,7 @@ class ViewerState:
     line_scan_x: Optional[float] = None  # X position for vertical line scan
     line_scan_direction: str = "horizontal"  # "horizontal" or "vertical"
     click_mode: str = "range"  # "range" or "linescan" - what clicking does
+    line_overlay_visible: bool = True  # Toggle for showing scan indicator
 
     def to_dict(self) -> Dict[str, Any]:
         """Return JSON-serialisable dict."""
