@@ -828,7 +828,7 @@ def build_tab_children(tab_id):
             if card:
                 cards.append(card)
     elif tab_id == 'plasticity':
-        for builder in (build_crss_card, build_crss_hist_card, build_plastic_strain_card):
+        for builder in (build_crss_card, build_plastic_strain_card):
             card = builder()
             if card:
                 cards.append(card)
@@ -1181,60 +1181,6 @@ def build_crss_hist_card():
     if not data:
         return None
     series = data.get('series') or {}
-
-    def sort_key(name):
-        digits = ''.join(ch for ch in name if ch.isdigit())
-        return int(digits) if digits else name
-
-    options = [{'label': 'Average', 'value': 'Average'}]
-    for key in sorted(series.keys(), key=sort_key):
-        options.append({'label': key.replace('ss_', 'SS ').upper(), 'value': key})
-    default_value = options[0]['value']
-    default_bins = 30
-    figure, summary = build_histogram_figure(crss_series_values(default_value), "CRSS (MPa)", bins=default_bins)
-    return html.Div([
-        html.Div([
-            html.Span(className='dataset-accent'),
-            html.H3('CRSS Histograms', className='dataset-title')
-        ], className='dataset-header'),
-        html.Div([
-            html.Div([
-                html.Label('Component', className='textdata-label'),
-                dcc.Dropdown(
-                    id='crss-hist-component',
-                    options=options,
-                    value=default_value,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Bins', className='textdata-label'),
-                dcc.Slider(
-                    id='crss-hist-bins',
-                    min=5,
-                    max=100,
-                    step=5,
-                    value=default_bins,
-                    marks={10: '10', 50: '50', 90: '90'},
-                    tooltip={"placement": "bottom", "always_visible": False}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Analysis', className='textdata-label'),
-                dcc.Checklist(
-                    id='crss-hist-fit',
-                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                    value=[],
-                    className='hist-toggle'
-                )
-            ], className='textdata-control')
-        ], className='textdata-controls'),
-        html.Div([
-            dcc.Graph(id='crss-hist-fig', figure=figure, className='textdata-plot')
-        ], className='textdata-graphs'),
-        dcc.Markdown(summary, id='crss-hist-summary', className='hist-summary', mathjax=True)
-    ], className='dataset-block textdata-card')
 
 
 def build_crss_figure(selected=None):
@@ -1600,19 +1546,6 @@ if CRSS_DATA:
     )
     def update_crss_plot(selected_components):
         return build_crss_figure(selected_components)
-
-    @app.callback(
-        Output('crss-hist-fig', 'figure'),
-        Output('crss-hist-summary', 'children'),
-        Input('crss-hist-component', 'value'),
-        Input('crss-hist-bins', 'value'),
-        Input('crss-hist-fit', 'value')
-    )
-    def update_crss_hist(component, bins, fit_value):
-        values = crss_series_values(component)
-        fit_enabled = bool(fit_value and 'fit' in fit_value)
-        fig, summary = build_histogram_figure(values, "CRSS (MPa)", bins, fit=fit_enabled)
-        return fig, summary
 
 
 
