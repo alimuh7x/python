@@ -57,37 +57,42 @@ def build_controls(
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
 
-        # Row 1b: Full Scale toggle
-        html.Div([
-            html.Label([
-                html.Span("⚡", className="label-icon"),
-                "Mode",
-            ], className='field-label grid-label'),
-            html.Div([
-                dcc.Checklist(
-                    id=component_id(viewer_id, 'colorscaleMode'),
-                    options=[{'label': 'Full Scale', 'value': 'full'}],
-                    value=['full'] if state.colorscale_mode == 'dynamic' else [],
-                    className='fullscale-switch',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'cursor': 'pointer'},
-                    inputStyle={'display': 'none'}
-                )
-            ], className='switch-wrapper')
-        ], className='controls-grid-row switch-row')
     ]
 
-    # Range Selection radio (left card)
+    # Mode + Range toggles (match right-card styling)
     rows.append(
         html.Div([
-            html.Label("Range Selection", className='field-label grid-label'),
-            dcc.RadioItems(
-                id=component_id(viewer_id, 'clickModeRange'),
-                options=[{'label': '', 'value': 'range'}],
-                value='range' if state.click_mode == 'range' else None,
-                labelStyle={'display': 'inline-flex', 'alignItems': 'center'},
-                inputStyle={'marginRight': '6px'}
-            )
-        ], className='controls-grid-row single-radio-row')
+            html.Div([
+                html.Div([
+                    html.Span("Mode", className='scan-option__label'),
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'colorscaleMode'),
+                        label="Full Scale",
+                        checked=state.colorscale_mode == 'dynamic',
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option'),
+                html.Div([
+                    html.Span("Click Mode", className='scan-option__label'),
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'clickModeRange'),
+                        label="Range Selection",
+                        checked=state.click_mode == 'range',
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option'),
+            ], className='scan-toolbar'),
+        ], className='modern-toggle-row')
     )
 
     if include_range_section:

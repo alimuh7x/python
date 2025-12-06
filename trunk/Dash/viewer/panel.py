@@ -248,8 +248,8 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'value'),
             Output(self.cid('rangeSlider'), 'min'),
             Output(self.cid('rangeSlider'), 'max'),
-            Output(self.cid('colorscaleMode'), 'value'),
-            Output(self.cid('clickModeRange'), 'value'),
+            Output(self.cid('colorscaleMode'), 'checked'),
+            Output(self.cid('clickModeRange'), 'checked'),
         ]
 
         # Only add DMC Switch outputs if line scan is enabled
@@ -276,12 +276,12 @@ class ViewerPanel:
         # Only add DMC Switch inputs if line scan is enabled
         if self.enable_line_scan:
             inputs.extend([
-                Input(self.cid('lineOverlay'), 'checked'),
-            ])
+            Input(self.cid('lineOverlay'), 'checked'),
+        ])
 
         inputs.extend([
-            Input(self.cid('colorscaleMode'), 'value'),
-            Input(self.cid('clickModeRange'), 'value'),
+            Input(self.cid('colorscaleMode'), 'checked'),
+            Input(self.cid('clickModeRange'), 'checked'),
         ])
 
         if self.enable_line_scan:
@@ -300,12 +300,12 @@ class ViewerPanel:
             if self.enable_line_scan:
                 (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range, line_overlay_checked,
-                 colorscale_mode_value, click_mode_range_value,
+                 colorscale_mode_checked, click_mode_range_checked,
                  click_mode_line_checked, scan_direction_value, stored_state) = args
             else:
                 (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range,
-                 colorscale_mode_value, click_mode_range_value, stored_state) = args
+                 colorscale_mode_checked, click_mode_range_checked, stored_state) = args
                 line_overlay_checked = False
                 click_mode_line_checked = False
                 scan_direction_value = 'horizontal'
@@ -370,7 +370,7 @@ class ViewerPanel:
                 state.first_click = None
 
             state.palette = palette_value or fallback_state.palette
-            full_scale_enabled = bool(colorscale_mode_value and 'full' in colorscale_mode_value)
+            full_scale_enabled = bool(colorscale_mode_checked)
             state.colorscale_mode = 'dynamic' if full_scale_enabled else 'normal'
 
             # Handle DMC Switch boolean values and SegmentedControl string value
@@ -438,8 +438,8 @@ class ViewerPanel:
                 [formatted_min, formatted_max],
                 _formatted_range_value(scaled_stats['min']),
                 _formatted_range_value(scaled_stats['max']),
-                ['full'] if state.colorscale_mode == 'dynamic' else [],
-                'range' if state.click_mode == 'range' else None,
+                state.colorscale_mode == 'dynamic',
+                state.click_mode == 'range',
             )
 
             # Add DMC Switch values if line scan is enabled
@@ -459,18 +459,18 @@ class ViewerPanel:
                 Output(self.cid('lineScanInfo'), 'children'),
                 Output(self.cid('state'), 'data', allow_duplicate=True),
                 Input(self.cid('graph'), 'clickData'),
-                Input(self.cid('lineScanDir'), 'checked'),
-                Input(self.cid('clickModeRange'), 'value'),
+                Input(self.cid('lineScanDir'), 'value'),
+                Input(self.cid('clickModeRange'), 'checked'),
                 Input(self.cid('clickModeLine'), 'checked'),
                 State(self.cid('state'), 'data'),
                 prevent_initial_call=True
             )
-            def _update_line_scan(click_data, scan_direction_checked, click_mode_range, click_mode_line_checked, stored_state):
+            def _update_line_scan(click_data, scan_direction_value, click_mode_range_checked, click_mode_line_checked, stored_state):
                 state_data = stored_state or {}
                 state = ViewerState.from_dict(state_data, self.base_state)
 
-                # Update scan direction from DMC Switch (boolean)
-                state.line_scan_direction = 'horizontal' if scan_direction_checked else 'vertical'
+                # Update scan direction from segmented control value
+                state.line_scan_direction = scan_direction_value or 'horizontal'
 
                 # Update click mode from DMC Switch (boolean)
                 state.click_mode = 'linescan' if click_mode_line_checked else 'range'
