@@ -503,7 +503,7 @@ h1.app-title {
 
 .controls-grid-row {
     display: grid;
-    grid-template-columns: minmax(120px, 1fr) minmax(160px, 2fr) minmax(120px, 1fr) minmax(160px, 2fr);
+    grid-template-columns: max-content minmax(160px, 2fr) max-content minmax(160px, 2fr);
     gap: 10px 16px;
     align-items: center;
     padding: 6px 10px;
@@ -517,8 +517,12 @@ h1.app-title {
 
 /* Extended range row with Min, Max, Reset */
 .range-row-extended {
-    grid-template-columns: minmax(120px, 1.2fr) minmax(140px, 1.2fr) minmax(140px, 1.2fr) minmax(110px, 0.8fr);
+    grid-template-columns: max-content minmax(140px, 1.2fr) minmax(140px, 1.2fr) minmax(110px, 0.8fr) auto;
     align-items: stretch;
+}
+
+.range-row-extended .scan-option {
+    justify-self: end;
 }
 
 .controls-row-with-mode {
