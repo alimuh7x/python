@@ -31,7 +31,7 @@ def build_controls(
         html.Div([
             html.Label([
                 html.Span("S", className="label-icon"),
-                "Scalar Field:",
+                "Field:",
             ], className='field-label grid-label'),
             html.Div([
                 dcc.Dropdown(
@@ -80,10 +80,7 @@ def build_controls(
                     placeholder='Max'
                 ),
                 html.Button(
-                    [
-                        html.Img(src='/assets/Reset.png', alt='Reset', className='btn-icon'),
-                        "Reset"
-                    ],
+                    html.Img(src='/assets/Reset.png', alt='Reset', className='btn-icon'),
                     id=component_id(viewer_id, 'reset'),
                     className='btn btn-danger reset-btn'
                 ),
