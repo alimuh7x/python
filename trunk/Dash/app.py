@@ -778,6 +778,7 @@ for tab in TAB_CONFIGS:
             "scale": dataset.get("scale"),
             "units": dataset.get("units"),
             "overrides": dataset.get("overrides"),
+            "enable_line_scan": tab['id'] != 'phase-field',  # Enable for all tabs except phase-field
         }
         try:
             panel = ViewerPanel(app, get_reader, dataset_config)
@@ -796,7 +797,7 @@ def build_tab_children(tab_id):
         return [html.Div("No datasets available for this tab.", className='dataset-empty')]
     cards = []
 
-    # Add main viewer cards with line scan and histogram cards
+    # Add main viewer cards
     for label, panel in panels:
         # Main viewer card
         cards.append(html.Div([
@@ -807,11 +808,14 @@ def build_tab_children(tab_id):
             html.Div(panel.build_layout(), className='dataset-body')
         ], className='dataset-block'))
 
-        # Line scan card
-        cards.append(panel.build_line_scan_card())
+        # Line scan and histogram cards - for all tabs EXCEPT Phase Field
+        if tab_id != 'phase-field':
+            cards.append(panel.build_line_scan_card())
+            # build_histogram_card() returns None (deprecated - now combined with line scan)
+            histogram_card = panel.build_histogram_card()
+            if histogram_card:
+                cards.append(histogram_card)
 
-        # Histogram card
-        cards.append(panel.build_histogram_card())
     if tab_id == 'phase-field':
         for builder in (build_size_details_card, build_grain_distribution_card):
             card = builder()

@@ -176,6 +176,7 @@ class ViewerPanel:
         self.file_path = tab_config.get("file")
         self.dataset_units = tab_config.get("units")
         self.dataset_scale = tab_config.get("scale", 1.0)
+        self.enable_line_scan = tab_config.get("enable_line_scan", True)  # Enable by default
         self.theme_input_id = None
 
         self.reader = self.reader_factory(self.file_path)
@@ -245,8 +246,6 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'min'),
             Output(self.cid('rangeSlider'), 'max'),
             Output(self.cid('colorscaleMode'), 'value'),
-            Output(self.cid('lineScanDir'), 'value'),
-            Output(self.cid('clickMode'), 'value'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -257,13 +256,11 @@ class ViewerPanel:
             Input(self.cid('rangeMax'), 'value'),
             Input(self.cid('rangeSlider'), 'value'),
             Input(self.cid('colorscaleMode'), 'value'),
-            Input(self.cid('lineScanDir'), 'value'),
-            Input(self.cid('clickMode'), 'value'),
             State(self.cid('state'), 'data'),
         )
         def _update_viewer(scalar_value, palette_value,
                            slice_value, slice_input_value, reset_clicks, click_data,
-                           min_val, max_val, slider_range, colorscale_mode_value, line_scan_dir, click_mode, stored_state):
+                           min_val, max_val, slider_range, colorscale_mode_value, stored_state):
             reader = self.reader
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
@@ -326,8 +323,6 @@ class ViewerPanel:
 
             state.palette = palette_value or fallback_state.palette
             state.colorscale_mode = colorscale_mode_value or fallback_state.colorscale_mode
-            state.line_scan_direction = line_scan_dir or fallback_state.line_scan_direction
-            state.click_mode = click_mode or fallback_state.click_mode
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
             scale = descriptor.get('scale', 1.0) or 1.0
@@ -388,99 +383,99 @@ class ViewerPanel:
                 [formatted_min, formatted_max],
                 _formatted_range_value(scaled_stats['min']),
                 _formatted_range_value(scaled_stats['max']),
-                state.colorscale_mode,
-                state.line_scan_direction,
-                state.click_mode
+                state.colorscale_mode
             )
 
-        # Line scan callback
-        @self.app.callback(
-            Output(self.cid('lineScanPlot'), 'figure'),
-            Output(self.cid('lineScanInfo'), 'children'),
-            Output(self.cid('state'), 'data', allow_duplicate=True),
-            Input(self.cid('graph'), 'clickData'),
-            Input(self.cid('lineScanDir'), 'value'),
-            Input(self.cid('clickMode'), 'value'),
-            State(self.cid('state'), 'data'),
-            prevent_initial_call=True
-        )
-        def _update_line_scan(click_data, scan_direction, click_mode, stored_state):
-            state_data = stored_state or {}
-            state = ViewerState.from_dict(state_data, self.base_state)
-
-            # Update scan direction
-            state.line_scan_direction = scan_direction or 'horizontal'
-            state.click_mode = click_mode or 'range'
-
-            # Get click position if available and in linescan mode
-            info_msg = ""
-            if click_data and 'points' in click_data and len(click_data['points']) > 0 and state.click_mode == 'linescan':
-                point = click_data['points'][0]
-                if 'x' in point and 'y' in point:
-                    if state.line_scan_direction == 'horizontal':
-                        state.line_scan_y = point['y']
-                        info_msg = f"Horizontal scan at Y = {point['y']:.2f}"
-                    else:
-                        state.line_scan_x = point['x']
-                        info_msg = f"Vertical scan at X = {point['x']:.2f}"
-            elif state.click_mode == 'linescan':
-                info_msg = "Click heatmap to set line scan position"
-            else:
-                info_msg = "Switch to 'Line Scan' mode to set position by clicking"
-
-            # Get current data
-            descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
-            X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
-                axis=state.axis,
-                index=state.slice_index,
-                scalar_name=descriptor['array'],
-                component=descriptor.get('component'),
-                resolution=self.config["interpolation_resolution"]
+        # Line scan callback - only register if enabled
+        if self.enable_line_scan:
+            @self.app.callback(
+                Output(self.cid('lineScanPlot'), 'figure'),
+                Output(self.cid('lineScanInfo'), 'children'),
+                Output(self.cid('state'), 'data', allow_duplicate=True),
+                Input(self.cid('graph'), 'clickData'),
+                Input(self.cid('lineScanDir'), 'value'),
+                Input(self.cid('clickMode'), 'value'),
+                State(self.cid('state'), 'data'),
+                prevent_initial_call=True
             )
-            Z_grid = Z_grid * state.scale
+            def _update_line_scan(click_data, scan_direction, click_mode, stored_state):
+                state_data = stored_state or {}
+                state = ViewerState.from_dict(state_data, self.base_state)
 
-            # Create line scan plot
-            fig = self._build_line_scan_figure(X_grid, Y_grid, Z_grid, state)
+                # Update scan direction
+                state.line_scan_direction = scan_direction or 'horizontal'
+                state.click_mode = click_mode or 'range'
 
-            return fig, info_msg, state.to_dict()
+                # Get click position if available and in linescan mode
+                info_msg = ""
+                if click_data and 'points' in click_data and len(click_data['points']) > 0 and state.click_mode == 'linescan':
+                    point = click_data['points'][0]
+                    if 'x' in point and 'y' in point:
+                        if state.line_scan_direction == 'horizontal':
+                            state.line_scan_y = point['y']
+                            info_msg = f"Horizontal scan at Y = {point['y']:.2f}"
+                        else:
+                            state.line_scan_x = point['x']
+                            info_msg = f"Vertical scan at X = {point['x']:.2f}"
+                elif state.click_mode == 'linescan':
+                    info_msg = "Click heatmap to set line scan position"
+                else:
+                    info_msg = "Switch to 'Line Scan' mode to set position by clicking"
 
-        # Histogram callback
-        @self.app.callback(
-            Output(self.cid('histogramPlot'), 'figure'),
-            Output(self.cid('histogramField'), 'options'),
-            Output(self.cid('histogramField'), 'value'),
-            Input(self.cid('scalar'), 'value'),
-            Input(self.cid('histogramField'), 'value'),
-            Input(self.cid('histogramBins'), 'value'),
-            State(self.cid('state'), 'data'),
-        )
-        def _update_histogram(scalar_value, histogram_field, bins, stored_state):
-            state_data = stored_state or {}
-            state = ViewerState.from_dict(state_data, self.base_state)
+                # Get current data
+                descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
+                X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
+                    axis=state.axis,
+                    index=state.slice_index,
+                    scalar_name=descriptor['array'],
+                    component=descriptor.get('component'),
+                    resolution=self.config["interpolation_resolution"]
+                )
+                Z_grid = Z_grid * state.scale
 
-            # Update histogram field options based on available scalars
-            field_options = self.scalar_options
+                # Create line scan plot
+                fig = self._build_line_scan_figure(X_grid, Y_grid, Z_grid, state)
 
-            # Set default histogram field
-            if histogram_field is None or ctx.triggered_id == self.cid('scalar'):
-                histogram_field = scalar_value or self.scalar_defs[0]['value']
+                return fig, info_msg, state.to_dict()
 
-            # Get histogram data
-            descriptor = self.scalar_map.get(histogram_field, self.scalar_defs[0])
-            X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
-                axis=state.axis,
-                index=state.slice_index,
-                scalar_name=descriptor['array'],
-                component=descriptor.get('component'),
-                resolution=self.config["interpolation_resolution"]
+        # Histogram callback - only register if enabled
+        if self.enable_line_scan:
+            @self.app.callback(
+                Output(self.cid('histogramPlot'), 'figure'),
+                Output(self.cid('histogramField'), 'options'),
+                Output(self.cid('histogramField'), 'value'),
+                Input(self.cid('scalar'), 'value'),
+                Input(self.cid('histogramField'), 'value'),
+                Input(self.cid('histogramBins'), 'value'),
+                State(self.cid('state'), 'data'),
             )
-            scale = descriptor.get('scale', 1.0) or 1.0
-            Z_grid = Z_grid * scale
+            def _update_histogram(scalar_value, histogram_field, bins, stored_state):
+                state_data = stored_state or {}
+                state = ViewerState.from_dict(state_data, self.base_state)
 
-            # Create histogram
-            fig = self._build_histogram_figure(Z_grid, descriptor['label'], bins or 30)
+                # Update histogram field options based on available scalars
+                field_options = self.scalar_options
 
-            return fig, field_options, histogram_field
+                # Set default histogram field
+                if histogram_field is None or ctx.triggered_id == self.cid('scalar'):
+                    histogram_field = scalar_value or self.scalar_defs[0]['value']
+
+                # Get histogram data
+                descriptor = self.scalar_map.get(histogram_field, self.scalar_defs[0])
+                X_grid, Y_grid, Z_grid, stats = self.reader.get_interpolated_slice(
+                    axis=state.axis,
+                    index=state.slice_index,
+                    scalar_name=descriptor['array'],
+                    component=descriptor.get('component'),
+                    resolution=self.config["interpolation_resolution"]
+                )
+                scale = descriptor.get('scale', 1.0) or 1.0
+                Z_grid = Z_grid * scale
+
+                # Create histogram
+                fig = self._build_histogram_figure(Z_grid, descriptor['label'], bins or 30)
+
+                return fig, field_options, histogram_field
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
 
