@@ -27,7 +27,7 @@ def build_controls(
     """Return control panel stacked above the graph."""
 
     rows = [
-        # Row 1: Scalar Field and Color Map
+        # Row 1: Scalar Field, Color Map, Mode toggle
         html.Div([
             html.Label([
                 html.Span("S", className="label-icon"),
@@ -56,44 +56,7 @@ def build_controls(
                 )
             ], className='dropdown-wrapper')
         ], className='controls-grid-row'),
-
     ]
-
-    # Mode + Range toggles (match right-card styling)
-    rows.append(
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Span("Mode", className='scan-option__label'),
-                    dmc.Switch(
-                        id=component_id(viewer_id, 'colorscaleMode'),
-                        label="Full Scale",
-                        checked=state.colorscale_mode == 'dynamic',
-                        labelPosition="right",
-                        size="xs",
-                        radius="xs",
-                        color="#5c7cfa",
-                        disabled=False,
-                        withThumbIndicator=True,
-                    )
-                ], className='scan-option'),
-                html.Div([
-                    html.Span("Click Mode", className='scan-option__label'),
-                    dmc.Switch(
-                        id=component_id(viewer_id, 'clickModeRange'),
-                        label="Range Selection",
-                        checked=state.click_mode == 'range',
-                        labelPosition="right",
-                        size="xs",
-                        radius="xs",
-                        color="#5c7cfa",
-                        disabled=False,
-                        withThumbIndicator=True,
-                    )
-                ], className='scan-option'),
-            ], className='scan-toolbar'),
-        ], className='modern-toggle-row')
-    )
 
     if include_range_section:
         rows.extend([
@@ -123,25 +86,55 @@ def build_controls(
                     ],
                     id=component_id(viewer_id, 'reset'),
                     className='btn btn-danger reset-btn'
-                )
-            ], className='controls-grid-row range-row-extended'),
-
-            html.Div([
-                dcc.RangeSlider(
-                    id=component_id(viewer_id, 'rangeSlider'),
-                    min=format_range_value(state.range_min),
-                    max=format_range_value(state.range_max),
-                    value=[format_range_value(state.range_min), format_range_value(state.range_max)],
-                    marks=None,
-                    tooltip={"placement": "bottom", "always_visible": True},
-                    className='range-slider-dual',
-                    allowCross=False
                 ),
                 html.Div([
-                    html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), style={'display': 'none'}),
-                    html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), style={'display': 'none'}),
-                ], style={'display': 'none'})
-            ], className='range-slider-row')
+                    html.Span("Click Mode", className='scan-option__label'),
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'clickModeRange'),
+                        label="Range Selection",
+                        checked=state.click_mode == 'range',
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option scan-option--inline'),
+            ], className='controls-grid-row range-row-extended range-row-with-toggle'),
+
+            html.Div([
+                html.Div([
+                    dcc.RangeSlider(
+                        id=component_id(viewer_id, 'rangeSlider'),
+                        min=format_range_value(state.range_min),
+                        max=format_range_value(state.range_max),
+                        value=[format_range_value(state.range_min), format_range_value(state.range_max)],
+                        marks=None,
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        className='range-slider-dual',
+                        allowCross=False
+                    ),
+                    html.Div([
+                        html.Span(id=component_id(viewer_id, 'rangeMinDisplay'), style={'display': 'none'}),
+                        html.Span(id=component_id(viewer_id, 'rangeMaxDisplay'), style={'display': 'none'}),
+                    ], style={'display': 'none'})
+                ], className='range-slider-track'),
+                html.Div([
+                    html.Span("Mode", className='scan-option__label'),
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'colorscaleMode'),
+                        label="Full Scale",
+                        checked=state.colorscale_mode == 'dynamic',
+                        labelPosition="right",
+                        size="xs",
+                        radius="xs",
+                        color="#5c7cfa",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    )
+                ], className='scan-option scan-option--inline'),
+            ], className='range-slider-row range-slider-with-mode')
         ])
 
     rows.append(html.Div([
