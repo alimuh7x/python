@@ -377,7 +377,13 @@ class ViewerPanel:
 
             # Handle DMC Switch boolean values and SegmentedControl string value
             state.line_overlay_visible = bool(line_overlay_checked)
-            state.click_mode = 'linescan' if click_mode_line_checked else 'range'
+            # Decide click mode based on which toggle was interacted with
+            if triggered == self.cid('clickModeRange'):
+                state.click_mode = 'range'
+            elif triggered == self.cid('clickModeLine'):
+                state.click_mode = 'linescan'
+            # Otherwise, keep existing state.click_mode
+
             state.line_scan_direction = scan_direction_value  # SegmentedControl returns 'horizontal' or 'vertical' directly
 
             descriptor = self.scalar_map.get(state.scalar_key, self.scalar_defs[0])
@@ -473,9 +479,6 @@ class ViewerPanel:
 
                 # Update scan direction from segmented control value
                 state.line_scan_direction = scan_direction_value or 'horizontal'
-
-                # Update click mode from DMC Switch (boolean)
-                state.click_mode = 'linescan' if click_mode_line_checked else 'range'
 
                 # Get click position if available and in linescan mode
                 info_msg = ""
