@@ -568,6 +568,14 @@ class ViewerPanel:
 
             # Separate colorbar figure (fixed card width ~90px).
             # Use an invisible scatter with a colorbar so only one bar is visible.
+            # Build explicit tick positions so min/max are always shown.
+            if np.isfinite(zmin_display) and np.isfinite(zmax_display) and zmax_display != zmin_display:
+                tick_vals = np.linspace(zmin_display, zmax_display, 5)
+                tick_text = [f"{v:.3g}" for v in tick_vals]
+            else:
+                tick_vals = [zmin_display]
+                tick_text = [f"{zmin_display:.3g}"]
+
             colorbar_fig = go.Figure()
             colorbar_fig.add_trace(
                 go.Scatter(
@@ -586,7 +594,7 @@ class ViewerPanel:
                                 text=state.scalar_label + (f" ({state.units})" if state.units else ""),
                                 side="right",
                                 font=dict(
-                                    size=14,
+                                    size=20,
                                     family="Montserrat, Arial, sans-serif",
                                     color="#0f1b2b",
                                 ),
@@ -596,8 +604,12 @@ class ViewerPanel:
                             thicknessmode="pixels",
                             x=0.5,
                             xanchor="center",
+                            tickmode="array",
+                            tickvals=tick_vals,
+                            ticktext=tick_text,
+                            ticks="outside",
                             tickfont=dict(
-                                size=11,
+                                size=16,
                                 family="Montserrat, Arial, sans-serif",
                                 color="#0f1b2b",
                             ),

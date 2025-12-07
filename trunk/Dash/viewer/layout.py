@@ -79,14 +79,14 @@ def build_controls(
                     id=component_id(viewer_id, 'rangeMin'),
                     type='number',
                     value=format_range_value(state.range_min),
-                    step=0.001,
+                    step='any',
                     placeholder='Min'
                 ),
                 dcc.Input(
                     id=component_id(viewer_id, 'rangeMax'),
                     type='number',
                     value=format_range_value(state.range_max),
-                    step=0.001,
+                    step='any',
                     placeholder='Max'
                 ),
                 html.Button(

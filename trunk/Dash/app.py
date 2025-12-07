@@ -88,6 +88,9 @@ TAB_CONFIGS = [
                 "id": "elastic",
                 "label": "Elastic Strains",
                 "file_glob": "VTK/ElasticStrains_*.vts",
+                # Store elastic strains in percent for all components
+                "units": "%",
+                "scale": 100.0,
                 "scalars": tensor_scalars('ElasticStrains', 'ε'),
             },
         ],
@@ -99,6 +102,8 @@ TAB_CONFIGS = [
             {
                 "id": "crss",
                 "label": "CRSS",
+                "units": "MPa",
+                "scale": 1e-6,
                 "file_glob": "VTK/CRSS_00001000.vts",
                 "scalars": [
                     {'label': f"CRSS {i}", 'array': f"CRSS_0_{i}"}
@@ -109,6 +114,9 @@ TAB_CONFIGS = [
                 "id": "plastic-strain",
                 "label": "Plastic Strain",
                 "file_glob": "VTK/PlasticStrain_*.vts",
+                # Store plastic strains in percent for all components
+                "units": "%",
+                "scale": 100.0,
                 "scalars": tensor_scalars('PlasticStrain', 'εᵖ'),
             },
         ],
@@ -672,9 +680,10 @@ def strain_series_values(component):
         return None
     comps = data.get('strain_components') or {}
     if component == 'Average':
-        return compute_average_series(comps)
+        avg = compute_average_series(comps)
+        return avg * 100.0 if avg is not None else None
     values = comps.get(component)
-    return np.asarray(values) if values is not None else None
+    return np.asarray(values) * 100.0 if values is not None else None
 
 
 def build_grain_histogram(time_value, bins, fit=False):
@@ -1468,7 +1477,8 @@ if STRESS_STRAIN_DATA:
     )
     def update_stress_strain(components):
         data = STRESS_STRAIN_DATA
-        strain = np.array(data['strain'])
+        # Convert engineering strain to percent for display
+        strain = np.array(data['strain']) * 100.0
         comp_map = data['components']
         labels = {
             "Sigma_xx": "σ_xx",
@@ -1507,7 +1517,7 @@ if STRESS_STRAIN_DATA:
             )
         )
         fig.update_xaxes(
-            title="ε_xx",
+            title="ε_xx (%)",
             title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
             tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
         )
@@ -1541,7 +1551,7 @@ if STRESS_STRAIN_DATA:
     def update_strain_hist(selected_component, bins, fit_value):
         values = strain_series_values(selected_component)
         fit_enabled = bool(fit_value and 'fit' in fit_value)
-        fig, summary = build_histogram_figure(values, "Strain", bins, fit=fit_enabled)
+        fig, summary = build_histogram_figure(values, "Strain (%)", bins, fit=fit_enabled)
         return fig, summary
 
 
