@@ -28,7 +28,7 @@ def build_controls(
 ):
     """Return control panel stacked above the graph."""
 
-    # Row 1: Optional Time Step, Scalar Field, Color Map
+    # Row 1: Optional Time Step, Scalar Field
     first_row_children = []
 
     if time_options:
@@ -58,19 +58,6 @@ def build_controls(
                 id=component_id(viewer_id, 'scalar'),
                 options=scalar_options,
                 value=state.scalar_key,
-                clearable=False,
-                searchable=False,
-            )
-        ], className='dropdown-wrapper'),
-        html.Label([
-            html.Img(src='/assets/color-scale.png', className="label-img"),
-            "Color Map:",
-        ], className='field-label grid-label'),
-        html.Div([
-            dcc.Dropdown(
-                id=component_id(viewer_id, 'palette'),
-                options=palette_options,
-                value=state.palette,
                 clearable=False,
                 searchable=False,
             )
@@ -123,6 +110,19 @@ def build_controls(
             ], className='controls-grid-row range-row-extended range-row-with-toggle'),
 
             html.Div([
+                # Row 3: Color Map icon + dropdown, Range slider, Full Scale toggle
+                html.Label([
+                    html.Img(src='/assets/color-scale.png', className="label-img"),
+                ], className='field-label grid-label'),
+                html.Div([
+                    dcc.Dropdown(
+                        id=component_id(viewer_id, 'palette'),
+                        options=palette_options,
+                        value=state.palette,
+                        clearable=False,
+                        searchable=False,
+                    )
+                ], className='dropdown-wrapper'),
                 html.Div([
                     dcc.RangeSlider(
                         id=component_id(viewer_id, 'rangeSlider'),
