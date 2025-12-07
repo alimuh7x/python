@@ -16,7 +16,7 @@ from utils.vtk_reader import VTKReader
 from viewer import ViewerPanel
 
 
-APP_TITLE = "OPview"
+APP_TITLE = "OPView"
 TENSOR_COMPONENTS = ['xx', 'yy', 'zz', 'xy', 'yz', 'zx']
 
 
@@ -485,8 +485,8 @@ def render_docs():
             <div class="app-header">
                 <div class="top-bar">
                     <div class="top-left">
-                        <img src="/assets/OP_Logo.png" class="app-logo" alt="OP logo">
-                        <h1 class="app-title">OP<span class="app-title-sub">view</span></h1>
+                        <img src="/Logo/OP_Logo.png" class="app-logo" alt="OP logo">
+                        <h1 class="app-title">OPV<span class="app-title-sub">iew</span></h1>
                     </div>
                     <div class="top-right">
                         <a class="doc-link" href="/">Back to App</a>
@@ -1322,10 +1322,10 @@ app.layout = dmc.MantineProvider(
             html.Div([
                 html.Div([
                     html.Div([
-                        html.Img(src='/assets/OP_Logo.png', className='app-logo', alt='OP logo'),
+                        html.Img(src='/assets/OP_Logo_main.png', className='app-logo', alt='OP logo'),
                         html.H1([
-                            "OP",
-                            html.Span("view", className='app-title-sub')
+                            "OPV",
+                            html.Span("iew", className='app-title-sub'),
                         ], className='app-title')
                     ], className='top-left'),
                     html.Div([

@@ -124,7 +124,6 @@ body {
     font-weight: 700;
     background: var(--accent-gradient);
     -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     background-clip: text;
     margin: 0;
     letter-spacing: -0.02em;

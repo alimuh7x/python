@@ -114,7 +114,7 @@ body {
 .app-title-sub {
     font-size: 0.7em;
     text-transform: lowercase;
-    margin-left: 4px;
+    margin-left: 0;
     font-weight: 600;
     color: #ffffff !important;
 }
