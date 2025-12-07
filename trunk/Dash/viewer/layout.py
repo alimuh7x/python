@@ -205,7 +205,7 @@ def build_graph_section(viewer_id: str):
                 # --- Left: Logo card ---
                 html.Div(
                     html.Img(
-                        src='/assets/OP_Logo_main.png',
+                        src='/assets/OP_Logo.png',
                         className='heatmap-logo',
                         alt='OP logo'
                     ),

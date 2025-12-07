@@ -530,12 +530,15 @@ class ViewerPanel:
             slice_disabled = not reader.is_3d
             slice_style = {'marginBottom': '20px'} if reader.is_3d else {'display': 'none'}
 
-            # Determine figure width from original data aspect ratio (Nx, Ny)
+            # Determine figure width from original data aspect ratio (Nx, Ny).
+            # We reserve 40px of top margin inside the figure for the
+            # modebar, so use the *effective* plot height when computing
+            # the width to keep the image square and avoid side gaps.
             nx, ny = self._slice_dimensions(reader, state.axis)
 
-            base_height = 380
+            effective_height = 380 - 40  # fig_height - top_margin
             aspect = nx / max(ny, 1)
-            fig_width = max(300, min(1200, int(base_height * aspect)))
+            fig_width = max(300, min(1200, int(effective_height * aspect)))
             
 
             # Colorscale parameters shared between main heatmap and colorbar
@@ -604,7 +607,9 @@ class ViewerPanel:
             colorbar_fig.update_layout(
                 width=90,
                 height=380,
-                margin=dict(l=0, r=0, t=10, b=10),
+                # Match the top margin of the main heatmap figure
+                # so the colorbar aligns vertically within its card.
+                margin=dict(l=0, r=0, t=40, b=0),
                 xaxis=dict(visible=False),
                 yaxis=dict(visible=False),
                 paper_bgcolor="#ffffff",
@@ -765,8 +770,11 @@ class ViewerPanel:
 
         # Fixed figure dimensions
         fig_height = 380
-        
+
         fig.update_layout(
+            # Preserve data aspect ratio so the image is not
+            # stretched, while leaving some top margin for the
+            # modebar.
             xaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, scaleanchor="y", scaleratio=1),
             yaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, constrain='domain'),
             template     = template,
@@ -775,7 +783,9 @@ class ViewerPanel:
             width        = fig_width,
             paper_bgcolor= bg_color,
             hovermode    = 'closest',
-            margin       = dict(l=0, r=0, t=0, b=0),
+            # Add some top margin so Plotly's modebar
+            # sits above the main heatmap content.
+            margin       = dict(l=0, r=0, t=40, b=0),
             plot_bgcolor = bg_color,
             font         = dict(family=font_family, color=text_color)
         )
