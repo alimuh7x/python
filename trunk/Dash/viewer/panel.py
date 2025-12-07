@@ -801,7 +801,7 @@ class ViewerPanel:
                     type="line",
                     x0=X_grid[0, 0], x1=X_grid[0, -1],
                     y0=state.line_scan_y, y1=state.line_scan_y,
-                    line=dict(color="yellow", width=2, dash="dash"),
+                    line=dict(color="#ffffff", width=3, dash="dash"),
                     layer="above"
                 )
             elif state.line_scan_direction == 'vertical' and state.line_scan_x is not None:
@@ -809,7 +809,7 @@ class ViewerPanel:
                     type="line",
                     x0=state.line_scan_x, x1=state.line_scan_x,
                     y0=Y_grid[0, 0], y1=Y_grid[-1, 0],
-                    line=dict(color="yellow", width=2, dash="dash"),
+                    line=dict(color="#ffffff", width=3, dash="dash"),
                     layer="above"
                 )
 
