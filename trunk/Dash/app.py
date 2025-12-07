@@ -887,6 +887,7 @@ def build_size_details_card():
     if not value_labels:
         return None
     default_time = time_options[0]['value'] if time_options else None
+
     return html.Div([
         html.Div([
             html.Span(className='dataset-accent'),
@@ -894,32 +895,32 @@ def build_size_details_card():
         ], className='dataset-header'),
         html.Div([
             html.Div([
-                html.Label('Time Step', className='textdata-label'),
-                dcc.Dropdown(
-                    id='size-card-time',
-                    options=time_options,
-                    value=default_time,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Chart Style', className='textdata-label'),
-                dcc.RadioItems(
-                    id='size-card-mode',
-                    options=[
-                        {'label': 'Bar', 'value': 'bar'},
-                        {'label': 'Line', 'value': 'line'}
-                    ],
-                    value='bar',
-                    inline=True,
-                    className='textdata-radio',
-                    labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
-                    inputStyle={'marginRight': '4px'}
-                )
-            ], className='textdata-control'),
-        ], className='textdata-controls'),
-        html.Div([
+                html.Div([
+                    html.Label('Time Step', className='textdata-label'),
+                    dcc.Dropdown(
+                        id='size-card-time',
+                        options=time_options,
+                        value=default_time,
+                        clearable=False,
+                        className='textdata-input'
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Chart Style', className='textdata-label'),
+                    dcc.RadioItems(
+                        id='size-card-mode',
+                        options=[
+                            {'label': 'Bar', 'value': 'bar'},
+                            {'label': 'Line', 'value': 'line'}
+                        ],
+                        value='bar',
+                        inline=True,
+                        className='textdata-radio',
+                        labelStyle={'display': 'inline-flex', 'alignItems': 'center', 'marginRight': '12px'},
+                        inputStyle={'marginRight': '4px'}
+                    )
+                ], className='textdata-control'),
+            ], className='textdata-controls'),
             dcc.Graph(id='size-card-main', className='textdata-plot'),
             dcc.Graph(id='size-card-line', className='textdata-plot')
         ], className='textdata-graphs')
@@ -951,38 +952,38 @@ def build_grain_distribution_card():
         ], className='dataset-header'),
         html.Div([
             html.Div([
-                html.Label('Time Step', className='textdata-label'),
-                dcc.Dropdown(
-                    id='grain-dist-time',
-                    options=time_options,
-                    value=default_time,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Number of Bins', className='textdata-label'),
-                dcc.Slider(
-                    id='grain-dist-bins',
-                    min=5,
-                    max=50,
-                    step=5,
-                    value=default_bins,
-                    marks={10: '10', 25: '25', 40: '40'},
-                    tooltip={"placement": "bottom", "always_visible": False}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Analysis', className='textdata-label'),
-                dcc.Checklist(
-                    id='grain-dist-fit',
-                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                    value=[],
-                    className='hist-toggle'
-                )
-            ], className='textdata-control')
-        ], className='textdata-controls'),
-        html.Div([
+                html.Div([
+                    html.Label('Time Step', className='textdata-label'),
+                    dcc.Dropdown(
+                        id='grain-dist-time',
+                        options=time_options,
+                        value=default_time,
+                        clearable=False,
+                        className='textdata-input'
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Number of Bins', className='textdata-label'),
+                    dcc.Slider(
+                        id='grain-dist-bins',
+                        min=5,
+                        max=50,
+                        step=5,
+                        value=default_bins,
+                        marks={10: '10', 25: '25', 40: '40'},
+                        tooltip={"placement": "bottom", "always_visible": False}
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Analysis', className='textdata-label'),
+                    dcc.Checklist(
+                        id='grain-dist-fit',
+                        options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                        value=[],
+                        className='hist-toggle'
+                    )
+                ], className='textdata-control')
+            ], className='textdata-controls'),
             dcc.Graph(id='grain-dist-fig', figure=default_fig, className='textdata-plot')
         ], className='textdata-graphs'),
         dcc.Markdown(default_summary, id='grain-dist-summary', className='hist-summary', mathjax=True)
@@ -1005,6 +1006,7 @@ def build_stress_strain_card():
             html.H3('Stress–Strain Curves', className='dataset-title')
         ], className='dataset-header'),
         html.Div([
+        html.Div([
             html.Div([
                 html.Label('Components', className='textdata-label'),
                 dcc.Checklist(
@@ -1017,7 +1019,6 @@ def build_stress_strain_card():
                 )
             ], className='textdata-control')
         ], className='textdata-controls'),
-        html.Div([
             dcc.Graph(id='stress-strain-fig', className='textdata-plot')
         ], className='textdata-graphs')
     ], className='dataset-block textdata-card')
@@ -1046,38 +1047,38 @@ def build_stress_hist_card():
         ], className='dataset-header'),
         html.Div([
             html.Div([
-                html.Label('Component', className='textdata-label'),
-                dcc.Dropdown(
-                    id='stress-hist-component',
-                    options=options,
-                    value=default_value,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Bins', className='textdata-label'),
-                dcc.Slider(
-                    id='stress-hist-bins',
-                    min=5,
-                    max=100,
-                    step=5,
-                    value=default_bins,
-                    marks={10: '10', 50: '50', 90: '90'},
-                    tooltip={"placement": "bottom", "always_visible": False}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Analysis', className='textdata-label'),
-                dcc.Checklist(
-                    id='stress-hist-fit',
-                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                    value=[],
-                    className='hist-toggle'
-                )
-            ], className='textdata-control')
-        ], className='textdata-controls'),
-        html.Div([
+                html.Div([
+                    html.Label('Component', className='textdata-label'),
+                    dcc.Dropdown(
+                        id='stress-hist-component',
+                        options=options,
+                        value=default_value,
+                        clearable=False,
+                        className='textdata-input'
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Bins', className='textdata-label'),
+                    dcc.Slider(
+                        id='stress-hist-bins',
+                        min=5,
+                        max=100,
+                        step=5,
+                        value=default_bins,
+                        marks={10: '10', 50: '50', 90: '90'},
+                        tooltip={"placement": "bottom", "always_visible": False}
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Analysis', className='textdata-label'),
+                    dcc.Checklist(
+                        id='stress-hist-fit',
+                        options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                        value=[],
+                        className='hist-toggle'
+                    )
+                ], className='textdata-control')
+            ], className='textdata-controls'),
             dcc.Graph(id='stress-hist-fig', figure=figure, className='textdata-plot')
         ], className='textdata-graphs'),
         dcc.Markdown(summary, id='stress-hist-summary', className='hist-summary', mathjax=True)
@@ -1102,38 +1103,38 @@ def build_strain_hist_card():
         ], className='dataset-header'),
         html.Div([
             html.Div([
-                html.Label('Component', className='textdata-label'),
-                dcc.Dropdown(
-                    id='strain-hist-component',
-                    options=options,
-                    value=default_value,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Bins', className='textdata-label'),
-                dcc.Slider(
-                    id='strain-hist-bins',
-                    min=5,
-                    max=100,
-                    step=5,
-                    value=default_bins,
-                    marks={10: '10', 50: '50', 90: '90'},
-                    tooltip={"placement": "bottom", "always_visible": False}
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Analysis', className='textdata-label'),
-                dcc.Checklist(
-                    id='strain-hist-fit',
-                    options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                    value=[],
-                    className='hist-toggle'
-                )
-            ], className='textdata-control')
-        ], className='textdata-controls'),
-        html.Div([
+                html.Div([
+                    html.Label('Component', className='textdata-label'),
+                    dcc.Dropdown(
+                        id='strain-hist-component',
+                        options=options,
+                        value=default_value,
+                        clearable=False,
+                        className='textdata-input'
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Bins', className='textdata-label'),
+                    dcc.Slider(
+                        id='strain-hist-bins',
+                        min=5,
+                        max=100,
+                        step=5,
+                        value=default_bins,
+                        marks={10: '10', 50: '50', 90: '90'},
+                        tooltip={"placement": "bottom", "always_visible": False}
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Analysis', className='textdata-label'),
+                    dcc.Checklist(
+                        id='strain-hist-fit',
+                        options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
+                        value=[],
+                        className='hist-toggle'
+                    )
+                ], className='textdata-control')
+            ], className='textdata-controls'),
             dcc.Graph(id='strain-hist-fig', figure=figure, className='textdata-plot')
         ], className='textdata-graphs'),
         dcc.Markdown(summary, id='strain-hist-summary', className='hist-summary', mathjax=True)
@@ -1160,6 +1161,7 @@ def build_crss_card():
             html.H3('CRSS Evolution', className='dataset-title')
         ], className='dataset-header'),
         html.Div([
+        html.Div([
             html.Div([
                 html.Label('Components', className='textdata-label'),
                 dcc.Checklist(
@@ -1170,7 +1172,6 @@ def build_crss_card():
                 )
             ], className='textdata-control crss-control')
         ], className='textdata-controls'),
-        html.Div([
             dcc.Graph(id='crss-avg-fig', figure=fig, className='textdata-plot')
         ], className='textdata-graphs')
     ], className='dataset-block textdata-card')

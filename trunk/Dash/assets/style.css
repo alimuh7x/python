@@ -25,6 +25,9 @@
     --radius-md: 12px;
     --radius-sm: 8px;
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Standard control height (inner content) */
+    --control-height: 32px;
 }
 
 body {
@@ -334,7 +337,7 @@ h1.app-title {
     border-radius: 10px;
     border: 1px solid #e0e7f3;
     box-shadow: 0 2px 8px rgba(24, 53, 104, 0.04);
-    padding: 10px 12px;
+    padding: 16px 16px;
 }
 
 .textdata-control {
@@ -405,6 +408,7 @@ h1.app-title {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding: 16px
 }
 
 .textdata-plot {
@@ -519,7 +523,7 @@ h1.app-title {
 /* Extended range row with Min, Max, Reset */
 .range-row-extended {
     grid-template-columns: max-content minmax(140px, 1.2fr) minmax(140px, 1.2fr) auto auto;
-    align-items: stretch;
+    align-items: center;
     place-items: center;
 }
 
@@ -548,8 +552,9 @@ h1.app-title {
     background: #fff;
     border: 1px solid rgba(15, 27, 43, 0.08);
     border-radius: 14px;
-    padding: 10px 14px;
-    margin-bottom: 18px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    margin-bottom: 6px;
 }
 
 .scan-toolbar {
@@ -570,13 +575,15 @@ h1.app-title {
     border: 1px solid rgba(24, 53, 104, 0.12);
     border-radius: 8px;
     padding: 2px 10px;
-    min-height: 32px;
+    height: var(--control-height);
+    min-height: var(--control-height);
     box-shadow: 0 2px 4px rgba(15, 27, 43, 0.05);
 }
 
 .scan-option--inline {
     padding: 4px 12px;
-    min-height: 32px;
+    height: var(--control-height);
+    min-height: var(--control-height);
 }
 
 .scan-option--direction {
@@ -842,8 +849,8 @@ h1.app-title {
 
 /* Range slider row - slider + mode toggle */
 .range-slider-row {
-    padding: 0 6px;
-    margin-top: -4px;
+    padding: 6px 10px;
+    margin-top: 0;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     column-gap: 16px;
@@ -862,7 +869,7 @@ h1.app-title {
 .range-slider-dual {
     margin: 8px 0 4px 0;
     padding: 0 8px;
-    height: 30px;
+    height: var(--control-height);
 }
 
 /* Dash RangeSlider uses different class names */
@@ -1070,8 +1077,8 @@ input[type="text"] {
     font-weight: 500;
     box-sizing: border-box;
     color: var(--text-main);
-    min-height: 32px !important;
-    height: 32px;
+    min-height: var(--control-height) !important;
+    height: var(--control-height) !important;
     box-shadow: inset 0 1px 2px rgba(185, 185, 185, 0.04);
 }
 
@@ -1087,8 +1094,8 @@ input[type="text"] {
     font-weight: 500;
     box-sizing: border-box;
     color: var(--text-main);
-    min-height: 16px !important;
-    height: 16px;
+    min-height: var(--control-height) !important;
+    height: var(--control-height) !important;
     overflow: visible !important;
     box-shadow: inset 0 1px 2px rgba(24, 53, 104, 0.04);
 }
@@ -1106,7 +1113,7 @@ input[type="text"] {
 
 .Select-placeholder,
 .Select-value-label {
-    line-height: 16px !important;
+    line-height: var(--control-height) !important;
 }
 
 input:focus,
@@ -1139,20 +1146,19 @@ input:focus,
 
 /* Compact variant for the RANGE reset button */
 .btn.reset-btn {
-    padding        : 0px;
-    min-width      : 28px;
-    min-height     : 28px;
-    width          : 32px;
-    height         : 32px;
-    border-radius  : 4px;
-
-    display        : inline-flex;
-    align-items    : center;
+    padding: 0;
+    min-width: 28px;
+    min-height: var(--control-height);
+    width: 32px;
+    height: var(--control-height);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
-    border         : 0.5px
-    background     : #ffffff;
-    box-shadow     : 0 2px 4px rgba(15, 27, 43, 0.12);
-    transition     : transform 0.15s ease, box-shadow 0.2s ease;
+    border: 0.5px solid rgba(24, 53, 104, 0.18);
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(15, 27, 43, 0.12);
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .btn-icon {
@@ -1232,6 +1238,17 @@ input:focus,
     width: 100% !important;
     height: 380px !important;
     flex: 1;
+}
+
+/* Center Plotly SVG inside its plot container */
+.js-plotly-plot .plot-container {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.js-plotly-plot .svg-container {
+    flex: 0 0 auto;
 }
 
 /* Toast */

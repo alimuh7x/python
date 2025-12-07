@@ -79,12 +79,12 @@ def make_dynamic_colorscale(min_val, max_val, blue_cut, red_cut, colors):
 
         # Calculate midpoints for smooth transitions
         p_black_white = (p_min + p_blue) / 2
-        p_blue_white = (p_blue + p_red) / 2
-        p_red_white = (p_red + p_max) / 2
+        p_blue_white  = (p_blue + p_red) / 2
+        p_red_white   = (p_red + p_max) / 2
 
         colorscale = [
-            [p_min,         colors[0]],           # Black at minimum
-            [p_black_white, colors[2]],   # White midpoint
+            [p_min,         colors[0]], # Black at minimum
+            [p_black_white, colors[2]], # White midpoint
             [p_blue,        colors[1]],          # Blue at blue_cut
             [p_blue_white,  colors[2]],    # White midpoint
             [p_red,         colors[3]],           # Red at red_cut
@@ -133,7 +133,9 @@ def make_dynamic_colorscale(min_val, max_val, blue_cut, red_cut, colors):
             [0.0, colors[1]],             # Blue at minimum
             [0.5, colors[2]],             # White at midpoint
             [1.0, colors[3]]              # Red at maximum
+
         ]
+
 
     return colorscale
 

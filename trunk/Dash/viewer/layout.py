@@ -195,6 +195,7 @@ def build_line_scan_card(viewer_id: str, state):
             html.H3('Line Scan & Histogram Analysis', className='dataset-title')
         ], className='dataset-header'),
 
+        html.Div([
         # Line Scan Section - uniform toolbar
         html.Div([
             html.Div([
@@ -239,7 +240,6 @@ def build_line_scan_card(viewer_id: str, state):
                 ], className='scan-option scan-option--direction'),
             ], className='scan-toolbar'),
         ], className='modern-toggle-row'),
-        html.Div([
             dcc.Graph(id=component_id(viewer_id, 'lineScanPlot'), className='textdata-plot')
         ], className='textdata-graphs'),
         html.Div(id=component_id(viewer_id, 'lineScanInfo'), className='toast-anchor', style={'marginTop': '8px', 'marginBottom': '16px', 'fontSize': '12px', 'color': '#666'}),
@@ -247,29 +247,29 @@ def build_line_scan_card(viewer_id: str, state):
         # Histogram Section (below line scan)
         html.Div([
             html.Div([
-                html.Label('Histogram Field', className='textdata-label'),
-                dcc.Dropdown(
-                    id=component_id(viewer_id, 'histogramField'),
-                    options=[],  # Will be populated dynamically
-                    value=None,
-                    clearable=False,
-                    className='textdata-input'
-                )
-            ], className='textdata-control'),
-            html.Div([
-                html.Label('Number of Bins', className='textdata-label'),
-                dcc.Slider(
-                    id=component_id(viewer_id, 'histogramBins'),
-                    min=10,
-                    max=100,
-                    step=5,
-                    value=30,
-                    marks={10: '10', 50: '50', 100: '100'},
-                    tooltip={"placement": "bottom", "always_visible": False}
-                )
-            ], className='textdata-control'),
-        ], className='textdata-controls'),
-        html.Div([
+                html.Div([
+                    html.Label('Histogram Field', className='textdata-label'),
+                    dcc.Dropdown(
+                        id=component_id(viewer_id, 'histogramField'),
+                        options=[],  # Will be populated dynamically
+                        value=None,
+                        clearable=False,
+                        className='textdata-input'
+                    )
+                ], className='textdata-control'),
+                html.Div([
+                    html.Label('Number of Bins', className='textdata-label'),
+                    dcc.Slider(
+                        id=component_id(viewer_id, 'histogramBins'),
+                        min=10,
+                        max=100,
+                        step=5,
+                        value=30,
+                        marks={10: '10', 50: '50', 100: '100'},
+                        tooltip={"placement": "bottom", "always_visible": False}
+                    )
+                ], className='textdata-control'),
+            ], className='textdata-controls'),
             dcc.Graph(id=component_id(viewer_id, 'histogramPlot'), className='textdata-plot')
         ], className='textdata-graphs')
     ], className='dataset-block textdata-card')
