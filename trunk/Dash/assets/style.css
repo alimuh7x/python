@@ -337,7 +337,7 @@ h1.app-title {
     border-radius: 10px;
     border: 1px solid #e0e7f3;
     box-shadow: 0 2px 8px rgba(24, 53, 104, 0.04);
-    padding: 16px 16px;
+    padding: 10px 10px;
 }
 
 .textdata-control {
@@ -507,8 +507,8 @@ h1.app-title {
 
 .controls-grid-row {
     display: grid;
-    grid-template-columns: max-content minmax(160px, 2fr) max-content minmax(160px, 2fr);
-    gap: 10px 16px;
+    grid-template-columns: max-content minmax(140px, 1fr) max-content minmax(140px, 1.2fr) max-content minmax(140px, 1.2fr);
+    gap: 10px 6px;
     align-items: center;
     padding: 6px 10px;
     border-radius: 10px;
@@ -634,7 +634,7 @@ h1.app-title {
 }
 
 .scan-option .mantine-Switch-root[data-checked="true"] .mantine-Switch-track {
-    background: #5c7cfa !important;
+    background: #c50623 !important;
 }
 
 .scan-option--direction .mantine-SegmentedControl-root {
@@ -736,8 +736,9 @@ h1.app-title {
 
 .dropdown-wrapper .Select,
 .dropdown-wrapper .dash-dropdown {
-    width: 100%;
-    font-size: 0.85rem;
+    width: 110%;
+    height: 90%;
+    font-size: 0.75rem;
     font-family: 'Inter', sans-serif;
 }
 
@@ -1083,14 +1084,15 @@ input[type="text"] {
 }
 
 .Select-control {
-    width: 100% !important;
+    width: 80% !important;
+    height: 80% !important;
     padding: 0px 8px;
     border-radius: 7px !important;
     border: 1.5px solid #cbd5e1 !important;
     background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
     transition: var(--transition);
     font-family: inherit;
-    font-size: 0.85rem;
+    font-size: 0.25rem;
     font-weight: 500;
     box-sizing: border-box;
     color: var(--text-main);

@@ -764,11 +764,16 @@ tab_datasets = {}
 for tab in TAB_CONFIGS:
     datasets = []
     for dataset in tab.get("datasets", []):
-        file_path = dataset.get("file")
+        # Collect all available files for this dataset (time steps)
+        files = []
         if dataset.get("file_glob"):
-            file_path = latest_file(dataset["file_glob"])
-        if not file_path:
+            files = sorted(glob(dataset["file_glob"]))
+        elif dataset.get("file"):
+            files = [dataset["file"]]
+        if not files:
             continue
+        # Default to latest file for initial view
+        file_path = files[-1]
         dataset_config = {
             "id": f"{tab['id']}-{dataset['id']}",
             "label": dataset["label"],
@@ -776,6 +781,7 @@ for tab in TAB_CONFIGS:
             "colorA": dataset.get("colorA"),
             "colorB": dataset.get("colorB"),
             "file": file_path,
+            "files": files,
             "scale": dataset.get("scale"),
             "units": dataset.get("units"),
             "overrides": dataset.get("overrides"),

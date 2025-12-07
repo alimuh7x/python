@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
@@ -175,7 +176,11 @@ class ViewerPanel:
             tab_config.get("colorA", self.config["colorA"]),
             tab_config.get("colorB", self.config["colorB"])
         )
+        # Time-step handling: list of all files for this dataset
+        self.files = tab_config.get("files") or []
         self.file_path = tab_config.get("file")
+        if not self.file_path and self.files:
+            self.file_path = self.files[-1]
         self.dataset_units = tab_config.get("units")
         self.dataset_scale = tab_config.get("scale", 1.0)
         self.enable_line_scan = tab_config.get("enable_line_scan", True)  # Enable by default
@@ -186,6 +191,10 @@ class ViewerPanel:
         self.scalar_options = [{'label': d['label'], 'value': d['value']} for d in self.scalar_defs]
         self.scalar_map = {d['value']: d for d in self.scalar_defs}
         self.palette_options = [{'label': name.replace("-", " ").title(), 'value': name} for name in self.PALETTES.keys()]
+
+        # Build time-step options (one per file), if multiple files are available
+        self.time_options = self._build_time_options(self.files)
+        self.time_value = self.file_path if self.file_path else (self.time_options[-1]['value'] if self.time_options else None)
 
         if not self.scalar_defs:
             raise ValueError(f"No scalar definitions available for dataset {self.id}")
@@ -201,6 +210,21 @@ class ViewerPanel:
         """Component id helper."""
         return component_id(self.id, suffix)
 
+    def _build_time_options(self, files):
+        """Return dropdown options for available time-step files.
+
+        Labels show only the numeric time step extracted from the filename,
+        while values remain full file paths.
+        """
+        options = []
+        for path in sorted(files):
+            name = Path(path).name
+            # Extract last numeric group from filename, e.g. PhaseField_00001000.vts → "1000"
+            step = "".join(ch for ch in name.split(".")[0][::-1] if ch.isdigit())[::-1]
+            label = step.lstrip("0") or step or name
+            options.append({'label': label, 'value': path})
+        return options
+
     def build_layout(self):
         """Return Dash layout for this tab."""
         return build_tab_layout(
@@ -211,6 +235,8 @@ class ViewerPanel:
             slider_max=self.initial_slider_max,
             axis_label=self.axis_label,
             palette_options=self.palette_options,
+             time_options=self.time_options,
+             time_value=self.time_value,
             include_range_section=True,
             include_hidden_line_toggle=not self.enable_line_scan
         )
@@ -264,6 +290,7 @@ class ViewerPanel:
 
         # Build inputs list - conditionally include DMC Switch inputs
         inputs = [
+            Input(self.cid('time'), 'value'),
             Input(self.cid('scalar'), 'value'),
             Input(self.cid('palette'), 'value'),
             Input(self.cid('slice'), 'value'),
@@ -300,24 +327,32 @@ class ViewerPanel:
         def _update_viewer(*args):
             # Parse args based on whether line scan is enabled
             if self.enable_line_scan:
-                (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
+                (time_value, scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range, line_overlay_checked,
                  colorscale_mode_checked, click_mode_range_checked,
                  click_mode_line_checked, scan_direction_value, stored_state) = args
             else:
-                (scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
+                (time_value, scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range,
                  colorscale_mode_checked, click_mode_range_checked, stored_state) = args
                 line_overlay_checked = False
                 click_mode_line_checked = False
                 scan_direction_value = 'horizontal'
-            reader = self.reader
+            # Choose file path based on time selection (fallback to current/default)
+            if time_value:
+                file_path = time_value
+            else:
+                state_data = stored_state or {}
+                file_path = state_data.get('file_path') or self.file_path
+
+            reader = self.reader_factory(file_path)
             state_data = stored_state or {}
             default_value = self.scalar_defs[0]['value']
             fallback_value = state_data.get('scalar_key', default_value)
             if fallback_value not in self.scalar_map:
                 fallback_value = default_value
-            fallback_state = self._build_state(reader, self.file_path, fallback_value)
+            # Fallback state should reflect the currently selected file
+            fallback_state = self._build_state(reader, file_path, fallback_value)
 
             # Ensure colorscale_mode is in state_data for backward compatibility
             if stored_state and 'colorscale_mode' not in stored_state:
@@ -332,6 +367,8 @@ class ViewerPanel:
                 min_val = state.range_min
                 max_val = state.range_max
                 palette_value = fallback_state.palette
+                # Keep current file when resetting other controls
+                state.file_path = file_path
 
             if scalar_value and scalar_value in self.scalar_map and scalar_value != state.scalar_key:
                 descriptor = self.scalar_map[scalar_value]
@@ -340,6 +377,12 @@ class ViewerPanel:
                 state.click_count = 0
                 state.first_click = None
                 state.clicked_message = None
+                range_needs_reset = True
+            # Handle explicit time step change
+            if triggered == self.cid('time') and time_value:
+                # When file changes, reset slice index and ranges to new dataset stats
+                state.file_path = file_path
+                state.slice_index = 0
                 range_needs_reset = True
 
             if triggered in {self.cid('slice'), self.cid('sliceInput')}:
@@ -401,6 +444,8 @@ class ViewerPanel:
             scaled_stats = {k: stats[k] * scale for k in stats}
             state.scale = scale
             state.units = units
+            # Ensure state.file_path tracks the active file used to compute stats
+            state.file_path = file_path
 
             if range_needs_reset:
                 state.range_min = scaled_stats['min']

@@ -21,41 +21,64 @@ def build_controls(
     slider_max,
     axis_label,
     palette_options,
+    time_options=None,
+    time_value=None,
     include_range_section: bool = True,
     include_hidden_line_toggle: bool = False,
 ):
     """Return control panel stacked above the graph."""
 
-    rows = [
-        # Row 1: Scalar Field, Color Map, Mode toggle
-        html.Div([
+    # Row 1: Optional Time Step, Scalar Field, Color Map
+    first_row_children = []
+
+    if time_options:
+        first_row_children.extend([
             html.Label([
-                html.Span("S", className="label-icon"),
-                "Field:",
+                html.Span("t", className="label-icon"),
+                "Time Step:",
             ], className='field-label grid-label'),
             html.Div([
                 dcc.Dropdown(
-                    id=component_id(viewer_id, 'scalar'),
-                    options=scalar_options,
-                    value=state.scalar_key,
+                    id=component_id(viewer_id, 'time'),
+                    options=time_options,
+                    value=time_value,
                     clearable=False,
                     searchable=False,
                 )
             ], className='dropdown-wrapper'),
-            html.Label([
-                html.Img(src='/assets/color-scale.png', className="label-img"),
-                "Color Map:",
-            ], className='field-label grid-label'),
-            html.Div([
-                dcc.Dropdown(
-                    id=component_id(viewer_id, 'palette'),
-                    options=palette_options,
-                    value=state.palette,
-                    clearable=False,
-                    searchable=False,
-                )
-            ], className='dropdown-wrapper')
-        ], className='controls-grid-row'),
+        ])
+
+    first_row_children.extend([
+        html.Label([
+            html.Span("S", className="label-icon"),
+            "Field:",
+        ], className='field-label grid-label'),
+        html.Div([
+            dcc.Dropdown(
+                id=component_id(viewer_id, 'scalar'),
+                options=scalar_options,
+                value=state.scalar_key,
+                clearable=False,
+                searchable=False,
+            )
+        ], className='dropdown-wrapper'),
+        html.Label([
+            html.Img(src='/assets/color-scale.png', className="label-img"),
+            "Color Map:",
+        ], className='field-label grid-label'),
+        html.Div([
+            dcc.Dropdown(
+                id=component_id(viewer_id, 'palette'),
+                options=palette_options,
+                value=state.palette,
+                clearable=False,
+                searchable=False,
+            )
+        ], className='dropdown-wrapper'),
+    ])
+
+    rows = [
+        html.Div(first_row_children, className='controls-grid-row'),
     ]
 
     if include_range_section:
@@ -92,7 +115,7 @@ def build_controls(
                         labelPosition="right",
                         size="xs",
                         radius="xs",
-                        color="#5c7cfa",
+                        color="#c50623",
                         disabled=False,
                         withThumbIndicator=True,
                     )
@@ -124,7 +147,7 @@ def build_controls(
                         labelPosition="right",
                         size="xs",
                         radius="xs",
-                        color="#5c7cfa",
+                        color="#c50623",
                         disabled=False,
                         withThumbIndicator=True,
                     )
@@ -207,7 +230,7 @@ def build_line_scan_card(viewer_id: str, state):
                         labelPosition="right",
                         size="xs",
                         radius="xs",
-                        color="#5c7cfa",
+                        color="#c50623",
                         disabled=False,
                         withThumbIndicator=True,
                     )
@@ -220,7 +243,7 @@ def build_line_scan_card(viewer_id: str, state):
                         labelPosition="right",
                         size="xs",
                         radius="xs",
-                        color="#5c7cfa",
+                        color="#c50623",
                         disabled=False,
                         withThumbIndicator=True,
                     )
@@ -234,7 +257,7 @@ def build_line_scan_card(viewer_id: str, state):
                             {'label': '↔ Horizontal', 'value': 'horizontal'},
                             {'label': '↕ Vertical', 'value': 'vertical'},
                         ],
-                        color="#5c7cfa",
+                        color="#c50623",
                         size="sm",
                     )
                 ], className='scan-option scan-option--direction'),
@@ -288,6 +311,8 @@ def build_tab_layout(
     slider_max,
     axis_label,
     palette_options,
+    time_options=None,
+    time_value=None,
     include_range_section=True,
     include_hidden_line_toggle=False
 ):
@@ -302,6 +327,8 @@ def build_tab_layout(
                 slider_max,
                 axis_label,
                 palette_options,
+                time_options=time_options,
+                time_value=time_value,
                 include_range_section=include_range_section,
                 include_hidden_line_toggle=include_hidden_line_toggle
             ),
