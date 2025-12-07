@@ -184,30 +184,73 @@ def build_controls(
 
     return html.Div(rows, className='control-panel panel-card')
 
-
 def build_graph_section(viewer_id: str):
-    """Graph container - just the main heatmap."""
+    """Graph container - main heatmap block."""
     return html.Div([
+
+        # -------------------------
+        # Top bar (title + buttons)
+        # -------------------------
         html.Div([
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
-            html.Div([
-                html.Button("⤓", title="Download image", className="icon-btn"),
-                html.Button("⤢", title="Fit view", className="icon-btn"),
-                html.Button("⟲", title="Reset view", className="icon-btn"),
-            ], className="graph-actions")
         ], className="graph-topbar"),
-        dcc.Graph(
-            id=component_id(viewer_id, 'graph'),
-            className='heatmap-graph',
-            config={
-                'displayModeBar': True,
-                'displaylogo': False,
-                'responsive': False,
-                'toImageButtonOptions': {'scale': 4}
-            }
-        ),
+
+
+        # -------------------------
+        # Centered Heatmap Section
+        # -------------------------
+        html.Div([       # <-- ✔ this must be heatmap-wrapper
+            html.Div([   # <-- ✔ this must be heatmap-row (cards with gap)
+
+                # --- Left: Logo card ---
+                html.Div(
+                    html.Img(
+                        src='/assets/OP_Logo_main.png',
+                        className='heatmap-logo',
+                        alt='OP logo'
+                    ),
+                    className='heatmap-logo-card'
+                ),
+
+                # --- Middle: Heatmap card ---
+                html.Div(
+                    dcc.Graph(
+                        id=component_id(viewer_id, 'graph'),
+                        className='heatmap-main-graph',
+                        config={
+                            'displayModeBar': True,
+                            'displaylogo': False,
+                            'responsive': False,
+                            'toImageButtonOptions': {'scale': 4}
+                        }
+                    ),
+                    id=component_id(viewer_id, 'heatmapCard'),
+                    className='heatmap-main-card',
+                    style={'width': '600px', 'height': '380px'}
+                ),
+
+                # --- Right: Colorbar card ---
+                html.Div(
+                    dcc.Graph(
+                        id=component_id(viewer_id, 'colorbar'),
+                        className='heatmap-colorbar-graph',
+                        config={
+                            'displayModeBar': False,
+                            'displaylogo': False,
+                            'responsive': False
+                        }
+                    ),
+                    className='heatmap-colorbar-card',
+                    style={'width': '90px', 'height': '380px'}
+                ),
+
+            ], className='heatmap-row'),   # <-- correct
+        ], className='heatmap-wrapper'),   # <-- correct
+
         html.Div(id=component_id(viewer_id, 'clickInfo'), className='toast-anchor')
+
     ], className='graph-card')
+
 
 
 def build_line_scan_card(viewer_id: str, state):

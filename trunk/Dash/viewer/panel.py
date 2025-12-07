@@ -219,11 +219,81 @@ class ViewerPanel:
         options = []
         for path in sorted(files):
             name = Path(path).name
-            # Extract last numeric group from filename, e.g. PhaseField_00001000.vts → "1000"
-            step = "".join(ch for ch in name.split(".")[0][::-1] if ch.isdigit())[::-1]
-            label = step.lstrip("0") or step or name
-            options.append({'label': label, 'value': path})
+            stem = name.split(".")[0]
+            # Extract trailing digit block from stem, e.g. PhaseField_00001000 → "00001000"
+            trailing_digits = ""
+            for ch in reversed(stem):
+                if ch.isdigit():
+                    trailing_digits = ch + trailing_digits
+                elif trailing_digits:
+                    break
+            if trailing_digits:
+                label = trailing_digits.lstrip("0") or trailing_digits
+            else:
+                label = name
+            options.append({"label": label, "value": path})
         return options
+
+    def _colorscale_params(self, Z_grid, state: ViewerState):
+        """Compute colorscale and z-range settings for the current state."""
+        colors = self.PALETTES.get(state.palette, self.PALETTES["aqua-fire"])
+
+        if state.colorscale_mode == "dynamic":
+            # Dynamic mode: use full data range
+            data_min = float(np.nanmin(Z_grid))
+            data_max = float(np.nanmax(Z_grid))
+
+            blue_cut = state.range_min
+            red_cut = state.range_max
+
+            colorscale = make_dynamic_colorscale(data_min, data_max, blue_cut, red_cut, colors)
+
+            Z_grid_display = Z_grid
+            zmin_display = data_min
+            zmax_display = data_max
+            zmid_display = state.threshold
+        else:
+            # Normal mode: standard 5-color gradient within selected range
+            colorscale = [
+                [0.0, colors[0]],
+                [0.25, colors[1]],
+                [0.5, colors[2]],
+                [0.75, colors[3]],
+                [1.0, colors[4]],
+            ]
+            Z_grid_display = Z_grid
+            zmin_display = state.range_min
+            zmax_display = state.range_max
+            zmid_display = state.threshold
+
+        return colorscale, Z_grid_display, zmin_display, zmax_display, zmid_display
+
+    def _slice_dimensions(self, reader, axis: str):
+        """Return (nx, ny) for the current slice based on the original mesh dimensions.
+
+        This uses the underlying VTK grid dimensions rather than the
+        interpolation resolution so that figure aspect reflects the true
+        data aspect ratio.
+        """
+        if not hasattr(reader, "dimensions") or reader.dimensions is None:
+            # Fallback: treat slice as square if dimensions are unavailable
+            return 1, 1
+
+        dx, dy, dz = reader.dimensions
+        axis = (axis or "y").lower()
+
+        # For 2D data, just use the in-plane dimensions
+        if not reader.is_3d:
+            return dx, dz
+
+        if axis == "x":
+            # X-slice → viewing Y–Z plane
+            return dy, dz
+        if axis == "y":
+            # Y-slice → viewing X–Z plane
+            return dx, dz
+        # Z-slice → viewing X–Y plane
+        return dx, dy
 
     def build_layout(self):
         """Return Dash layout for this tab."""
@@ -278,6 +348,9 @@ class ViewerPanel:
             Output(self.cid('rangeSlider'), 'max'),
             Output(self.cid('colorscaleMode'), 'checked'),
             Output(self.cid('clickModeRange'), 'checked'),
+            # New: width/height styling for heatmap card, and separate colorbar figure
+            Output(self.cid('heatmapCard'), 'style'),
+            Output(self.cid('colorbar'), 'figure'),
         ]
 
         # Only add DMC Switch outputs if line scan is enabled
@@ -457,7 +530,20 @@ class ViewerPanel:
             slice_disabled = not reader.is_3d
             slice_style = {'marginBottom': '20px'} if reader.is_3d else {'display': 'none'}
 
-            figure = self._build_figure(X_grid, Y_grid, Z_grid, state)
+            # Determine figure width from original data aspect ratio (Nx, Ny)
+            nx, ny = self._slice_dimensions(reader, state.axis)
+
+            base_height = 380
+            aspect = nx / max(ny, 1)
+            fig_width = max(300, min(1200, int(base_height * aspect)))
+            
+
+            # Colorscale parameters shared between main heatmap and colorbar
+            colorscale, Z_display, zmin_display, zmax_display, zmid_display = self._colorscale_params(Z_grid, state)
+
+            figure = self._build_figure(X_grid, Y_grid, Z_display, state,
+                                        colorscale, zmin_display, zmax_display, zmid_display,
+                                        fig_width)
             map_title = self._build_map_title(state)
             click_info = self._build_click_info(state)
 
@@ -468,6 +554,62 @@ class ViewerPanel:
             formatted_max = _formatted_range_value(state.range_max)
             min_display = f"{formatted_min:.6f}" if formatted_min is not None else ""
             max_display = f"{formatted_max:.6f}" if formatted_max is not None else ""
+
+            # Style for middle heatmap card
+            card_style = {
+                "width": f"{fig_width}px",
+                "height": "380px",
+            }
+
+            # Separate colorbar figure (fixed card width ~90px).
+            # Use an invisible scatter with a colorbar so only one bar is visible.
+            colorbar_fig = go.Figure()
+            colorbar_fig.add_trace(
+                go.Scatter(
+                    x=[0, 0],
+                    y=[0, 1],
+                    mode="markers",
+                    marker=dict(
+                        size=0.1,
+                        color=[zmin_display, zmax_display],
+                        colorscale=colorscale,
+                        showscale=True,
+                        cmin=zmin_display,
+                        cmax=zmax_display,
+                        colorbar=dict(
+                            title=dict(
+                                text=state.scalar_label + (f" ({state.units})" if state.units else ""),
+                                side="right",
+                                font=dict(
+                                    size=14,
+                                    family="Montserrat, Arial, sans-serif",
+                                    color="#0f1b2b",
+                                ),
+                            ),
+                            len=0.9,
+                            thickness=20,
+                            thicknessmode="pixels",
+                            x=0.5,
+                            xanchor="center",
+                            tickfont=dict(
+                                size=11,
+                                family="Montserrat, Arial, sans-serif",
+                                color="#0f1b2b",
+                            ),
+                        ),
+                    ),
+                    hoverinfo="skip",
+                )
+            )
+            colorbar_fig.update_layout(
+                width=90,
+                height=380,
+                margin=dict(l=0, r=0, t=10, b=10),
+                xaxis=dict(visible=False),
+                yaxis=dict(visible=False),
+                paper_bgcolor="#ffffff",
+                plot_bgcolor="#ffffff",
+            )
 
             # Build base return tuple
             base_return = (
@@ -493,6 +635,8 @@ class ViewerPanel:
                 _formatted_range_value(scaled_stats['max']),
                 state.colorscale_mode == 'dynamic',
                 state.click_mode == 'range',
+                card_style,
+                colorbar_fig,
             )
 
             # Add DMC Switch values if line scan is enabled
@@ -598,41 +742,8 @@ class ViewerPanel:
 
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
 
-    def _build_figure(self, X_grid, Y_grid, Z_grid, state: ViewerState):
-        colors = self.PALETTES.get(state.palette, self.PALETTES["aqua-fire"])
-
-        # Determine colorscale based on mode
-        if state.colorscale_mode == "dynamic":
-            # Dynamic mode: create multi-segment colorscale
-            # Get actual data range (not clipped)
-            data_min = float(np.nanmin(Z_grid))
-            data_max = float(np.nanmax(Z_grid))
-
-            # Use user-selected range as blue/red breakpoints
-            blue_cut = state.range_min
-            red_cut = state.range_max
-
-            colorscale = make_dynamic_colorscale(data_min, data_max, blue_cut, red_cut, colors)
-
-            # In dynamic mode, show full data range
-            Z_grid_display = Z_grid
-            zmin_display = data_min
-            zmax_display = data_max
-            zmid_display = state.threshold
-        else:
-            # Normal mode: standard 5-color gradient
-            colorscale = [
-                [0.0, colors[0]],
-                [0.25, colors[1]],
-                [0.5, colors[2]],
-                [0.75, colors[3]],
-                [1.0, colors[4]]
-            ]
-            Z_grid_display = Z_grid
-            zmin_display = state.range_min
-            zmax_display = state.range_max
-            zmid_display = state.threshold
-
+    def _build_figure(self, X_grid, Y_grid, Z_grid_display, state: ViewerState,
+                      colorscale, zmin_display, zmax_display, zmid_display, fig_width: int):
         template = 'plotly_white'
         bg_color = '#ffffff'
         font_family = "Montserrat, Arial, sans-serif"
@@ -649,167 +760,12 @@ class ViewerPanel:
             zmax       = zmax_display,
             zsmooth    = self.config["zsmooth"], # 'best' | 'fast' | 'none'
 
-            colorbar = dict(
-                title = dict(
-                    text = state.scalar_label,
-                    side = "right",
-                    font = dict(size=18, family=font_family, color=text_color)
-                ),
-                len           = 0.6,             # height of colorbar relative to plot (stays consistent)
-                lenmode       = 'fraction',      # 'pixels' | 'fraction'
-                thickness     = 14,              # Colorbar thickness
-                thicknessmode = 'pixels',        # 'pixels' | 'fraction'
-                x             = 0.0,            # Fixed position relative to plot area (right edge)
-                y             = 0.5,             # Centered vertically
-                xpad          = 0,               # Padding in pixels
-                xanchor       = 'right',          # Anchor at left edge of colorbar
-                yanchor       = 'middle',        # Anchor at middle
-                tickmode      = "linear",        # 'auto' | 'linear' | 'array'
-                tick0         = zmin_display,    # Starting tick value
-                dtick         = ((zmax_display - zmin_display) / 5) if zmax_display != zmin_display else 1,
-                tickfont = dict(size=14, family=font_family, color=text_color)
-            ),
+            showscale=False,
             hovertemplate = 'Value: %{z:.6f}<extra></extra>'))
 
         # Fixed figure dimensions
-        fig_width = 600
-        fig_height = 500
-        margins = dict(t=00, b=00, l=00, r=00, autoexpand=False)
-
-        # Calculate data aspect ratio
-        data_width = X_grid[0, -1] - X_grid[0, 0] + 1
-        data_height = Y_grid[-1, 0] - Y_grid[0, 0] + 1
-        data_aspect = data_width / data_height if data_height > 0 else 1.0
-        # -------------------------------
-        # AUTO DOMAIN BASED ON ASPECT
-        # -------------------------------
+        fig_height = 380
         
-        fig_aspect  = fig_width / fig_height
-        print("--------------------------------------------------------------------------")
-        print("-------------------Start Printing-----------------------------------------")
-        print("--------------------------------------------------------------------------")
-        print(f"data_width: {data_width}")
-        print(f"data_height: {data_height}")
-        print(f"data_aspect: {data_aspect}")
-        print(f"fig_width: {fig_width}")
-        print(f"fig_height: {fig_height}")
-        print(f"fig_aspect: {fig_aspect}")
-        # 1. Aspect of data and figure
-        
-        # 2. Reserve fixed space on right for colorbar (fraction)
-        cbar_space = 0.25
-        right_domain = 1 - cbar_space
-        
-        y_min_local = 0.1
-        y_max_local = 0.9
-        fig.update_xaxes(domain=[0.0, right_domain])
-        fig.update_yaxes(domain=[y_min_local, y_max_local])
-
-        if(data_aspect > fig_aspect):  # PF
-            colorbar_x = right_domain + 0.02
-        elif data_aspect != 1.0:        # CRSS
-            fig.update_xaxes(domain=[0.0, 1.0])
-            real_right = self.compute_real_heatmap_edge(fig_width, fig_height, data_width, data_height,
-                domain=[0.0, 1.0])
-            colorbar_x = real_right
-            print(f"real_right: {real_right}")
-            fig.update_yaxes(domain=[0, y_max_local])
-        else:                           # Mechanis
-            colorbar_x = right_domain + 0.02 - y_min_local / 2.0
-
-
-        fig.update_traces(colorbar=dict(
-            x=colorbar_x,
-            y=0.5,
-            xanchor="left",
-            yanchor="middle",
-            len=0.6,
-            thickness=14
-        ))
-
-        print(f"data_width: {data_width}, data_height: {data_height}")
-
-        # Compute domain manually to understand plot area geometry
-        left  = margins['l']
-        right = margins['r']
-        top   = margins['t']
-        bottom= margins['b']
-
-        x0 = left / fig_width           # 0.1   |---
-        x1 = 1 - (right / fig_width)    # 0.9   ---|
-        y0 = bottom / fig_height        # 0.1   |
-        y1 = 1 - (top / fig_height)     # 0.9   |
-
-        # Convert domain → pixel geometry
-        plot_left   = x0 * fig_width    # 50
-        plot_right  = x1 * fig_width    # 450
-
-        plot_top    = y1 * fig_height   # 50
-        plot_bottom = y0 * fig_height   # 450
-
-        plot_width  = plot_right - plot_left # 400
-        plot_height = plot_top - plot_bottom # 400
-
-        actual_plot_width = plot_width
-        actual_plot_height = plot_width / data_aspect
-        vertical_padding = (plot_height - actual_plot_height) / 2
-        horizontal_padding = (plot_width - actual_plot_width) / 2
-
-        logo_size_px = 40  # Logo size in pixels
-        if(horizontal_padding):
-            horizontal_padding += logo_size_px / 2.0
-        if(vertical_padding):
-            vertical_padding += logo_size_px / 2.0
-        logo_x_px = 5 + horizontal_padding # 5px from left edge
-        logo_y_px = 5 + vertical_padding # At the actual plot bottom
-
-        # Convert to paper coordinates
-        logo_x_paper = logo_x_px / fig_width
-        logo_y_paper = logo_y_px / fig_height
-        logo_size_paper = logo_size_px / fig_width
-
-        # print("--------------------------------------------------------------------------")
-        # print("-------------------Start Printing-----------------------------------------")
-        # print("--------------------------------------------------------------------------")
-        # print(f"data_width: {data_width}")
-        # print(f"data_height: {data_height}")
-        # print(f"data_aspect: {data_aspect}")
-        # print(f"fig_width: {fig_width}")
-        # print(f"fig_height: {fig_height}")
-        # print("--------------------------------------------------------------------------")
-        # print(f"margins: {margins}")
-        # print(f"left: {left}")
-        # print(f"right: {right}")
-        # print(f"top: {top}")
-        # print(f"bottom: {bottom}")
-        # print("--------------------------------------------------------------------------")
-        # print(f"x0: {x0}")
-        # print(f"x1: {x1}")
-        # print(f"y0: {y0}")
-        # print(f"y1: {y1}")
-        # print("--------------------------------------------------------------------------")
-        # print(f"plot_left: {plot_left}")
-        # print(f"plot_right: {plot_right}")
-        # print(f"plot_top: {plot_top}")
-        # print(f"plot_bottom: {plot_bottom}")
-        # print(f"plot_width (Area Available for plot)   : {plot_width}")
-        # print(f"plot_height ( Area Available for plot) : {plot_height}")
-
-        # print("--------------------------------------------------------------------------")
-        # print(f"actual_plot_width (Actual width):  {actual_plot_width}")
-        # print(f"actual_plot_height (Actual height): {actual_plot_height}")
-
-        # print(f"vertical_padding  (Layout - Figure) :   {vertical_padding}")
-        # print(f"horizontal_padding (layout - Figure): {horizontal_padding}")
-        # print("--------------------------------------------------------------------------")
-        # print(f"logo_size_px: {logo_size_px}")
-        # print(f"logo_x_px: {logo_x_px}")
-        # print(f"logo_y_px: {logo_y_px}")
-        # print(f"logo_x_paper: {logo_x_paper}")
-        # print(f"logo_y_paper: {logo_y_paper}")
-        # print(f"logo_size_paper: {logo_size_paper}")
-        # print("--------------------------------------------------------------------------")
-
         fig.update_layout(
             xaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, scaleanchor="y", scaleratio=1),
             yaxis        = dict(showticklabels=False, showgrid=False, zeroline=False, title=None, constrain='domain'),
@@ -819,28 +775,12 @@ class ViewerPanel:
             width        = fig_width,
             paper_bgcolor= bg_color,
             hovermode    = 'closest',
-            margin       = margins,
+            margin       = dict(l=0, r=0, t=0, b=0),
             plot_bgcolor = bg_color,
             font         = dict(family=font_family, color=text_color)
         )
        # Force actual plot margins
  
-        fig.add_layout_image(
-            dict(
-                source  =  "/assets/OP_Logo.png",
-                xref    =  "paper",
-                yref    =  "paper",
-                x       =   0,
-                y       =   0,
-                sizex   =  logo_size_paper,
-                sizey   =  logo_size_paper,
-                xanchor =  "left",
-                yanchor =  "bottom",
-                sizing  =  "contain",
-                opacity =  0.95,
-                layer   =  "above"
-            )
-        )
 
         # Add line scan indicator
         if state.line_overlay_visible:
@@ -861,7 +801,6 @@ class ViewerPanel:
                     layer="above"
                 )
 
-        print(f"x = {logo_x_paper}, y = {logo_y_paper}")
         return fig
 
     def _build_map_title(self, state: ViewerState):

@@ -1221,6 +1221,71 @@ input:focus,
     min-height: 0;
 }
 
+.heatmap-wrapper {
+    width: 100%;
+    flex: 1;                   /* fill all remaining space below header */
+    display: flex;
+    justify-content: center;   /* center horizontally */
+    align-items: center;       /* center vertically */
+}
+
+
+
+/* Logo – Heatmap – Colorbar row */
+.heatmap-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    width: max-content;
+}
+.heatmap-logo-card,
+.heatmap-main-card,
+.heatmap-colorbar-card {
+    background: #ffffff;
+    border-radius: 0px;
+    border: 0px solid var(--surface-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.heatmap-main-card {
+    flex: 0 0 auto;
+    padding: 0px;
+}
+
+.heatmap-colorbar-card {
+    flex: 0 0 90px;
+    max-width: 90px;
+    min-width: 90px;
+    padding: 0px;
+}
+
+.heatmap-logo-card {
+    flex: 0 0 70px;
+    max-width: 70px;
+    min-width: 70px;
+    padding: 0px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;   /* puts the logo at the bottom */
+    align-items: flex-end;
+}
+
+.heatmap-logo {
+    width: 50%;     /* or 80%, or any size you want */
+    height: auto;
+}
+
+.heatmap-main-graph,
+.heatmap-colorbar-graph {
+    width: 100%;
+    height: 100%;
+}
+
 .graph-topbar {
     display: flex;
     justify-content: space-between;
@@ -1244,13 +1309,8 @@ input:focus,
 
 /* Center Plotly SVG inside its plot container */
 .js-plotly-plot .plot-container {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-.js-plotly-plot .svg-container {
-    flex: 0 0 auto;
+    /* Revert to block so the heatmap can fill the card without large inner gaps */
+    display: block !important;
 }
 
 /* Toast */
