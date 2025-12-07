@@ -1295,6 +1295,12 @@ input:focus,
     border-bottom: 1px solid #e2e8f0;
 }
 
+.interfaces-overlay-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 6px;
+}
+
 .map-title {
     font-weight: 700;
     font-size: 0.9rem;

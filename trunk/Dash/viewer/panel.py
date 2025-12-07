@@ -236,6 +236,20 @@ class ViewerPanel:
 
     def _colorscale_params(self, Z_grid, state: ViewerState):
         """Compute colorscale and z-range settings for the current state."""
+
+        # Special case: Interfaces (band) – render interfaces in a single
+        # flat color (brand blue) and rely on NaNs for transparency elsewhere.
+        if state.scalar_key == "interfaces_band":
+            Z_grid_display = np.where(np.isnan(Z_grid), np.nan, 1.0)
+            colorscale = [
+                [0.0, "#183568"],
+                [1.0, "#183568"],
+            ]
+            zmin_display = 0.0
+            zmax_display = 1.0
+            zmid_display = 0.5
+            return colorscale, Z_grid_display, zmin_display, zmax_display, zmid_display
+
         colors = self.PALETTES.get(state.palette, self.PALETTES["aqua-fire"])
 
         if state.colorscale_mode == "dynamic":
@@ -351,6 +365,8 @@ class ViewerPanel:
             # New: width/height styling for heatmap card, and separate colorbar figure
             Output(self.cid('heatmapCard'), 'style'),
             Output(self.cid('colorbar'), 'figure'),
+            # Interfaces overlay toggle state
+            Output(self.cid('interfacesOverlay'), 'checked'),
         ]
 
         # Only add DMC Switch outputs if line scan is enabled
@@ -384,6 +400,7 @@ class ViewerPanel:
         inputs.extend([
             Input(self.cid('colorscaleMode'), 'checked'),
             Input(self.cid('clickModeRange'), 'checked'),
+            Input(self.cid('interfacesOverlay'), 'checked'),
         ])
 
         if self.enable_line_scan:
@@ -402,12 +419,12 @@ class ViewerPanel:
             if self.enable_line_scan:
                 (time_value, scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range, line_overlay_checked,
-                 colorscale_mode_checked, click_mode_range_checked,
+                 colorscale_mode_checked, click_mode_range_checked, interfaces_overlay_checked,
                  click_mode_line_checked, scan_direction_value, stored_state) = args
             else:
                 (time_value, scalar_value, palette_value, slice_value, slice_input_value, reset_clicks,
                  click_data, min_val, max_val, slider_range,
-                 colorscale_mode_checked, click_mode_range_checked, stored_state) = args
+                 colorscale_mode_checked, click_mode_range_checked, interfaces_overlay_checked, stored_state) = args
                 line_overlay_checked = False
                 click_mode_line_checked = False
                 scan_direction_value = 'horizontal'
@@ -490,6 +507,7 @@ class ViewerPanel:
             state.palette = palette_value or fallback_state.palette
             full_scale_enabled = bool(colorscale_mode_checked)
             state.colorscale_mode = 'dynamic' if full_scale_enabled else 'normal'
+            state.interfaces_overlay_visible = bool(interfaces_overlay_checked)
 
             # Handle DMC Switch boolean values and SegmentedControl string value
             state.line_overlay_visible = bool(line_overlay_checked)
@@ -515,6 +533,19 @@ class ViewerPanel:
             )
             Z_grid = Z_grid * scale
             scaled_stats = {k: stats[k] * scale for k in stats}
+
+            # Custom scalar: interfaces_band
+            # Show only interface band (values between 1.1 and 1.5)
+            # and make all other regions transparent.
+            if descriptor.get('value') == 'interfaces_band':
+                band_min, band_max = 1.1, 3.0
+                mask = (Z_grid >= band_min) & (Z_grid <= band_max)
+                Z_grid = np.where(mask, Z_grid, np.nan)
+                # Clamp stats to the band so colorbar and default
+                # ranges use [1.1, 1.5].
+                scaled_stats['min'] = band_min
+                scaled_stats['max'] = band_max
+
             state.scale = scale
             state.units = units
             # Ensure state.file_path tracks the active file used to compute stats
@@ -549,6 +580,40 @@ class ViewerPanel:
             figure = self._build_figure(X_grid, Y_grid, Z_display, state,
                                         colorscale, zmin_display, zmax_display, zmid_display,
                                         fig_width)
+
+            # Optional: add Interfaces (band) overlay on top of any field.
+            if state.interfaces_overlay_visible:
+                try:
+                    # Always derive interfaces from the Phase Field VTK and reuse
+                    # that geometry as an overlay across all viewers.
+                    phase_file = "VTK/PhaseField_00000000.vts"
+                    phase_reader = self.reader_factory(phase_file)
+                    X_i, Y_i, Z_i, _ = phase_reader.get_interpolated_slice(
+                        axis=state.axis,
+                        index=state.slice_index,
+                        scalar_name="Interfaces",
+                        component=None,
+                        resolution=self.config["interpolation_resolution"],
+                    )
+
+                    band_min, band_max = 1.5, 3.0
+                    mask = (Z_i >= band_min) & (Z_i <= band_max)
+                    Z_band = np.where(mask, 1.0, np.nan)
+                    figure.add_trace(go.Heatmap(
+                        x=X_i[0, :],
+                        y=Y_i[:, 0],
+                        z=Z_band,
+                        colorscale=[[0.0, "#FFFFFF"], [1.0, "#FFFFFF"]],
+                        zmin=0.0,
+                        zmax=1.0,
+                        showscale=False,
+                        hoverinfo="skip",
+                        hovertemplate=None,
+                    ))
+                except Exception:
+                    # If Interfaces array is not available for this dataset,
+                    # silently skip the overlay.
+                    pass
             map_title = self._build_map_title(state)
             click_info = self._build_click_info(state)
 
@@ -656,6 +721,7 @@ class ViewerPanel:
                 state.click_mode == 'range',
                 card_style,
                 colorbar_fig,
+                state.interfaces_overlay_visible,
             )
 
             # Add DMC Switch values if line scan is enabled

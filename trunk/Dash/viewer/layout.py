@@ -197,6 +197,21 @@ def build_graph_section(viewer_id: str):
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
         ], className="graph-topbar"),
 
+        # Interfaces overlay toggle (top-right under title)
+        html.Div([
+            dmc.Switch(
+                id=component_id(viewer_id, 'interfacesOverlay'),
+                label="Interfaces Overlay",
+                checked=False,
+                labelPosition="left",
+                size="xs",
+                radius="xs",
+                color="#5c7cfa",
+                disabled=False,
+                withThumbIndicator=True,
+            )
+        ], className="interfaces-overlay-toggle"),
+
 
         # -------------------------
         # Centered Heatmap Section
