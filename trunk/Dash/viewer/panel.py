@@ -536,9 +536,11 @@ class ViewerPanel:
             # the width to keep the image square and avoid side gaps.
             nx, ny = self._slice_dimensions(reader, state.axis)
 
+            # HEAD: Calculating width of the image ---------------------------------------
+
             effective_height = 380 - 40  # fig_height - top_margin
             aspect = nx / max(ny, 1)
-            fig_width = max(300, min(1200, int(effective_height * aspect)))
+            fig_width = max(100, min(1200, int(effective_height * aspect)))
             
 
             # Colorscale parameters shared between main heatmap and colorbar
