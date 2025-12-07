@@ -599,7 +599,7 @@ def build_histogram_figure(values, x_label, bins=None, fit=False):
     hist = go.Histogram(
         x=arr,
         nbinsx=nbins,
-        marker_color='#c50623',
+        marker_color='#183568',
         opacity=0.6,
         name='Histogram'
     )
@@ -833,6 +833,7 @@ def build_tab_children(tab_id):
                 cards.append(histogram_card)
 
     if tab_id == 'phase-field':
+        # Phase-field tab: show size-details and grain distribution cards.
         for builder in (build_size_details_card, build_grain_distribution_card):
             card = builder()
             if card:
@@ -1040,120 +1041,13 @@ def build_stress_strain_card():
 
 
 def build_stress_hist_card():
-    data = STRESS_STRAIN_DATA
-    if not data or not data.get('components'):
-        return None
-    options_map = {
-        "Sigma_xx": "σ_xx",
-        "Sigma_yy": "σ_yy",
-        "Sigma_zz": "σ_zz",
-        "Mises": "von Mises",
-    }
-    options = [{'label': 'Average', 'value': 'Average'}]
-    for key in data['components'].keys():
-        options.append({'label': options_map.get(key, key), 'value': key})
-    default_value = options[0]['value']
-    default_bins = 30
-    figure, summary = build_histogram_figure(stress_series_values(default_value), "Stress (MPa)", bins=default_bins)
-    return html.Div([
-        html.Div([
-            html.Span(className='dataset-accent'),
-            html.H3('Stress Histograms', className='dataset-title')
-        ], className='dataset-header'),
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Label('Component', className='textdata-label'),
-                    dcc.Dropdown(
-                        id='stress-hist-component',
-                        options=options,
-                        value=default_value,
-                        clearable=False,
-                        className='textdata-input'
-                    )
-                ], className='textdata-control'),
-                html.Div([
-                    html.Label('Bins', className='textdata-label'),
-                    dcc.Slider(
-                        id='stress-hist-bins',
-                        min=5,
-                        max=100,
-                        step=5,
-                        value=default_bins,
-                        marks={10: '10', 50: '50', 90: '90'},
-                        tooltip={"placement": "bottom", "always_visible": False}
-                    )
-                ], className='textdata-control'),
-                html.Div([
-                    html.Label('Analysis', className='textdata-label'),
-                    dcc.Checklist(
-                        id='stress-hist-fit',
-                        options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                        value=[],
-                        className='hist-toggle'
-                    )
-                ], className='textdata-control')
-            ], className='textdata-controls'),
-            dcc.Graph(id='stress-hist-fig', figure=figure, className='textdata-plot')
-        ], className='textdata-graphs'),
-        dcc.Markdown(summary, id='stress-hist-summary', className='hist-summary', mathjax=True)
-    ], className='dataset-block textdata-card')
+    """Legacy PDF-based stress histogram card – hidden from UI."""
+    return None
 
 
 def build_strain_hist_card():
-    data = STRESS_STRAIN_DATA
-    strain_components = (data or {}).get('strain_components')
-    if not strain_components:
-        return None
-    options = [{'label': 'Average', 'value': 'Average'}]
-    for key in strain_components.keys():
-        options.append({'label': key.replace('_', ' ').title(), 'value': key})
-    default_value = options[0]['value']
-    default_bins = 30
-    figure, summary = build_histogram_figure(strain_series_values(default_value), "Strain", bins=default_bins)
-    return html.Div([
-        html.Div([
-            html.Span(className='dataset-accent'),
-            html.H3('Strain Histograms', className='dataset-title')
-        ], className='dataset-header'),
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Label('Component', className='textdata-label'),
-                    dcc.Dropdown(
-                        id='strain-hist-component',
-                        options=options,
-                        value=default_value,
-                        clearable=False,
-                        className='textdata-input'
-                    )
-                ], className='textdata-control'),
-                html.Div([
-                    html.Label('Bins', className='textdata-label'),
-                    dcc.Slider(
-                        id='strain-hist-bins',
-                        min=5,
-                        max=100,
-                        step=5,
-                        value=default_bins,
-                        marks={10: '10', 50: '50', 90: '90'},
-                        tooltip={"placement": "bottom", "always_visible": False}
-                    )
-                ], className='textdata-control'),
-                html.Div([
-                    html.Label('Analysis', className='textdata-label'),
-                    dcc.Checklist(
-                        id='strain-hist-fit',
-                        options=[{'label': 'Show Best-fit PDF', 'value': 'fit'}],
-                        value=[],
-                        className='hist-toggle'
-                    )
-                ], className='textdata-control')
-            ], className='textdata-controls'),
-            dcc.Graph(id='strain-hist-fig', figure=figure, className='textdata-plot')
-        ], className='textdata-graphs'),
-        dcc.Markdown(summary, id='strain-hist-summary', className='hist-summary', mathjax=True)
-    ], className='dataset-block textdata-card')
+    """Legacy PDF-based strain histogram card – hidden from UI."""
+    return None
 
 
 def build_crss_card():
