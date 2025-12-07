@@ -184,6 +184,8 @@ def build_controls(
 
     return html.Div(rows, className='control-panel panel-card')
 
+#  HEAD: --------------------- Heatmap plot section -------------------------------------------------------
+
 def build_graph_section(viewer_id: str):
     """Graph container - main heatmap block."""
     return html.Div([
