@@ -825,7 +825,120 @@ class ViewerPanel:
 
                 return fig, field_options, histogram_field
 
+        self._register_download_callback()
+
     """ NOTE: Construct the heatmap figure based on the provided data and viewer state."""
+
+    def _register_download_callback(self):
+        """Register client-side download handler to save heatmap + logo + colorbar."""
+        self.app.clientside_callback(
+            f"""
+            function(n_clicks) {{
+                if (!n_clicks) {{
+                    return window.dash_clientside.no_update;
+                }}
+                var heatmapContainer = document.getElementById("{self.cid('graph')}");
+                var colorbarContainer = document.getElementById("{self.cid('colorbar')}");
+                if (!heatmapContainer || !colorbarContainer || !window.Plotly || !Plotly.toImage) {{
+                    return window.dash_clientside.no_update;
+                }}
+
+                // dcc.Graph wraps the Plotly div; grab the rendered plot nodes.
+                var heatmapPlot = heatmapContainer.getElementsByClassName("js-plotly-plot")[0] || heatmapContainer;
+                var colorbarPlot = colorbarContainer.getElementsByClassName("js-plotly-plot")[0] || colorbarContainer;
+
+                var loadImage = function(src) {{
+                    return new Promise(function(resolve, reject) {{
+                        var img = new Image();
+                        img.onload = function() {{ resolve(img); }};
+                        img.onerror = reject;
+                        img.src = src;
+                    }});
+                }};
+
+                var heatmapLayout = heatmapPlot._fullLayout || {{}};
+                var colorbarLayout = colorbarPlot._fullLayout || {{}};
+                var heatmapWidth = Math.round(heatmapLayout.width || heatmapPlot.clientWidth || 600);
+                var heatmapHeight = Math.round(heatmapLayout.height || heatmapPlot.clientHeight || 380);
+                var colorbarWidth = Math.round(colorbarLayout.width || colorbarPlot.clientWidth || 90);
+                var colorbarHeight = Math.round(colorbarLayout.height || colorbarPlot.clientHeight || heatmapHeight);
+
+                var exportScale = 2;  // keep layout proportions with the same scale used for Plotly renders
+
+                (async () => {{
+                    try {{
+                        // Render both graphs to PNG data URLs.
+                        var [heatmapUrl, colorbarUrl] = await Promise.all([
+                            Plotly.toImage(heatmapPlot, {{
+                                format: 'png',
+                                width: heatmapWidth,
+                                height: heatmapHeight,
+                                scale: exportScale
+                            }}),
+                            Plotly.toImage(colorbarPlot, {{
+                                format: 'png',
+                                width: colorbarWidth,
+                                height: colorbarHeight,
+                                scale: exportScale
+                            }})
+                        ]);
+
+                        // Load images for compositing (heatmap, colorbar, logo).
+                        var [heatmapImg, colorbarImg, logoImg] = await Promise.all([
+                            loadImage(heatmapUrl),
+                            loadImage(colorbarUrl),
+                            loadImage("/assets/OP_Logo.png")
+                        ]);
+
+                        var padding = 12 * exportScale;
+                        var gap = 8 * exportScale;             // matches CSS gap between cards
+                        var logoCardWidth = 70 * exportScale;  // matches CSS flex width
+
+                        var canvasWidth = padding * 2 + logoCardWidth + gap + heatmapImg.width + gap + colorbarImg.width;
+                        var canvasHeight = padding * 2 + Math.max(heatmapImg.height, colorbarImg.height);
+
+                        var canvas = document.createElement('canvas');
+                        canvas.width = canvasWidth;
+                        canvas.height = canvasHeight;
+                        var ctx = canvas.getContext('2d');
+
+                        // White background to mimic cards.
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+                        // Draw heatmap and colorbar.
+                        var heatmapX = padding + logoCardWidth + gap;
+                        var heatmapY = padding;
+                        ctx.drawImage(heatmapImg, heatmapX, heatmapY);
+
+                        var colorbarX = heatmapX + heatmapImg.width + gap;
+                        var colorbarY = padding;
+                        ctx.drawImage(colorbarImg, colorbarX, colorbarY);
+
+                        // Draw logo in its 70px card area, bottom-right aligned.
+                        var logoTargetWidth = logoCardWidth * 0.5;
+                        var logoScale = logoTargetWidth / logoImg.width;
+                        var logoTargetHeight = logoImg.height * logoScale;
+                        var logoX = padding + logoCardWidth - logoTargetWidth;
+                        var logoY = padding + heatmapImg.height - logoTargetHeight - 6 * exportScale;
+                        ctx.drawImage(logoImg, logoX, logoY, logoTargetWidth, logoTargetHeight);
+
+                        // Trigger download.
+                        var link = document.createElement('a');
+                        link.href = canvas.toDataURL('image/png');
+                        link.download = '{self.id}_heatmap_full.png';
+                        link.click();
+                    }} catch (err) {{
+                        console.error("Failed to export heatmap PNG", err);
+                    }}
+                }})();
+                return window.dash_clientside.no_update;
+            }}
+            """,
+            Output(self.cid('downloadHeatmapBtn'), 'n_clicks'),
+            Input(self.cid('downloadHeatmapBtn'), 'n_clicks'),
+            prevent_initial_call=True
+        )
 
     def _build_figure(self, X_grid, Y_grid, Z_grid_display, state: ViewerState,
                       colorscale, zmin_display, zmax_display, zmid_display, fig_width: int):

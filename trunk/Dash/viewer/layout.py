@@ -195,6 +195,15 @@ def build_graph_section(viewer_id: str):
         # -------------------------
         html.Div([
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
+            html.Button([
+                html.Img(src='/assets/download.png', alt='Download', className='btn-icon'),
+                html.Span("PNG")
+            ],
+                id=component_id(viewer_id, 'downloadHeatmapBtn'),
+                n_clicks=0,
+                className='graph-toolbar-btn graph-toolbar-btn--icon',
+                title='Download heatmap as PNG'
+            ),
         ], className="graph-topbar"),
 
         # Interfaces overlay toggle (top-right under title)
@@ -394,7 +403,7 @@ def build_tab_layout(
             ),
             build_graph_section(viewer_id)
         ], className='stacked-card'),
-        dcc.Store(id=component_id(viewer_id, 'state'), data=state.to_dict())
+        dcc.Store(id=component_id(viewer_id, 'state'), data=state.to_dict()),
     ], className='viewer-tab')
 
 
