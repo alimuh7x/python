@@ -585,8 +585,9 @@ class ViewerPanel:
             if state.interfaces_overlay_visible:
                 try:
                     # Always derive interfaces from the Phase Field VTK and reuse
-                    # that geometry as an overlay across all viewers.
-                    phase_file = "VTK/PhaseField_00000000.vts"
+                    # that geometry as an overlay across all viewers. Prefer the
+                    # PhaseField file that matches the current timestep.
+                    phase_file = self._phase_overlay_file(file_path)
                     phase_reader = self.reader_factory(phase_file)
                     X_i, Y_i, Z_i, _ = phase_reader.get_interpolated_slice(
                         axis=state.axis,
@@ -1099,7 +1100,7 @@ class ViewerPanel:
             x=data,
             nbinsx=bins,
             marker_color='#183568',
-            opacity=0.7,
+            opacity=0.9,
             name='Histogram'
         ))
 
@@ -1257,6 +1258,37 @@ class ViewerPanel:
 
     def _make_scalar_value(self, array_name, component):
         return f"{array_name}__c{component}" if component is not None else array_name
+
+    def _phase_overlay_file(self, active_file: str | None) -> str:
+        """
+        Pick the PhaseField file that matches the active timestep if available,
+        otherwise fall back to the first file.
+        """
+        default = "VTK/PhaseField_00000000.vts"
+        if not active_file:
+            return default
+
+        path = Path(active_file)
+
+        # If we're already on a PhaseField file, just reuse it.
+        if path.name.startswith("PhaseField_"):
+            return str(path)
+
+        # Extract trailing digits from the active filename stem to build a candidate.
+        stem = path.stem
+        digits = ""
+        for ch in reversed(stem):
+            if ch.isdigit():
+                digits = ch + digits
+            elif digits:
+                break
+
+        if digits:
+            candidate = Path("VTK") / f"PhaseField_{digits}.vts"
+            if candidate.exists():
+                return str(candidate)
+
+        return default
 
 
 def _click_box(message, color, background):

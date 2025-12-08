@@ -587,7 +587,7 @@ h1.app-title {
 }
 
 .scan-option--direction {
-    flex: 1 1 260px;
+    flex: 0 0 auto;
     gap: 16px;
 }
 
@@ -641,18 +641,23 @@ h1.app-title {
     width: auto;
     min-height: 26px;
     white-space: nowrap;
+    display: inline-flex;
 }
 
 .scan-option--direction .mantine-SegmentedControl-control {
     min-height: 26px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    padding: 0 12px;
+    padding: 0 0px;
     font-weight: 600;
+    flex: 0 0 auto;
+    border: 1px solid rgba(24, 53, 104, 0.18);
+    border-radius: 4px;
+    margin-left: 6px;
 }
 
 .scan-option--direction .mantine-SegmentedControl-control span {
-    font-size: 0.85rem;
+    font-size: 1rem;
 }
 
 .fullscale-switch {
@@ -1337,6 +1342,7 @@ input:focus,
     border-radius: 4px;
     padding: 0px 0px;
     box-shadow: 0 2px 4px rgba(15, 27, 43, 0.05);
+    margin: 2px;
 }
 
 .interfaces-overlay-toggle {

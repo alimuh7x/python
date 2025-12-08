@@ -600,7 +600,6 @@ def build_histogram_figure(values, x_label, bins=None, fit=False):
         x=arr,
         nbinsx=nbins,
         marker_color='#183568',
-        opacity=0.6,
         name='Histogram'
     )
 

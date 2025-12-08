@@ -322,8 +322,8 @@ def build_line_scan_card(viewer_id: str, state):
                         id=component_id(viewer_id, 'lineScanDir'),
                         value='horizontal' if getattr(state, 'line_scan_direction', 'horizontal') == 'horizontal' else 'vertical',
                         data=[
-                            {'label': '↔ Horizontal', 'value': 'horizontal'},
-                            {'label': '↕ Vertical', 'value': 'vertical'},
+                            {'label': '↔', 'value': 'horizontal'},
+                            {'label': '↕', 'value': 'vertical'},
                         ],
                         color="#c50623",
                         size="sm",
