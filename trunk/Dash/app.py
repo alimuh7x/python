@@ -483,6 +483,12 @@ def render_docs():
                 width: 100%;
                 margin: 0 auto;
             }
+            /* Ensure doc header logo matches main app sizing */
+            .app-logo {
+                width: 42px;
+                height: 42px;
+                object-fit: contain;
+            }
         </style>
         <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
         <script id="MathJax-script" async
@@ -493,7 +499,7 @@ def render_docs():
             <div class="app-header">
                 <div class="top-bar">
                     <div class="top-left">
-                        <img src="/Logo/OP_Logo.png" class="app-logo" alt="OP logo">
+                        <img src="/assets/OP_Logo_main.png" class="app-logo" alt="OP logo">
                         <h1 class="app-title">OPV<span class="app-title-sub">iew</span></h1>
                     </div>
                     <div class="top-right">
@@ -639,13 +645,13 @@ def build_histogram_figure(values, x_label, bins=None, fit=False):
     )
     fig.update_xaxes(
         title=x_label,
-        title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
-        tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
+        title_font=dict(size=16, family='Montserrat, Arial, sans-serif', color='#12294f'),
+        tickfont=dict(size=16, family='Montserrat, Arial, sans-serif', color='#0f1b2b')
     )
     fig.update_yaxes(
         title="Frequency",
-        title_font=dict(size=16, family='Inter, sans-serif', color='#12294f'),
-        tickfont=dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
+        title_font=dict(size=16, family='Montserrat, Arial, sans-serif', color='#12294f'),
+        tickfont=dict(size=16, family='Montserrat, Arial, sans-serif', color='#0f1b2b')
     )
     fig.update_traces(showlegend=False, selector=lambda t: isinstance(t, go.Histogram))
     return fig, summary
@@ -1322,8 +1328,8 @@ if SIZE_DETAILS_DATA:
             height=320,
             template='plotly_white'
         )
-        axis_title_font = dict(size=16, family='Inter, sans-serif', color='#12294f')
-        tick_font = dict(size=13, family='Inter, sans-serif', color='#0f1b2b')
+        axis_title_font = dict(size=16, family='Montserrat, Arial, sans-serif', color='#12294f')
+        tick_font = dict(size=16, family='Montserrat, Arial, sans-serif', color='#0f1b2b')
         main_fig.update_xaxes(title="Grain Number", title_font=axis_title_font, tickfont=tick_font)
         main_fig.update_yaxes(title="Grain Size", title_font=axis_title_font, tickfont=tick_font)
 

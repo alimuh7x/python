@@ -993,7 +993,7 @@ class ViewerPanel:
                     type="line",
                     x0=X_grid[0, 0], x1=X_grid[0, -1],
                     y0=state.line_scan_y, y1=state.line_scan_y,
-                    line=dict(color="#ffffff", width=3, dash="dash"),
+                    line=dict(color="#c50623", width=3, dash="dash"),
                     layer="above"
                 )
             elif state.line_scan_direction == 'vertical' and state.line_scan_x is not None:
@@ -1001,7 +1001,7 @@ class ViewerPanel:
                     type="line",
                     x0=state.line_scan_x, x1=state.line_scan_x,
                     y0=Y_grid[0, 0], y1=Y_grid[-1, 0],
-                    line=dict(color="#ffffff", width=3, dash="dash"),
+                    line=dict(color="#c50623", width=3, dash="dash"),
                     layer="above"
                 )
 
@@ -1071,13 +1071,13 @@ class ViewerPanel:
             title=dict(text=title, font=dict(size=12, family=font_family, color=text_color)),
             xaxis=dict(
                 title=x_label,
-                title_font=dict(size=12, family=font_family, color=text_color),
-                tickfont=dict(size=10, family=font_family, color=text_color)
+                title_font=dict(size=16, family=font_family, color=text_color),
+                tickfont=dict(size=16, family=font_family, color=text_color)
             ),
             yaxis=dict(
                 title=state.scalar_label + (f" ({state.units})" if state.units else ""),
-                title_font=dict(size=12, family=font_family, color=text_color),
-                tickfont=dict(size=10, family=font_family, color=text_color)
+                title_font=dict(size=16, family=font_family, color=text_color),
+                tickfont=dict(size=16, family=font_family, color=text_color)
             ),
             margin=dict(l=50, r=20, t=40, b=40),
             template='plotly_white',
@@ -1108,13 +1108,13 @@ class ViewerPanel:
             title=dict(text=f"Distribution of {label}", font=dict(size=12, family=font_family, color=text_color)),
             xaxis=dict(
                 title=label,
-                title_font=dict(size=12, family=font_family, color=text_color),
-                tickfont=dict(size=10, family=font_family, color=text_color)
+                title_font=dict(size=16, family=font_family, color=text_color),
+                tickfont=dict(size=16, family=font_family, color=text_color)
             ),
             yaxis=dict(
                 title="Frequency",
-                title_font=dict(size=12, family=font_family, color=text_color),
-                tickfont=dict(size=10, family=font_family, color=text_color)
+                title_font=dict(size=16, family=font_family, color=text_color),
+                tickfont=dict(size=16, family=font_family, color=text_color)
             ),
             margin=dict(l=50, r=20, t=40, b=40),
             template='plotly_white',
