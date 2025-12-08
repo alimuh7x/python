@@ -195,32 +195,31 @@ def build_graph_section(viewer_id: str):
         # -------------------------
         html.Div([
             html.Div(id=component_id(viewer_id, 'mapTitle'), className='map-title'),
-            html.Button([
-                html.Img(src='/assets/download.png', alt='Download', className='btn-icon'),
-                html.Span("PNG")
-            ],
-                id=component_id(viewer_id, 'downloadHeatmapBtn'),
-                n_clicks=0,
-                className='graph-toolbar-btn graph-toolbar-btn--icon',
-                title='Download heatmap as PNG'
-            ),
+            html.Div([
+                html.Div([
+                    dmc.Switch(
+                        id=component_id(viewer_id, 'interfacesOverlay'),
+                        label="Interfaces Overlay",
+                        checked=False,
+                        labelPosition="left",
+                        size="xs",
+                        radius="xs",
+                        color="#c50623",
+                        disabled=False,
+                        withThumbIndicator=True,
+                    ),
+                ], className='scan-option scan-option--inline interfaces-overlay-toggle'),
+                html.Button([
+                    html.Img(src='/assets/download.png', alt='Download', className='btn-icon'),
+                    html.Span("PNG")
+                ],
+                    id=component_id(viewer_id, 'downloadHeatmapBtn'),
+                    n_clicks=0,
+                    className='graph-toolbar-btn graph-toolbar-btn--icon',
+                    title='Download heatmap as PNG'
+                ),
+            ], className="graph-topbar-actions"),
         ], className="graph-topbar"),
-
-        # Interfaces overlay toggle (top-right under title)
-        html.Div([
-            dmc.Switch(
-                id=component_id(viewer_id, 'interfacesOverlay'),
-                label="Interfaces Overlay",
-                checked=False,
-                labelPosition="left",
-                size="xs",
-                radius="xs",
-                color="#c50623",
-                disabled=False,
-                withThumbIndicator=True,
-            )
-        ], className="scan-option"),
-
 
         # -------------------------
         # Centered Heatmap Section

@@ -34,7 +34,7 @@ TAB_CONFIGS = [
             {
                 "id": "phase",
                 "label": "Phase Field",
-                "file_glob": "VTK/PhaseField_00000000.vts",
+                "file_glob": "VTK/PhaseField_*.vts",
                 "scalars": [
                     {'label': 'Phase Field', 'array': 'PhaseFields'},
                     {'label': 'Interfaces', 'array': 'Interfaces'},

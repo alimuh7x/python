@@ -596,14 +596,14 @@ class ViewerPanel:
                         resolution=self.config["interpolation_resolution"],
                     )
 
-                    band_min, band_max = 1.5, 3.0
+                    band_min, band_max = 1.5, 3.5
                     mask = (Z_i >= band_min) & (Z_i <= band_max)
                     Z_band = np.where(mask, 1.0, np.nan)
                     figure.add_trace(go.Heatmap(
                         x=X_i[0, :],
                         y=Y_i[:, 0],
                         z=Z_band,
-                        colorscale=[[0.0, "#183568"], [1.0, "#183568"]],
+                        colorscale=[[0.0, "#000000"], [1.0, "#000000"]],
                         zmin=0.0,
                         zmax=1.0,
                         showscale=False,
