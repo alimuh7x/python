@@ -215,11 +215,11 @@ def build_graph_section(viewer_id: str):
                 labelPosition="left",
                 size="xs",
                 radius="xs",
-                color="#5c7cfa",
+                color="#c50623",
                 disabled=False,
                 withThumbIndicator=True,
             )
-        ], className="interfaces-overlay-toggle"),
+        ], className="scan-option"),
 
 
         # -------------------------

@@ -603,7 +603,7 @@ class ViewerPanel:
                         x=X_i[0, :],
                         y=Y_i[:, 0],
                         z=Z_band,
-                        colorscale=[[0.0, "#FFFFFF"], [1.0, "#FFFFFF"]],
+                        colorscale=[[0.0, "#183568"], [1.0, "#183568"]],
                         zmin=0.0,
                         zmax=1.0,
                         showscale=False,
