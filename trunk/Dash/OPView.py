@@ -18,6 +18,7 @@ from viewer import ViewerPanel
 
 APP_TITLE = "OPView"
 TENSOR_COMPONENTS = ['xx', 'yy', 'zz', 'xy', 'yz', 'zx']
+BASE_DIR = Path(__file__).resolve().parent
 
 
 def tensor_scalars(array_name: str, prefix: str):
@@ -126,6 +127,28 @@ TAB_CONFIGS = [
 reader_cache = {}
 
 
+def vtk_data_dir():
+    """Return the VTK data directory preferring the caller's CWD/VTK, else repo VTK."""
+    cwd_vtk = Path.cwd() / "VTK"
+    if cwd_vtk.exists():
+        return cwd_vtk
+    fallback = BASE_DIR / "VTK"
+    return fallback if fallback.exists() else Path.cwd()
+
+
+DEFAULT_VTK_FOLDER_LABEL = vtk_data_dir().name or "VTK"
+
+def resolve_vtk_path(pattern: str) -> Path:
+    """Resolve a file or glob pattern into the VTK data dir."""
+    p = Path(pattern)
+    if p.is_absolute():
+        return p
+    parts = p.parts
+    if parts and parts[0].lower() == "vtk":
+        p = Path(*parts[1:])
+    return vtk_data_dir() / p
+
+
 def get_reader(file_path):
     """Return cached VTKReader for a given file path."""
     if not file_path or not os.path.exists(file_path):
@@ -145,12 +168,12 @@ app = Dash(__name__, suppress_callback_exceptions=True)
 app.title = APP_TITLE
 
 TEXTDATA_DIR = Path("TextData")
-SIZE_DETAILS_FILE = TEXTDATA_DIR / "SizeDetails.dat"
-SIZE_AVERAGE_FILE = TEXTDATA_DIR / "SizeAveInfo.dat"
-STRESS_STRAIN_FILE = TEXTDATA_DIR / "StressStrainFile.txt"
-CRSS_FILE = TEXTDATA_DIR / "CRSSFile.txt"
+SIZE_DETAILS_FILE   = TEXTDATA_DIR / "SizeDetails.dat"
+SIZE_AVERAGE_FILE   = TEXTDATA_DIR / "SizeAveInfo.dat"
+STRESS_STRAIN_FILE  = TEXTDATA_DIR / "StressStrainFile.txt"
+CRSS_FILE           = TEXTDATA_DIR / "CRSSFile.txt"
 PLASTIC_STRAIN_FILE = TEXTDATA_DIR / "PlasticStrainFile.txt"
-SIZE_AVERAGE_FILE = TEXTDATA_DIR / "SizeAveInfo.dat"
+SIZE_AVERAGE_FILE   = TEXTDATA_DIR / "SizeAveInfo.dat"
 
 
 def load_size_details():
@@ -781,9 +804,10 @@ for tab in TAB_CONFIGS:
         # Collect all available files for this dataset (time steps)
         files = []
         if dataset.get("file_glob"):
-            files = sorted(glob(dataset["file_glob"]))
+            glob_pattern = resolve_vtk_path(dataset["file_glob"])
+            files = sorted(glob(str(glob_pattern)))
         elif dataset.get("file"):
-            files = [dataset["file"]]
+            files = [str(resolve_vtk_path(dataset["file"]))]
         if not files:
             continue
         # Default to latest file for initial view
@@ -1245,8 +1269,39 @@ app.layout = dmc.MantineProvider(
                     html.Div([
                         html.A("Documentation", href='/docs', target='_blank', className='doc-link')
                     ], className='top-right')
-                ], className='top-bar')
-            ], className='app-header'),
+            ], className='top-bar')
+        ], className='app-header'),
+        html.Div([
+            html.Div([
+                html.Div([
+                    html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
+                    html.Span("Folders", className='vtk-folder-heading-text')
+                ], className='vtk-folder-heading'),
+                dcc.Tabs(
+                    id='vtk-folder-tabs',
+                    value='current',
+                    className='vtk-tabs',
+                    children=[
+                        dcc.Tab(
+                            label=DEFAULT_VTK_FOLDER_LABEL,
+                            value='current',
+                            className='vtk-tab',
+                            selected_className='vtk-tab--selected'
+                        )
+                    ]
+                ),
+                html.Button(
+                    html.Img(
+                        src='/assets/plus.png',
+                        alt='Add VTK folder',
+                        className='vtk-tab-add-icon'
+                    ),
+                    id='add-vtk-folder',
+                    n_clicks=0,
+                    className='vtk-tab-add-btn'
+                )
+            ], className='vtk-folder-row')
+        ], className='vtk-folder-section'),
             html.Div([
                 html.Div([
                     html.Span("Modules", className='sidebar-title'),

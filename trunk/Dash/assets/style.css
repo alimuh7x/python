@@ -136,6 +136,104 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.vtk-folder-section {
+    width: 100%;
+    margin: 4px 0;
+}
+
+.vtk-folder-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: #f8f9fc;
+    border: 1px solid #e0e7f3;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(24, 53, 104, 0.04);
+    width: 100%;
+}
+
+.vtk-folder-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 230px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #183568;
+    padding: 6px 6px;
+    background: #f8f9fc;
+    border-radius: 8px;
+}
+
+.vtk-folder-heading-text {
+    letter-spacing: 0.12em;
+}
+
+.vtk-folder-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #183568;
+    color: #ffffff;
+    letter-spacing: 0.12em;
+    font-size: 0.8rem;
+}
+
+.vtk-tabs {
+    flex: 1;
+    min-width: 0;
+    
+}
+
+.vtk-tab {
+    font-weight: 700;
+    color: #183568;
+    padding: 4px !important;
+    font-size: 0.8rem;
+    min-width: 200px;
+    background: #ffffff !important;
+    border: 2px solid #183568 !important;
+    border-radius: 6px;
+    box-shadow: none !important;
+}
+
+.vtk-tab--selected {
+    background: #183568 !important;
+    border: 2px solid #183568 !important;
+    color: #ffffff !important;
+    border-radius: 6px;
+    box-shadow: none !important;
+}
+
+.vtk-tab-add-btn {
+    border: 1px solid rgba(24, 53, 104, 0.18);
+    background: #ffffff;
+    color: #183568;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.2s ease;
+}
+
+.vtk-tab-add-icon {
+    width: 12px;
+    height: 12px;
+    display: block;
+    object-fit: contain;
+}
+
+.vtk-tab-add-btn:hover {
+    background: #f1f4fb;
+    box-shadow: 0 2px 6px rgba(24, 53, 104, 0.12);
+}
+
 .doc-sidebar .sidebar-tabs {
     overflow-y: auto;
     max-height: calc(100vh - 160px);

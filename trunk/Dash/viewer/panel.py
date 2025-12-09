@@ -1264,7 +1264,7 @@ class ViewerPanel:
         Pick the PhaseField file that matches the active timestep if available,
         otherwise fall back to the first file.
         """
-        default = "VTK/PhaseField_00000000.vts"
+        default = str(self._vtk_dir() / "PhaseField_00000000.vts")
         if not active_file:
             return default
 
@@ -1284,11 +1284,21 @@ class ViewerPanel:
                 break
 
         if digits:
-            candidate = Path("VTK") / f"PhaseField_{digits}.vts"
+            candidate = self._vtk_dir() / f"PhaseField_{digits}.vts"
             if candidate.exists():
                 return str(candidate)
 
         return default
+
+    def _vtk_dir(self) -> Path:
+        """
+        Prefer a VTK directory in the current working directory; otherwise fall back
+        to the repo VTK directory adjacent to this file.
+        """
+        cwd_vtk = Path.cwd() / "VTK"
+        if cwd_vtk.exists():
+            return cwd_vtk
+        return Path(__file__).resolve().parent.parent / "VTK"
 
 
 def _click_box(message, color, background):
