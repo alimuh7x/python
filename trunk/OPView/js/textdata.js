@@ -403,3 +403,4 @@ class TextDataLoader {
 
 // Create global instance
 const textDataLoader = new TextDataLoader();
+window.textDataLoader = textDataLoader;

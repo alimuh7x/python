@@ -784,21 +784,29 @@ class OPViewApp {
 
         // Draw initial plot
         if (fileData.data && fileData.data.rows) {
-            const series = textDataLoader.extractTimeSeries(fileData.data, 1);
-            textDataLoader.drawTimeSeries(canvas, series, {
-                title: fileData.label,
-                xLabel: 'Time Step',
-                yLabel: 'Value'
-            });
+            if (window.textDataLoader) {
+                const series = window.textDataLoader.extractTimeSeries(fileData.data, 1);
+                window.textDataLoader.drawTimeSeries(canvas, series, {
+                    title: fileData.label,
+                    xLabel: 'Time Step',
+                    yLabel: 'Value'
+                });
+            } else {
+                log('warn', `TextDataLoader not available for ${filename}`);
+            }
         }
 
         // Add column selection listener
         const select = controlDiv.querySelector('.textdata-column-select');
         if (select) {
             select.addEventListener('change', (e) => {
+                if (!window.textDataLoader) {
+                    log('error', 'TextDataLoader not available');
+                    return;
+                }
                 const col = parseInt(e.target.value);
-                const series = textDataLoader.extractTimeSeries(fileData.data, col);
-                textDataLoader.drawTimeSeries(canvas, series, {
+                const series = window.textDataLoader.extractTimeSeries(fileData.data, col);
+                window.textDataLoader.drawTimeSeries(canvas, series, {
                     title: `${fileData.label} - Column ${col}`,
                     xLabel: 'Time Step',
                     yLabel: 'Value'

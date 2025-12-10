@@ -193,3 +193,4 @@ class VTKLoader {
 
 // Create global loader instance
 const vtkLoader = new VTKLoader();
+window.vtkLoader = vtkLoader;

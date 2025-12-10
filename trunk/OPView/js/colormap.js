@@ -251,3 +251,4 @@ class ColorMapManager {
 
 // Create global instance
 const colorMapManager = new ColorMapManager();
+window.colorMapManager = colorMapManager;
