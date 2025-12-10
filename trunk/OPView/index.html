@@ -60,17 +60,103 @@
     </div>
 
     <!-- ==================== SCRIPTS ==================== -->
-    <!-- VTK.js from CDN - must load first -->
-    <!-- Using jsDelivr for reliable delivery -->
-    <script src="https://cdn.jsdelivr.net/npm/vtk.js@15.24.4/dist/vtk.js"></script>
 
-    <!-- Application scripts - load synchronously -->
-    <script src="js/utils.js" defer></script>
+    <!-- Application utility functions - must be first -->
+    <script src="js/utils.js"></script>
+
+    <!-- VTK.js from CDN - with error handling -->
+    <script>
+        // Track VTK.js loading
+        window.vtkLoadStarted = false;
+        window.vtkLoaded = false;
+
+        function loadVTKJS() {
+            if (window.vtkLoadStarted) return;
+            window.vtkLoadStarted = true;
+
+            console.log('[VTK-Loader] Starting VTK.js load from CDN...');
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/vtk.js@15.24.4/dist/vtk.js';
+            script.async = true;
+
+            script.onload = function() {
+                console.log('[VTK-Loader] VTK.js loaded successfully from CDN');
+                window.vtkLoaded = true;
+                // Trigger app initialization if scripts are already loaded
+                if (window.appScriptsReady) {
+                    initializeApp();
+                }
+            };
+
+            script.onerror = function() {
+                console.error('[VTK-Loader] ✗ Failed to load VTK.js from jsDelivr CDN');
+                console.error('[VTK-Loader] Attempting fallback CDN (unpkg)...');
+
+                // Fallback to unpkg
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://unpkg.com/vtk.js';
+                fallbackScript.async = true;
+                fallbackScript.onload = function() {
+                    console.log('[VTK-Loader] ✓ VTK.js loaded from fallback CDN (unpkg)');
+                    window.vtkLoaded = true;
+                    if (window.appScriptsReady) {
+                        initializeApp();
+                    }
+                };
+                fallbackScript.onerror = function() {
+                    console.error('[VTK-Loader] ✗ All CDN attempts failed');
+                    showToast('Failed to load VTK.js. Check console for details.', 'error');
+                };
+                document.head.appendChild(fallbackScript);
+            };
+
+            document.head.appendChild(script);
+        }
+
+        // Start loading VTK.js immediately
+        loadVTKJS();
+    </script>
+
+    <!-- Application scripts - load in order -->
     <script src="js/colormap.js" defer></script>
     <script src="js/histogram.js" defer></script>
     <script src="js/textdata.js" defer></script>
     <script src="js/loader.js" defer></script>
     <script src="js/viewer.js" defer></script>
     <script src="js/app.js" defer></script>
+
+    <!-- Initialization trigger -->
+    <script>
+        // Mark when scripts are ready, then initialize if VTK is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[App-Init] DOM Content Loaded');
+            window.appScriptsReady = true;
+
+            // Check if VTK is already loaded
+            let checkCount = 0;
+            const checkVTK = setInterval(function() {
+                checkCount++;
+                if (window.vtk && window.vtk.Rendering && window.vtk.Rendering.Core) {
+                    console.log('[App-Init] VTK.js confirmed available');
+                    clearInterval(checkVTK);
+                    initializeApp();
+                } else if (checkCount > 100) {
+                    console.error('[App-Init] VTK.js not loaded after 5 seconds');
+                    clearInterval(checkVTK);
+                    showToast('VTK.js failed to load from CDN', 'error');
+                }
+            }, 50);
+        });
+
+        function initializeApp() {
+            console.log('[App-Init] Initializing OPView application...');
+            if (window.OPViewApp && window.app) {
+                window.app.init().catch(err => {
+                    console.error('[App-Init] Error during app init:', err);
+                });
+            }
+        }
+    </script>
 </body>
 </html>
