@@ -86,6 +86,47 @@ class OPViewApp {
     async init() {
         log('log', '=== OPView Initialization Started ===');
 
+        // Check VTK.js module structure
+        log('log', '[VTK Module Check] Verifying VTK.js structure...');
+        if (window.vtk) {
+            const vtkModules = Object.keys(window.vtk);
+            log('log', `[VTK Module Check] Available top-level modules: ${vtkModules.join(', ')}`);
+
+            if (window.vtk.Common) {
+                const commonModules = Object.keys(window.vtk.Common);
+                log('log', `[VTK Module Check] Common sub-modules: ${commonModules.join(', ')}`);
+            }
+
+            if (window.vtk.Rendering) {
+                const renderingModules = Object.keys(window.vtk.Rendering);
+                log('log', `[VTK Module Check] Rendering sub-modules: ${renderingModules.join(', ')}`);
+            }
+
+            if (window.vtk.Interaction) {
+                const interactionModules = Object.keys(window.vtk.Interaction);
+                log('log', `[VTK Module Check] Interaction sub-modules: ${interactionModules.join(', ')}`);
+            }
+
+            // Test critical classes
+            try {
+                if (window.vtk.Common && window.vtk.Common.DataModel && window.vtk.Common.DataModel.vtkImageData) {
+                    log('log', '[VTK Module Check] ✓ vtkImageData available');
+                } else {
+                    log('error', '[VTK Module Check] ✗ vtkImageData not found in vtk.Common.DataModel');
+                }
+
+                if (window.vtk.Rendering && window.vtk.Rendering.Core && window.vtk.Rendering.Core.vtkRenderer) {
+                    log('log', '[VTK Module Check] ✓ vtkRenderer available');
+                } else {
+                    log('error', '[VTK Module Check] ✗ vtkRenderer not found in vtk.Rendering.Core');
+                }
+            } catch (e) {
+                log('error', '[VTK Module Check] Error checking modules:', e);
+            }
+        } else {
+            log('error', '[VTK Module Check] window.vtk is not defined!');
+        }
+
         log('log', '1. Setting up event listeners...');
         this.setupEventListeners();
 

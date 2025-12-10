@@ -34,15 +34,30 @@ class VTKViewer {
      * Initialize VTK.js viewer
      */
     initialize() {
+        const viewerId = this.container.id || 'unknown';
+
+        log('log', `[VTK Viewer ${viewerId}] Initialize called`);
+
         if (!this.container) {
-            log('error', 'Container element not found');
+            log('error', `[VTK Viewer ${viewerId}] Container element not found`);
             return;
         }
 
-        if (!window.vtk) {
-            log('error', 'VTK.js library not loaded');
+        // Check container is in DOM
+        if (!document.body.contains(this.container)) {
+            log('warn', `[VTK Viewer ${viewerId}] Container not in DOM tree yet, will retry...`);
+            setTimeout(() => this.initialize(), 50);
             return;
         }
+
+        log('log', `[VTK Viewer ${viewerId}] Container is in DOM`);
+
+        if (!window.vtk) {
+            log('error', `[VTK Viewer ${viewerId}] VTK.js library not loaded`);
+            return;
+        }
+
+        log('log', `[VTK Viewer ${viewerId}] VTK.js is available`);
 
         try {
             // Get container dimensions
@@ -50,61 +65,76 @@ class VTKViewer {
             const width = Math.max(rect.width, this.options.width);
             const height = Math.max(rect.height, this.options.height);
 
-            log('log', `[VTK] Creating viewer with size: ${width}x${height}`);
+            log('log', `[VTK ${viewerId}] Container size: ${rect.width}x${rect.height}, Using: ${width}x${height}`);
 
             // Create render window + renderer
-            log('log', '[VTK] Creating render window and renderer...');
+            log('log', `[VTK ${viewerId}] Creating render window...`);
             this.renderWindow = vtk.Rendering.Core.vtkRenderWindow.newInstance();
-            log('log', '[VTK] ✓ Render window created');
+            log('log', `[VTK ${viewerId}] ✓ Render window created`);
+
             this.renderer = vtk.Rendering.Core.vtkRenderer.newInstance({ background: [1, 1, 1] });
-            log('log', '[VTK] ✓ Renderer created');
+            log('log', `[VTK ${viewerId}] ✓ Renderer created`);
+
             this.renderWindow.addRenderer(this.renderer);
-            log('log', '[VTK] ✓ Renderer added to window');
+            log('log', `[VTK ${viewerId}] ✓ Renderer added to window`);
 
             // Prepare canvas container
-            log('log', '[VTK] Creating canvas...');
+            log('log', `[VTK ${viewerId}] Creating canvas element (${width}x${height})...`);
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             canvas.style.width = '100%';
             canvas.style.height = '100%';
             canvas.style.display = 'block';
+            canvas.style.border = '1px solid #ccc';  // Debug: visible border
+
+            // Clear container and add canvas
+            this.container.innerHTML = '';
             this.container.appendChild(canvas);
             this.canvas = canvas;
-            log('log', '[VTK] ✓ Canvas created and appended');
+
+            log('log', `[VTK ${viewerId}] ✓ Canvas created: ${canvas.width}x${canvas.height}`);
+            log('log', `[VTK ${viewerId}] Canvas in DOM: ${document.body.contains(canvas)}`);
 
             // OpenGL render window
-            log('log', '[VTK] Creating OpenGL render window...');
+            log('log', `[VTK ${viewerId}] Creating OpenGL render window...`);
             this.openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
-            log('log', '[VTK] ✓ OpenGL window created');
+            log('log', `[VTK ${viewerId}] ✓ OpenGL window created`);
+
             this.openglRenderWindow.setContainer(canvas);
-            log('log', '[VTK] ✓ Canvas set as container');
+            log('log', `[VTK ${viewerId}] ✓ Canvas set as OpenGL container`);
+
             this.openglRenderWindow.setSize(width, height);
-            log('log', '[VTK] ✓ Size set');
+            log('log', `[VTK ${viewerId}] ✓ OpenGL size set to ${width}x${height}`);
+
             this.renderWindow.addView(this.openglRenderWindow);
-            log('log', '[VTK] ✓ View added to window');
+            log('log', `[VTK ${viewerId}] ✓ OpenGL view added to render window`);
 
             // Interactor setup
-            log('log', '[VTK] Creating interactor...');
+            log('log', `[VTK ${viewerId}] Creating interactor...`);
             this.interactor = vtk.Rendering.OpenGL.vtkRenderWindowInteractor.newInstance();
-            log('log', '[VTK] ✓ Interactor created');
+            log('log', `[VTK ${viewerId}] ✓ Interactor created`);
+
             this.interactor.setView(this.openglRenderWindow);
+            log('log', `[VTK ${viewerId}] ✓ Interactor view set`);
+
             this.interactor.initialize();
-            log('log', '[VTK] ✓ Interactor initialized');
+            log('log', `[VTK ${viewerId}] ✓ Interactor initialized`);
+
             this.interactor.bindEvents(canvas);
-            log('log', '[VTK] ✓ Events bound');
+            log('log', `[VTK ${viewerId}] ✓ Events bound to canvas`);
 
             // Add interactor style
-            log('log', '[VTK] Setting interactor style...');
+            log('log', `[VTK ${viewerId}] Setting interactor style...`);
             const iStyle = vtk.Interaction.Style.vtkInteractorStyleImage.newInstance();
             this.interactor.setInteractorStyle(iStyle);
-            log('log', '[VTK] ✓ Interactor style set');
+            log('log', `[VTK ${viewerId}] ✓ Interactor style set`);
 
             this.initialized = true;
-            log('log', '✓✓✓ VTK Viewer initialized successfully ✓✓✓');
+            log('log', `[VTK ${viewerId}] ✅ VIEWER FULLY INITIALIZED AND READY ✅`);
         } catch (error) {
-            log('error', 'Error initializing VTK viewer:', error.message);
-            log('error', 'Stack:', error.stack);
+            log('error', `[VTK ${viewerId}] Error initializing VTK viewer: ${error.message}`);
+            log('error', `[VTK ${viewerId}] Stack: ${error.stack}`);
             this.initialized = false;
         }
     }
@@ -116,75 +146,103 @@ class VTKViewer {
      * @param {object} stats - {min, max, mean, std}
      */
     loadImageData(imageData, scalarName = 'data', stats = null) {
+        const viewerId = this.container.id || 'unknown';
+
         try {
+            log('log', `[VTK ${viewerId}] loadImageData called for: ${scalarName}`);
+
             if (!this.initialized) {
-                log('warn', 'Viewer not yet initialized. Will retry...');
+                log('warn', `[VTK ${viewerId}] Viewer not yet initialized (${this.initialized}). Will retry...`);
                 setTimeout(() => this.loadImageData(imageData, scalarName, stats), 100);
                 return;
             }
 
+            log('log', `[VTK ${viewerId}] Viewer initialized, proceeding...`);
+
             if (!imageData) {
-                log('error', 'No image data provided');
+                log('error', `[VTK ${viewerId}] No image data provided`);
                 return;
             }
 
+            log('log', `[VTK ${viewerId}] Image data provided`);
+
             if (!this.renderer) {
-                log('error', 'Renderer not initialized');
-                log('error', `Initialized flag: ${this.initialized}`);
-                log('error', `RenderWindow: ${this.renderWindow}`);
+                log('error', `[VTK ${viewerId}] Renderer not available!`);
+                log('error', `[VTK ${viewerId}] Initialized: ${this.initialized}, RenderWindow: ${this.renderWindow}`);
                 this.renderFallbackVisualization(imageData, scalarName, stats);
                 return;
             }
+
+            log('log', `[VTK ${viewerId}] Renderer is available`);
 
             this.imageData = imageData;
             this.currentScalarName = scalarName;
             this.stats = stats;
 
-            log('log', `Loading image data: ${scalarName}, dimensions: ${imageData.getDimensions()}`);
+            const dims = imageData.getDimensions();
+            log('log', `[VTK ${viewerId}] Loading image data: ${scalarName}, dimensions: ${dims[0]}x${dims[1]}x${dims[2]}`);
 
             // Get scalar range
             if (stats) {
                 this.scalarRange = [stats.min, stats.max];
+                log('log', `[VTK ${viewerId}] Using provided stats range: [${stats.min}, ${stats.max}]`);
             } else {
                 const scalars = imageData.getPointData().getScalars();
                 if (scalars) {
                     this.scalarRange = scalars.getRange();
+                    log('log', `[VTK ${viewerId}] Computed range from scalars: [${this.scalarRange[0]}, ${this.scalarRange[1]}]`);
+                } else {
+                    log('warn', `[VTK ${viewerId}] No scalars found in point data`);
                 }
             }
 
-            log('log', `Scalar range: [${this.scalarRange[0]}, ${this.scalarRange[1]}]`);
+            log('log', `[VTK ${viewerId}] Scalar range: [${this.scalarRange[0]}, ${this.scalarRange[1]}]`);
 
             // Create mapper
+            log('log', `[VTK ${viewerId}] Creating image mapper...`);
             const mapper = vtk.Rendering.Core.vtkImageMapper.newInstance();
             mapper.setInputData(imageData);
             mapper.setSliceAtFocalPoint(true);
             mapper.setSlicingMode(this.sliceAxis);
+            log('log', `[VTK ${viewerId}] ✓ Mapper created`);
 
             // Create image slice
+            log('log', `[VTK ${viewerId}] Creating image slice actor...`);
             this.imageSlice = vtk.Rendering.Core.vtkImageSlice.newInstance();
             this.imageSlice.setMapper(mapper);
+            log('log', `[VTK ${viewerId}] ✓ Image slice created`);
 
             // Setup LUT (lookup table) and color mapping
+            log('log', `[VTK ${viewerId}] Creating color transfer function (palette: ${this.options.palette})...`);
             const property = this.imageSlice.getProperty();
             const lut = colorMapManager.createLUT(this.options.palette, this.scalarRange[0], this.scalarRange[1]);
             property.setLookupTable(lut);
+            log('log', `[VTK ${viewerId}] ✓ LUT set`);
 
             // Set color window and level
             const level = (this.scalarRange[0] + this.scalarRange[1]) / 2;
             const window = this.scalarRange[1] - this.scalarRange[0];
             property.setColorLevel(level, window);
+            log('log', `[VTK ${viewerId}] ✓ Color level set (level: ${level}, window: ${window})`);
 
             // Add to renderer
+            log('log', `[VTK ${viewerId}] Adding actor to renderer...`);
             this.renderer.removeAllViewProps();
             this.renderer.addViewProp(this.imageSlice);
+            log('log', `[VTK ${viewerId}] ✓ Actor added to renderer`);
+
+            log('log', `[VTK ${viewerId}] Resetting camera...`);
             this.renderer.resetCamera();
+            log('log', `[VTK ${viewerId}] ✓ Camera reset`);
 
             // Render
+            log('log', `[VTK ${viewerId}] Calling renderWindow.render()...`);
             this.renderWindow.render();
-            log('log', `✓ Image data loaded and rendered successfully`);
+            log('log', `[VTK ${viewerId}] ✅ RENDERING COMPLETE - Image should now be visible ✅`);
         } catch (error) {
-            log('error', 'Error loading image data:', error);
-            log('warn', 'Falling back to canvas visualization...');
+            log('error', `[VTK ${viewerId}] Error loading image data: ${error.message}`);
+            log('error', `[VTK ${viewerId}] Stack: ${error.stack}`);
+            log('warn', `[VTK ${viewerId}] Falling back to canvas visualization...`);
             this.renderFallbackVisualization(imageData, scalarName, stats);
         }
     }
