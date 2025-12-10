@@ -163,16 +163,26 @@ class OPViewApp {
      * @param {string} tabId
      */
     selectTab(tabId) {
+        log('log', `[TAB] Selecting tab: ${tabId}`);
         // Update tab styles
         document.querySelectorAll('.custom-tab').forEach(tab => {
             tab.classList.remove('active-tab');
         });
-        document.getElementById(`tab-${tabId}`)?.classList.add('active-tab');
+        const tabElement = document.getElementById(`tab-${tabId}`);
+        if (tabElement) {
+            tabElement.classList.add('active-tab');
+            log('log', `[TAB] ✓ Tab element found and activated`);
+        } else {
+            log('warn', `[TAB] ✗ Tab element not found: tab-${tabId}`);
+        }
 
         // Show main content
         const config = this.tabConfigs.find(t => t.id === tabId);
         if (config) {
+            log('log', `[TAB] Rendering main panel for: ${config.label}`);
             this.renderMainPanel(config);
+        } else {
+            log('error', `[TAB] Config not found for: ${tabId}`);
         }
     }
 
@@ -181,19 +191,30 @@ class OPViewApp {
      * @param {object} tabConfig
      */
     renderMainPanel(tabConfig) {
+        log('log', `[PANEL] Rendering panel for: ${tabConfig.label}`);
         const mainContent = document.getElementById('mainContent');
-        if (!mainContent) return;
+        if (!mainContent) {
+            log('error', `[PANEL] ✗ mainContent element not found!`);
+            return;
+        }
+        log('log', `[PANEL] ✓ Found mainContent element`);
 
         mainContent.innerHTML = '';
+        log('log', `[PANEL] Cleared existing content`);
 
         const gridContainer = createElement('div', { classes: 'dataset-grid' });
+        log('log', `[PANEL] Creating ${tabConfig.datasets.length} dataset blocks...`);
 
         tabConfig.datasets.forEach((dataset, index) => {
+            log('log', `[PANEL] Creating block ${index + 1}: ${dataset.label}`);
             const block = this.createDatasetBlock(tabConfig.id, dataset, index);
             gridContainer.appendChild(block);
+            log('log', `[PANEL] ✓ Block ${index + 1} created and appended`);
         });
 
         mainContent.appendChild(gridContainer);
+        log('log', `[PANEL] ✓ Grid container appended to mainContent`);
+        log('log', `[PANEL] ✓ Panel rendering complete. Total viewers: ${this.viewers.size}`);
     }
 
     /**

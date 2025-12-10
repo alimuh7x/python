@@ -61,7 +61,8 @@
 
     <!-- ==================== SCRIPTS ==================== -->
     <!-- VTK.js from CDN - must load first -->
-    <script src="https://kitware.github.io/vtk-js/vtk.js" async defer></script>
+    <!-- Try unpkg first, with fallback to kitware -->
+    <script src="https://unpkg.com/vtk.js"></script>
 
     <!-- Application scripts - load synchronously -->
     <script src="js/utils.js" defer></script>
