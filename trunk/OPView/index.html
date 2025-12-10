@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPView - VTK Visualization</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- ==================== HEADER ==================== -->
+        <header class="app-header">
+            <div class="top-bar">
+                <div class="top-left">
+                    <img src="assets/OP_Logo.png" alt="OP Logo" class="app-logo">
+                    <h1 class="app-title">
+                        OPView<span class="app-title-sub">phase field simulator viewer</span>
+                    </h1>
+                </div>
+                <div class="top-right">
+                    <button id="openFolderBtn" class="btn btn-danger" title="Open VTK data folder">
+                        📁 Open Folder
+                    </button>
+                    <a href="#docs" class="doc-link">DOCS</a>
+                </div>
+            </div>
+
+            <!-- VTK Folder Selection Row -->
+            <div class="vtk-folder-section">
+                <div class="vtk-folder-row">
+                    <div class="vtk-folder-heading">
+                        <span class="vtk-folder-heading-text">📂 DATA FOLDER:</span>
+                        <span id="folderLabel" class="vtk-folder-badge">none</span>
+                    </div>
+                    <div class="vtk-tabs" id="datasetTabs">
+                        <!-- Tabs will be dynamically generated here -->
+                    </div>
+                    <button id="addTabBtn" class="vtk-tab-add-btn" title="Add another data folder">
+                        <img src="assets/plus.png" alt="+" class="vtk-tab-add-icon">
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- ==================== MAIN LAYOUT ==================== -->
+        <div class="layout-shell">
+            <!-- LEFT SIDEBAR -->
+            <aside class="sidebar">
+                <div class="sidebar-title">ANALYSES</div>
+                <div class="sidebar-tabs" id="analysisTopics">
+                    <!-- Sidebar tabs will be dynamically generated here -->
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT AREA -->
+            <main class="main-panel" id="mainContent">
+                <!-- Content panels will be dynamically generated here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <!-- VTK.js from CDN - must load first -->
+    <script src="https://kitware.github.io/vtk-js/vtk.js" async defer></script>
+
+    <!-- Application scripts - load synchronously -->
+    <script src="js/utils.js" defer></script>
+    <script src="js/colormap.js" defer></script>
+    <script src="js/histogram.js" defer></script>
+    <script src="js/textdata.js" defer></script>
+    <script src="js/loader.js" defer></script>
+    <script src="js/viewer.js" defer></script>
+    <script src="js/app.js" defer></script>
+</body>
+</html>
