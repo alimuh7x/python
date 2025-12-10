@@ -26,8 +26,23 @@ class VTKViewer {
         this.stats = null;
         this.initialized = false;
 
-        // Delay initialization slightly to ensure container is in DOM
-        setTimeout(() => this.initialize(), 10);
+        // Wait for VTK.js to load, then initialize
+        this.waitForVTKAndInitialize();
+    }
+
+    /**
+     * Wait for VTK.js library to load, then initialize
+     */
+    waitForVTKAndInitialize() {
+        const checkVTK = () => {
+            if (window.vtk && window.vtk.Rendering && window.vtk.Rendering.Core) {
+                log('log', `[VTK Viewer ${this.container.id || 'unknown'}] VTK.js is now available, initializing...`);
+                setTimeout(() => this.initialize(), 10);
+            } else {
+                setTimeout(checkVTK, 50);
+            }
+        };
+        checkVTK();
     }
 
     /**

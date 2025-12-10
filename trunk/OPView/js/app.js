@@ -604,9 +604,9 @@ class OPViewApp {
         const viewerArray = Array.from(this.viewers.entries());
         log('log', `Viewers to load: ${viewerArray.map(([id]) => id).join(', ')}`);
 
-        // Wait for viewers to initialize
-        log('log', 'Waiting for viewers to initialize...');
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Wait for viewers to initialize (with VTK.js load time)
+        log('log', 'Waiting for VTK.js and viewers to fully initialize (1500ms)...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
         viewerArray.forEach(([viewerId, viewer], index) => {
             try {
