@@ -820,27 +820,10 @@ class OPViewApp {
     }
 }
 
-// Initialize app when DOM is ready and VTK.js is loaded
-document.addEventListener('DOMContentLoaded', async () => {
-    log('log', 'DOMContentLoaded fired');
-
-    // Wait for VTK.js to load
-    let vtk_loaded = false;
-    let wait_count = 0;
-    while (!window.vtk && wait_count < 20) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        wait_count++;
-    }
-
-    if (!window.vtk) {
-        log('error', 'VTK.js failed to load from CDN');
-        showToast('VTK.js library failed to load. Check browser console.', 'error');
-    } else {
-        log('log', '✓ VTK.js loaded successfully');
-    }
-
-    // Create and initialize app
-    window.app = new OPViewApp();
-    await window.app.init();
-    log('log', '✓ OPView app fully initialized');
-});
+// Note: App initialization is now handled by index.html to ensure proper VTK.js loading sequence
+// The initialization flow is:
+// 1. index.html loads VTK.js from CDN with error handling
+// 2. Deferred scripts load (including this file)
+// 3. DOMContentLoaded fires
+// 4. index.html checks for VTK availability
+// 5. Once ready, index.html calls initializeApp() which creates window.app instance
