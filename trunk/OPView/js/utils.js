@@ -59,7 +59,11 @@ function createElement(tag, options = {}) {
         if (typeof options.classes === 'string') {
             el.className = options.classes;
         } else {
-            el.classList.add(...options.classes);
+            // Filter out empty strings before adding classes
+            const validClasses = options.classes.filter(c => c && c.trim());
+            if (validClasses.length > 0) {
+                el.classList.add(...validClasses);
+            }
         }
     }
     if (options.attrs) {
