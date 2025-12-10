@@ -208,8 +208,8 @@ body {
     font-weight: 600;
     line-height: 1.2;
     color: #1b2d4a !important;
-    background: transparent !important;
-    border: none !important;
+    background: #eef1f7 !important;
+    border: 1px solid #cdd5e3 !important;
     border-bottom: 2px solid transparent !important;
     border-radius: 3px 3px 0 0;
     box-shadow: none;
@@ -218,20 +218,21 @@ body {
 }
 
 .vtk-tab:hover {
-    background: transparent !important;
+    background: #e4e8f1 !important;
     border-bottom-color: #183568 !important;
     box-shadow: none;
 }
 
 .vtk-tab + .vtk-tab {
-    border-left: 1px solid #e2e8f4;
+    border-left: 1px solid #cbd3e2;
     padding-left: 14px !important;
-    margin-left: 6px;
+    margin-left: 8px;
 }
 
 .vtk-tab--selected {
     color: #183568 !important;
-    background: transparent !important;
+    background: #e0e5f0 !important;
+    border: 1px solid #cbd3e2 !important;
     border-bottom: 3px solid #c50623 !important;
     box-shadow: none;
     transform: translateY(0);
