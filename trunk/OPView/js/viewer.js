@@ -50,14 +50,19 @@ class VTKViewer {
             const width = Math.max(rect.width, this.options.width);
             const height = Math.max(rect.height, this.options.height);
 
-            log('log', `Creating viewer with size: ${width}x${height}`);
+            log('log', `[VTK] Creating viewer with size: ${width}x${height}`);
 
             // Create render window + renderer
+            log('log', '[VTK] Creating render window and renderer...');
             this.renderWindow = vtk.Rendering.Core.vtkRenderWindow.newInstance();
+            log('log', '[VTK] ✓ Render window created');
             this.renderer = vtk.Rendering.Core.vtkRenderer.newInstance({ background: [1, 1, 1] });
+            log('log', '[VTK] ✓ Renderer created');
             this.renderWindow.addRenderer(this.renderer);
+            log('log', '[VTK] ✓ Renderer added to window');
 
             // Prepare canvas container
+            log('log', '[VTK] Creating canvas...');
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
@@ -66,27 +71,40 @@ class VTKViewer {
             canvas.style.display = 'block';
             this.container.appendChild(canvas);
             this.canvas = canvas;
+            log('log', '[VTK] ✓ Canvas created and appended');
 
             // OpenGL render window
+            log('log', '[VTK] Creating OpenGL render window...');
             this.openglRenderWindow = vtk.Rendering.OpenGL.vtkRenderWindow.newInstance();
+            log('log', '[VTK] ✓ OpenGL window created');
             this.openglRenderWindow.setContainer(canvas);
+            log('log', '[VTK] ✓ Canvas set as container');
             this.openglRenderWindow.setSize(width, height);
+            log('log', '[VTK] ✓ Size set');
             this.renderWindow.addView(this.openglRenderWindow);
+            log('log', '[VTK] ✓ View added to window');
 
             // Interactor setup
+            log('log', '[VTK] Creating interactor...');
             this.interactor = vtk.Rendering.OpenGL.vtkRenderWindowInteractor.newInstance();
+            log('log', '[VTK] ✓ Interactor created');
             this.interactor.setView(this.openglRenderWindow);
             this.interactor.initialize();
+            log('log', '[VTK] ✓ Interactor initialized');
             this.interactor.bindEvents(canvas);
+            log('log', '[VTK] ✓ Events bound');
 
             // Add interactor style
+            log('log', '[VTK] Setting interactor style...');
             const iStyle = vtk.Interaction.Style.vtkInteractorStyleImage.newInstance();
             this.interactor.setInteractorStyle(iStyle);
+            log('log', '[VTK] ✓ Interactor style set');
 
             this.initialized = true;
-            log('log', '✓ VTK Viewer initialized successfully');
+            log('log', '✓✓✓ VTK Viewer initialized successfully ✓✓✓');
         } catch (error) {
-            log('error', 'Error initializing VTK viewer:', error);
+            log('error', 'Error initializing VTK viewer:', error.message);
+            log('error', 'Stack:', error.stack);
             this.initialized = false;
         }
     }
@@ -112,6 +130,9 @@ class VTKViewer {
 
             if (!this.renderer) {
                 log('error', 'Renderer not initialized');
+                log('error', `Initialized flag: ${this.initialized}`);
+                log('error', `RenderWindow: ${this.renderWindow}`);
+                this.renderFallbackVisualization(imageData, scalarName, stats);
                 return;
             }
 
@@ -163,6 +184,60 @@ class VTKViewer {
             log('log', `✓ Image data loaded and rendered successfully`);
         } catch (error) {
             log('error', 'Error loading image data:', error);
+            log('warn', 'Falling back to canvas visualization...');
+            this.renderFallbackVisualization(imageData, scalarName, stats);
+        }
+    }
+
+    /**
+     * Fallback visualization using canvas if VTK fails
+     */
+    renderFallbackVisualization(imageData, scalarName, stats) {
+        try {
+            // Clear container
+            this.container.innerHTML = '';
+
+            // Create a canvas for fallback visualization
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.border = '1px solid #ccc';
+            this.container.appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            const { width, height } = canvas;
+
+            // Draw a colorful gradient test pattern
+            const gradW = 50;
+            const gradH = 50;
+
+            for (let y = 0; y < height; y += gradH) {
+                for (let x = 0; x < width; x += gradW) {
+                    const r = Math.floor((x / width) * 255);
+                    const g = Math.floor((y / height) * 255);
+                    const b = 128;
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x, y, gradW, gradH);
+                }
+            }
+
+            // Add info text
+            ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 16px Arial';
+            ctx.strokeText(`${scalarName}`, 10, 30);
+            ctx.fillText(`${scalarName}`, 10, 30);
+
+            ctx.font = '12px Arial';
+            ctx.strokeText(`Fallback Canvas`, 10, 55);
+            ctx.fillText(`Fallback Canvas`, 10, 55);
+
+            log('log', '✓ Fallback canvas visualization rendered');
+        } catch (error) {
+            log('error', 'Fallback visualization error:', error);
         }
     }
 
