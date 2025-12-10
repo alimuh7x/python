@@ -151,11 +151,22 @@
 
         function initializeApp() {
             console.log('[App-Init] Initializing OPView application...');
-            if (window.OPViewApp && window.app) {
-                window.app.init().catch(err => {
-                    console.error('[App-Init] Error during app init:', err);
-                });
+
+            if (!window.OPViewApp) {
+                console.error('[App-Init] OPViewApp class not found');
+                return;
             }
+
+            console.log('[App-Init] Creating OPViewApp instance...');
+            window.app = new window.OPViewApp();
+
+            console.log('[App-Init] Calling app.init()...');
+            window.app.init().then(() => {
+                console.log('[App-Init] ✅ OPView app fully initialized');
+            }).catch(err => {
+                console.error('[App-Init] Error during app init:', err);
+                console.error('[App-Init] Stack:', err.stack);
+            });
         }
     </script>
 </body>

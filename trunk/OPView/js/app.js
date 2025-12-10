@@ -84,6 +84,7 @@ class OPViewApp {
      * Initialize application
      */
     async init() {
+        console.log('[OPView App] init() method called');
         log('log', '=== OPView Initialization Started ===');
 
         // Check VTK.js module structure
