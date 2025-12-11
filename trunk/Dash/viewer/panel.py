@@ -282,6 +282,99 @@ class ViewerPanel:
 
         return colorscale, Z_grid_display, zmin_display, zmax_display, zmid_display
 
+    def _build_colorbar_figure(self, zmin_display, zmax_display, colorscale, state: ViewerState):
+        if not np.isfinite(zmin_display) or not np.isfinite(zmax_display) or zmax_display == zmin_display:
+            tick_vals = [zmin_display]
+            tick_text = [f"{zmin_display:.3g}" if np.isfinite(zmin_display) else ""]
+        else:
+            tick_vals = np.linspace(zmin_display, zmax_display, 5)
+            tick_text = [f"{v:.3g}" for v in tick_vals]
+
+        colorbar_fig = go.Figure()
+        colorbar_fig.add_trace(
+            go.Scatter(
+                x=[0, 0],
+                y=[0, 1],
+                mode="markers",
+                marker=dict(
+                    size=0.1,
+                    color=[zmin_display, zmax_display],
+                    colorscale=colorscale,
+                    showscale=True,
+                    cmin=zmin_display,
+                    cmax=zmax_display,
+                    colorbar=dict(
+                        title=dict(
+                            text=state.scalar_label + (f" ({state.units})" if state.units else ""),
+                            side="right",
+                            font=dict(
+                                size=20,
+                                family="Montserrat, Arial, sans-serif",
+                                color="#0f1b2b",
+                            ),
+                        ),
+                        len=0.9,
+                        thickness=20,
+                        thicknessmode="pixels",
+                        x=0.5,
+                        xanchor="center",
+                        tickmode="array",
+                        tickvals=tick_vals,
+                        ticktext=tick_text,
+                        ticks="outside",
+                        tickfont=dict(
+                            size=16,
+                            family="Montserrat, Arial, sans-serif",
+                            color="#0f1b2b",
+                        ),
+                    ),
+                ),
+                hoverinfo="skip",
+            )
+        )
+        colorbar_fig.update_layout(
+            width=90,
+            height=380,
+            margin=dict(l=0, r=0, t=40, b=0),
+            xaxis=dict(visible=False),
+            yaxis=dict(visible=False),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+        )
+        return colorbar_fig
+
+    def _build_heatmap_figures(self, reader, state: ViewerState, file_path: str, slice_data=None):
+        descriptor = self.scalar_map.get(state.scalar_key) or self.scalar_defs[0]
+        if slice_data is None:
+            slice_data = reader.get_interpolated_slice(
+                axis=state.axis,
+                index=state.slice_index,
+                scalar_name=descriptor['array'],
+                component=descriptor.get('component'),
+                resolution=self.config["interpolation_resolution"]
+            )
+        X_grid, Y_grid, Z_grid, stats = slice_data
+        scale = descriptor.get('scale', 1.0) or 1.0
+        Z_grid = Z_grid * scale
+        colorscale, Z_display, zmin_display, zmax_display, zmid_display = self._colorscale_params(Z_grid, state)
+        nx, ny = self._slice_dimensions(reader, state.axis)
+        effective_height = 380 - 40
+        aspect = nx / max(ny, 1)
+        fig_width = max(100, min(1200, int(effective_height * aspect)))
+        figure = self._build_figure(
+            X_grid, Y_grid, Z_display, state,
+            colorscale, zmin_display, zmax_display, zmid_display,
+            fig_width
+        )
+        colorbar_fig = self._build_colorbar_figure(zmin_display, zmax_display, colorscale, state)
+        scaled_stats = {k: stats[k] * scale for k in stats}
+        return {
+            "figure": figure,
+            "colorbar": colorbar_fig,
+            "scaled_stats": scaled_stats,
+            "fig_width": fig_width,
+        }
+
     def _slice_dimensions(self, reader, axis: str):
         """Return (nx, ny) for the current slice based on the original mesh dimensions.
 
@@ -565,28 +658,18 @@ class ViewerPanel:
             # We reserve 40px of top margin inside the figure for the
             # modebar, so use the *effective* plot height when computing
             # the width to keep the image square and avoid side gaps.
-            nx, ny = self._slice_dimensions(reader, state.axis)
-
-            # HEAD: Calculating width of the image ---------------------------------------
-
-            effective_height = 380 - 40  # fig_height - top_margin
-            aspect = nx / max(ny, 1)
-            fig_width = max(100, min(1200, int(effective_height * aspect)))
-            
-
-            # Colorscale parameters shared between main heatmap and colorbar
-            colorscale, Z_display, zmin_display, zmax_display, zmid_display = self._colorscale_params(Z_grid, state)
-
-            figure = self._build_figure(X_grid, Y_grid, Z_display, state,
-                                        colorscale, zmin_display, zmax_display, zmid_display,
-                                        fig_width)
+            heatmap_data = self._build_heatmap_figures(reader, state, file_path)
+            figure = heatmap_data["figure"]
+            colorbar_fig = heatmap_data["colorbar"]
+            scaled_stats = heatmap_data["scaled_stats"]
+            card_style = {
+                "width": f"{heatmap_data['fig_width']}px",
+                "height": "380px",
+            }
 
             # Optional: add Interfaces (band) overlay on top of any field.
             if state.interfaces_overlay_visible:
                 try:
-                    # Always derive interfaces from the Phase Field VTK and reuse
-                    # that geometry as an overlay across all viewers. Prefer the
-                    # PhaseField file that matches the current timestep.
                     phase_file = self._phase_overlay_file(file_path)
                     phase_reader = self.reader_factory(phase_file)
                     X_i, Y_i, Z_i, _ = phase_reader.get_interpolated_slice(
@@ -612,89 +695,16 @@ class ViewerPanel:
                         hovertemplate=None,
                     ))
                 except Exception:
-                    # If Interfaces array is not available for this dataset,
-                    # silently skip the overlay.
                     pass
             map_title = self._build_map_title(state)
             click_info = self._build_click_info(state)
 
             store_data = state.to_dict()
 
-            # Format display values
             formatted_min = _formatted_range_value(state.range_min)
             formatted_max = _formatted_range_value(state.range_max)
             min_display = f"{formatted_min:.6f}" if formatted_min is not None else ""
             max_display = f"{formatted_max:.6f}" if formatted_max is not None else ""
-
-            # Style for middle heatmap card
-            card_style = {
-                "width": f"{fig_width}px",
-                "height": "380px",
-            }
-
-            # Separate colorbar figure (fixed card width ~90px).
-            # Use an invisible scatter with a colorbar so only one bar is visible.
-            # Build explicit tick positions so min/max are always shown.
-            if np.isfinite(zmin_display) and np.isfinite(zmax_display) and zmax_display != zmin_display:
-                tick_vals = np.linspace(zmin_display, zmax_display, 5)
-                tick_text = [f"{v:.3g}" for v in tick_vals]
-            else:
-                tick_vals = [zmin_display]
-                tick_text = [f"{zmin_display:.3g}"]
-
-            colorbar_fig = go.Figure()
-            colorbar_fig.add_trace(
-                go.Scatter(
-                    x=[0, 0],
-                    y=[0, 1],
-                    mode="markers",
-                    marker=dict(
-                        size=0.1,
-                        color=[zmin_display, zmax_display],
-                        colorscale=colorscale,
-                        showscale=True,
-                        cmin=zmin_display,
-                        cmax=zmax_display,
-                        colorbar=dict(
-                            title=dict(
-                                text=state.scalar_label + (f" ({state.units})" if state.units else ""),
-                                side="right",
-                                font=dict(
-                                    size=20,
-                                    family="Montserrat, Arial, sans-serif",
-                                    color="#0f1b2b",
-                                ),
-                            ),
-                            len=0.9,
-                            thickness=20,
-                            thicknessmode="pixels",
-                            x=0.5,
-                            xanchor="center",
-                            tickmode="array",
-                            tickvals=tick_vals,
-                            ticktext=tick_text,
-                            ticks="outside",
-                            tickfont=dict(
-                                size=16,
-                                family="Montserrat, Arial, sans-serif",
-                                color="#0f1b2b",
-                            ),
-                        ),
-                    ),
-                    hoverinfo="skip",
-                )
-            )
-            colorbar_fig.update_layout(
-                width=90,
-                height=380,
-                # Match the top margin of the main heatmap figure
-                # so the colorbar aligns vertically within its card.
-                margin=dict(l=0, r=0, t=40, b=0),
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                paper_bgcolor="#ffffff",
-                plot_bgcolor="#ffffff",
-            )
 
             # Build base return tuple
             base_return = (
@@ -1160,10 +1170,10 @@ class ViewerPanel:
             pass
         return state
 
-    def _build_state(self, reader, file_path, scalar_key):
+    def _build_state(self, reader, file_path, scalar_key, *, return_slice=False):
         descriptor = self.scalar_map.get(scalar_key, self.scalar_defs[0])
         slice_index = self._default_slice_index(reader)
-        _, _, _, stats = reader.get_interpolated_slice(
+        X_grid, Y_grid, Z_grid, stats = reader.get_interpolated_slice(
             axis=self.axis,
             index=slice_index,
             scalar_name=descriptor['array'],
@@ -1172,7 +1182,7 @@ class ViewerPanel:
         )
         scale = descriptor.get('scale', 1.0) or 1.0
         scaled_stats = {k: stats[k] * scale for k in stats}
-        return initial_state(
+        state = initial_state(
             scalar_key=descriptor['value'],
             scalar_label=descriptor['label'],
             axis=self.axis,
@@ -1185,6 +1195,9 @@ class ViewerPanel:
             scale=scale,
             units=descriptor.get('units')
         )
+        if return_slice:
+            return state, (X_grid, Y_grid, Z_grid, stats), scaled_stats
+        return state
 
     def compute_real_heatmap_edge(self, fig_w, fig_h, data_w, data_h, domain):
         data_aspect = data_w / data_h

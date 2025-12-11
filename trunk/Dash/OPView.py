@@ -1,5 +1,7 @@
 """Multi-field VTK viewer with reusable tab panels."""
+import base64
 import os
+import re
 import warnings
 from glob import glob
 from pathlib import Path
@@ -7,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import plotly.graph_objects as go
 from dash import ALL, Dash, Input, Output, State, ctx, dcc, html
+from dash.exceptions import PreventUpdate
 from flask import render_template_string
 import markdown
 from scipy import stats
@@ -137,6 +140,34 @@ def vtk_data_dir():
 
 
 DEFAULT_VTK_FOLDER_LABEL = vtk_data_dir().name or "VTK"
+COMPARISON_FOLDER_NAME = "Comparison"
+ALLOWED_VTK_EXTENSIONS = ('.vtk', '.vti', '.vtp', '.vtr', '.vts')
+
+
+def comparison_data_dir() -> Path:
+    """
+    Return the comparison folder path, preferring the user's working directory.
+    The directory is created inside the repository when no working-copy folder exists.
+    """
+    cwd_dir = Path.cwd() / COMPARISON_FOLDER_NAME
+    repo_dir = BASE_DIR / COMPARISON_FOLDER_NAME
+    if cwd_dir.exists():
+        return cwd_dir
+    if repo_dir.exists():
+        return repo_dir
+    repo_dir.mkdir(parents=True, exist_ok=True)
+    return repo_dir
+
+
+def list_comparison_files():
+    """Return sorted filenames in the comparison folder filtered by allowed extensions."""
+    directory = comparison_data_dir()
+    files = [
+        child.name
+        for child in sorted(directory.iterdir())
+        if child.is_file() and child.suffix.lower() in ALLOWED_VTK_EXTENSIONS
+    ]
+    return files
 
 def resolve_vtk_path(pattern: str) -> Path:
     """Resolve a file or glob pattern into the VTK data dir."""
@@ -830,10 +861,175 @@ for tab in TAB_CONFIGS:
         except (FileNotFoundError, ValueError):
             continue
         datasets.append((dataset["label"], panel))
-    tab_datasets[tab["id"]] = {
-        "label": tab["label"],
-        "panels": datasets
+        tab_datasets[tab["id"]] = {
+            "label": tab["label"],
+            "panels": datasets
+        }
+
+
+comparison_panels = {}
+
+
+def _comparison_panel_id(group: str) -> str:
+    safe = re.sub(r'[^a-z0-9]+', '-', group.lower()).strip('-')
+    suffix = safe or 'group'
+    return f"comparison-{suffix}"
+
+
+def _comparison_group_name(file_name: str) -> str:
+    return file_name.split('_', 1)[0] or file_name
+
+
+def _group_comparison_files(file_names):
+    grouped = {}
+    for file_name in sorted(set(file_names or [])):
+        group = _comparison_group_name(file_name)
+        grouped.setdefault(group, []).append(file_name)
+    return grouped
+
+
+def _comparison_scalar_options(panels):
+    """Return unique scalar dropdown options aggregated from all panels."""
+    seen = set()
+    options = []
+    for panel_entry in panels.values():
+        if not panel_entry:
+            continue
+        _, panel = panel_entry
+        for opt in panel.scalar_options:
+            value = opt['value']
+            if value in seen:
+                continue
+            seen.add(value)
+            options.append(opt)
+    return options
+
+
+def _comparison_palette_options(panels):
+    """Return palette dropdown options for comparison controls."""
+    if not panels:
+        return [{'label': key.replace('-', ' ').title(), 'value': key} for key in ViewerPanel.PALETTES.keys()]
+    _, panel = next(iter(panels.values()))
+    return panel.palette_options
+
+
+def _parse_float(value):
+    try:
+        if value is None or value == '':
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _clamp_range(min_val, max_val):
+    if min_val is None or max_val is None:
+        return min_val, max_val
+    lo, hi = sorted([min_val, max_val])
+    return lo, hi
+
+
+def _comparison_range_defaults(panels, scalar_key):
+    """Return range defaults for the requested scalar from the first suitable panel."""
+    for file_name, panel_entry in panels.items():
+        if not panel_entry:
+            continue
+        _, panel = panel_entry
+        descriptor = panel.scalar_map.get(scalar_key)
+        if not descriptor:
+            continue
+        file_path = str(comparison_data_dir() / file_name)
+        try:
+            reader = panel.reader_factory(file_path)
+        except FileNotFoundError:
+            continue
+        state, _, _ = panel._build_state(reader, file_path, descriptor['value'], return_slice=True)
+        return state.range_min, state.range_max
+    return None, None
+
+
+def _comparison_settings(panels, scalar_value=None, range_min=None, range_max=None,
+                         palette_value=None, full_scale=False, slider_range=None):
+    """Normalize comparison control inputs into a settings dict plus dropdown options."""
+    scalar_options = _comparison_scalar_options(panels)
+    palette_options = _comparison_palette_options(panels)
+    scalar_values = {opt['value'] for opt in scalar_options}
+    palette_values = {opt['value'] for opt in palette_options}
+    default_scalar = next((opt['value'] for opt in scalar_options), None)
+    default_palette = next((opt['value'] for opt in palette_options), 'aqua-fire')
+
+    selected_scalar = scalar_value if scalar_value in scalar_values else default_scalar
+    selected_palette = palette_value if palette_value in palette_values else default_palette
+
+    parsed_min = _parse_float(range_min)
+    parsed_max = _parse_float(range_max)
+    slider_min = None
+    slider_max = None
+    if slider_range and isinstance(slider_range, (list, tuple)) and len(slider_range) == 2:
+        try:
+            slider_min = float(slider_range[0])
+            slider_max = float(slider_range[1])
+        except (TypeError, ValueError):
+            slider_min = None
+            slider_max = None
+    if slider_min is not None and slider_max is not None:
+        parsed_min = slider_min
+        parsed_max = slider_max
+    if selected_scalar and (parsed_min is None or parsed_max is None):
+        fallback_min, fallback_max = _comparison_range_defaults(panels, selected_scalar)
+        if parsed_min is None:
+            parsed_min = fallback_min
+        if parsed_max is None:
+            parsed_max = fallback_max
+
+    clamped_min, clamped_max = _clamp_range(parsed_min, parsed_max)
+
+    settings = {
+        'scalar': selected_scalar,
+        'range_min': clamped_min,
+        'range_max': clamped_max,
+        'palette': selected_palette,
+        'full_scale': bool(full_scale),
     }
+    return settings, scalar_options, palette_options
+
+
+def _comparison_dataset_config(file_name: str):
+    path = comparison_data_dir() / file_name
+    if not path.exists():
+        return None
+    config = {
+        "id": _comparison_panel_id(file_name),
+        "label": file_name,
+        "file": str(path),
+        "files": [str(path)],
+        "scalars": None,
+        "enable_line_scan": True,
+        "axis": 'y',
+    }
+    return config
+
+
+def get_comparison_panels(file_names):
+    panels = {}
+    for file_name in sorted(set(file_names or [])):
+        config = _comparison_dataset_config(file_name)
+        if not config:
+            continue
+        entry = comparison_panels.get(file_name)
+        panel = entry['panel'] if entry and entry['axis'] == config["axis"] else None
+        if panel is None:
+            try:
+                panel = ViewerPanel(app, get_reader, config)
+            except (FileNotFoundError, ValueError):
+                continue
+            comparison_panels[file_name] = {'axis': config["axis"], 'panel': panel}
+        panels[file_name] = (config["label"], panel)
+
+    for cached_file in list(comparison_panels.keys()):
+        if cached_file not in panels:
+            comparison_panels.pop(cached_file, None)
+    return panels
 
 
 def build_tab_children(tab_id):
@@ -879,6 +1075,337 @@ def build_tab_children(tab_id):
                 cards.append(card)
     return [html.Div(cards, className='dataset-grid')]
 
+
+def _comparison_graph_id(file_name: str):
+    safe = re.sub(r'[^a-z0-9]+', '-', file_name.lower()).strip('-')
+    return {'type': 'comparison-graph', 'file': safe or 'file'}
+
+
+def _comparison_heatmap_data(panel, file_name: str, settings):
+    file_path = str(comparison_data_dir() / file_name)
+    scalar_value = settings.get('scalar')
+    descriptor = panel.scalar_map.get(scalar_value) or panel.scalar_defs[0]
+    try:
+        reader = panel.reader_factory(file_path)
+    except FileNotFoundError:
+        return None
+    try:
+        state, slice_data, _ = panel._build_state(
+            reader, file_path, descriptor['value'], return_slice=True
+        )
+    except Exception:
+        return None
+    range_min = settings.get('range_min')
+    range_max = settings.get('range_max')
+    if range_min is not None:
+        state.range_min = range_min
+    if range_max is not None:
+        state.range_max = range_max
+    if state.range_min is not None and state.range_max is not None and state.range_min > state.range_max:
+        state.range_min, state.range_max = sorted([state.range_min, state.range_max])
+    if state.range_min is not None and state.range_max is not None:
+        state.threshold = (state.range_min + state.range_max) / 2
+    state.palette = settings.get('palette') or state.palette
+    state.colorscale_mode = 'dynamic' if settings.get('full_scale') else 'normal'
+    slice_index = settings.get('slice_index')
+    if slice_index is not None:
+        try:
+            idx = int(slice_index)
+        except (TypeError, ValueError):
+            idx = state.slice_index
+        state.slice_index = max(0, idx)
+    return panel._build_heatmap_figures(reader, state, file_path, slice_data=slice_data)
+
+
+def build_comparison_heatmap_rows(panels, grouped, settings):
+    """Return header + heatmap rows for each comparison group."""
+    rows = []
+    graph_config = {
+        'displayModeBar': True,
+        'displaylogo': False,
+        'responsive': False,
+        'toImageButtonOptions': {'scale': 4}
+    }
+    for group, file_names in grouped.items():
+        ordered = [(name, panels.get(name)) for name in file_names if name in panels]
+        if not ordered:
+            continue
+        heatmap_children = [
+            html.Div(
+                html.Img(src='/assets/OP_Logo.png', className='heatmap-logo', alt='OP logo'),
+                className='heatmap-logo-card comparison-heatmap-logo-card'
+            )
+        ]
+        colorbar_fig = None
+        for file_name, panel_entry in ordered:
+            if not panel_entry:
+                continue
+            _, panel = panel_entry
+            heatmap_data = _comparison_heatmap_data(panel, file_name, settings)
+            if not heatmap_data:
+                continue
+            if colorbar_fig is None:
+                colorbar_fig = heatmap_data['colorbar']
+            heatmap_children.append(html.Div(
+                dcc.Graph(
+                    id=_comparison_graph_id(file_name),
+                    className='heatmap-main-graph comparison-heatmap-graph',
+                    figure=heatmap_data['figure'],
+                    config=graph_config
+                ),
+                className='heatmap-main-card comparison-heatmap-main-card'
+            ))
+
+        if colorbar_fig:
+            heatmap_children.append(html.Div(
+                dcc.Graph(
+                    className='heatmap-colorbar-graph comparison-heatmap-colorbar-graph',
+                    figure=colorbar_fig,
+                    config={'displayModeBar': False, 'displaylogo': False, 'responsive': False}
+                ),
+                className='heatmap-colorbar-card comparison-heatmap-colorbar-card',
+                style={'width': '120px', 'height': '380px'}
+            ))
+
+        rows.append(html.Div(
+            html.Div(heatmap_children, className='comparison-heatmap-row heatmap-row'),
+            className='comparison-group-block'
+        ))
+    return rows
+
+
+def build_comparison_content(files):
+    """Render the comparison tab body showing uploaded files."""
+    panels = get_comparison_panels(files)
+    if not panels:
+        return [html.Div([
+            html.Div([
+                html.Span(className='dataset-accent'),
+                html.H3('Comparison Files', className='dataset-title')
+            ], className='dataset-header'),
+            html.Div(
+                "No comparison files uploaded yet. Switch to Comparison tab and use \"Add VTK File\".",
+                className='comparison-empty'
+            )
+        ], className='dataset-block comparison-card')]
+
+    grouped = _group_comparison_files(files)
+    settings, scalar_options, palette_options = _comparison_settings(panels)
+    slider_min_default, slider_max_default = _comparison_range_defaults(panels, settings['scalar'])
+    if slider_min_default is None or slider_max_default is None:
+        slider_min_default, slider_max_default = 0.0, 1.0
+    slider_value_min = settings['range_min'] if settings['range_min'] is not None else slider_min_default
+    slider_value_max = settings['range_max'] if settings['range_max'] is not None else slider_max_default
+
+    controls_layout = html.Div([
+        html.Div([
+            html.Label([
+                html.Span("S", className="label-icon"),
+                "Field"
+            ], className='field-label grid-label'),
+            dcc.Dropdown(
+                id='comparison-heatmap-field',
+                options=scalar_options,
+                value=settings['scalar'],
+                clearable=False,
+                searchable=True,
+                className='dropdown-wrapper'
+            ),
+            html.Label([
+                html.Img(src='/assets/color-scale.png', className="label-img"),
+                "Palette"
+            ], className='field-label grid-label'),
+            dcc.Dropdown(
+                id='comparison-heatmap-palette',
+                options=palette_options,
+                value=settings['palette'],
+                clearable=False,
+                searchable=True,
+                className='dropdown-wrapper'
+            )
+        ], className='comparison-control-row comparison-palette-group'),
+
+
+        html.Div([
+            html.Label([
+                html.Img(src='/assets/bar-chart.png', className="label-img"),
+                "Range"
+            ], className='field-label grid-label'),
+            html.Div([
+                dcc.Input(
+                    id='comparison-heatmap-range-min',
+                    type='number',
+                    value=settings['range_min'],
+                    step='any',
+                    placeholder='Min',
+                    className='comparison-range-input'
+                ),
+                dcc.Input(
+                    id='comparison-heatmap-range-max',
+                    type='number',
+                    value=settings['range_max'],
+                    step='any',
+                    placeholder='Max',
+                    className='comparison-range-input'
+                ),
+                html.Button(
+                    html.Img(src='/assets/Reset.png', alt='Reset range', className='btn-icon'),
+                    id='comparison-heatmap-reset',
+                    n_clicks=0,
+                    className='btn btn-danger reset-btn',
+                    title='Reset range'
+                )
+            ], className='comparison-range-row'),
+
+                html.Div([
+                    dcc.RangeSlider(
+                        id='comparison-heatmap-range-slider',
+                        min=slider_min_default,
+                        max=slider_max_default,
+                        value=[slider_value_min, slider_value_max],
+                        allowCross=False,
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        className='comparison-range-slider'
+                    )
+                ], className='comparison-range-slider-row'),
+            dmc.Switch(
+                id='comparison-heatmap-full-scale',
+                label="Full Scale",
+                checked=settings['full_scale'],
+                labelPosition="right",
+                size="xs",
+                radius="xs",
+                color="#c50623",
+                withThumbIndicator=True,
+            )
+
+        ], className='comparison-control-row comparison-range-group'),
+    ], className='comparison-controls-grid')
+
+    range_selector_store = dcc.Store(
+        id='comparison-range-selection',
+        data={'click_count': 0, 'first_click': None},
+    )
+
+    heatmap_sections = build_comparison_heatmap_rows(panels, grouped, settings)
+    comparison_block = html.Div([
+        html.Div([
+            html.Span(className='dataset-accent'),
+            html.H3('Composition', className='dataset-title')
+        ], className='dataset-header'),
+        html.Div([
+            controls_layout,
+            range_selector_store,
+            html.Div(heatmap_sections, id='comparison-heatmap-rows', className='comparison-heatmap-area-inner')
+        ], className='comparison-heatmap-area')
+    ], className='dataset-block comparison-card comparison-heatmap-panel')
+
+    cards = [comparison_block]
+
+    for group, file_names in grouped.items():
+        for file_name in file_names:
+            panel_entry = panels.get(file_name)
+            if not panel_entry:
+                continue
+            _, panel = panel_entry
+            line_scan_card = panel.build_line_scan_card()
+            if line_scan_card:
+                cards.append(line_scan_card)
+            histogram_card = panel.build_histogram_card()
+            if histogram_card:
+                cards.append(histogram_card)
+
+    for panel_entry in panels.values():
+        if not panel_entry:
+            continue
+        _, panel = panel_entry
+        cards.append(html.Div(panel.build_layout(), className='comparison-hidden-layout'))
+
+    return [html.Div(cards, className='comparison-root')]
+
+
+@app.callback(
+    Output('comparison-heatmap-rows', 'children'),
+    Input('comparison-files-store', 'data'),
+    Input('comparison-heatmap-field', 'value'),
+    Input('comparison-heatmap-range-min', 'value'),
+    Input('comparison-heatmap-range-max', 'value'),
+    Input('comparison-heatmap-palette', 'value'),
+    Input('comparison-heatmap-full-scale', 'checked'),
+    Input('comparison-heatmap-range-slider', 'value'),
+)
+def _update_comparison_heatmaps(files, field, range_min, range_max, palette, full_scale, slider_range):
+    panels = get_comparison_panels(files or [])
+    if not panels:
+        return []
+    grouped = _group_comparison_files(files or [])
+    settings, _, _ = _comparison_settings(
+        panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
+    )
+    return build_comparison_heatmap_rows(panels, grouped, settings)
+
+
+@app.callback(
+    Output('comparison-heatmap-range-min', 'value'),
+    Output('comparison-heatmap-range-max', 'value'),
+    Output('comparison-range-selection', 'data'),
+    Output('comparison-heatmap-range-slider', 'value'),
+    Input('comparison-heatmap-reset', 'n_clicks'),
+    Input({'type': 'comparison-graph', 'file': ALL}, 'clickData'),
+    Input('comparison-heatmap-range-slider', 'value'),
+    State('comparison-heatmap-field', 'value'),
+    State('comparison-files-store', 'data'),
+    State('comparison-range-selection', 'data'),
+    State('comparison-heatmap-range-min', 'value'),
+    State('comparison-heatmap-range-max', 'value'),
+    prevent_initial_call=True
+)
+def _update_comparison_range(reset_clicks, clicks, slider_values, field, files, store_data, current_min, current_max):
+    triggered = ctx.triggered_id
+    if triggered == 'comparison-heatmap-reset':
+        if not files:
+            raise PreventUpdate
+        panels = get_comparison_panels(files)
+        if not panels:
+            raise PreventUpdate
+        min_val, max_val = _comparison_range_defaults(panels, field)
+        if min_val is None or max_val is None:
+            raise PreventUpdate
+        return min_val, max_val, {'click_count': 0, 'first_click': None}, [min_val, max_val]
+    if isinstance(triggered, dict):
+        triggered_value = ctx.triggered[0]['value']
+        if not triggered_value or 'points' not in triggered_value or not triggered_value['points']:
+            raise PreventUpdate
+        try:
+            point = triggered_value['points'][0]
+        except (IndexError, KeyError):
+            raise PreventUpdate
+        z_val = point.get('z')
+        if z_val is None:
+            raise PreventUpdate
+        try:
+            z_val = float(z_val)
+        except (TypeError, ValueError):
+            raise PreventUpdate
+        store = store_data or {'click_count': 0, 'first_click': None}
+        click_count = store.get('click_count', 0)
+        first_click = store.get('first_click')
+        if click_count == 0 or first_click is None:
+            return current_min, current_max, {'click_count': 1, 'first_click': z_val}, [current_min, current_max]
+        lo, hi = sorted([first_click, z_val])
+        return lo, hi, {'click_count': 0, 'first_click': None}, [lo, hi]
+    if triggered == 'comparison-heatmap-range-slider':
+        if not slider_values or len(slider_values) != 2:
+            raise PreventUpdate
+        try:
+            lo = float(slider_values[0])
+            hi = float(slider_values[1])
+        except (TypeError, ValueError):
+            raise PreventUpdate
+        lo, hi = sorted([lo, hi])
+        return lo, hi, {'click_count': 0, 'first_click': None}, [lo, hi]
+    raise PreventUpdate
+    raise PreventUpdate
 
 TAB_ORDER = [tab['id'] for tab in TAB_CONFIGS]
 
@@ -1257,6 +1784,7 @@ app.layout = dmc.MantineProvider(
         id='app-container',
         children=[
             dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
+            dcc.Store(id='comparison-files-store', data=list_comparison_files()),
             html.Div([
                 html.Div([
                     html.Div([
@@ -1272,35 +1800,33 @@ app.layout = dmc.MantineProvider(
             ], className='top-bar')
         ], className='app-header'),
         html.Div([
+        html.Div([
             html.Div([
-                html.Div([
-                    html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
-                    html.Span("Folders", className='vtk-folder-heading-text')
-                ], className='vtk-folder-heading'),
-                dcc.Tabs(
-                    id='vtk-folder-tabs',
-                    value='current',
-                    className='vtk-tabs',
-                    children=[
-                        dcc.Tab(
-                            label=DEFAULT_VTK_FOLDER_LABEL,
-                            value='current',
-                            className='vtk-tab',
-                            selected_className='vtk-tab--selected'
-                        )
-                    ]
-                ),
-                html.Button(
-                    html.Img(
-                        src='/assets/plus.png',
-                        alt='Add VTK folder',
-                        className='vtk-tab-add-icon'
-                    ),
-                    id='add-vtk-folder',
-                    n_clicks=0,
-                    className='vtk-tab-add-btn'
-                )
-            ], className='vtk-folder-row')
+                html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
+                html.Span("Folders", className='vtk-folder-heading-text')
+            ], className='vtk-folder-heading'),
+        dcc.Tabs(
+            id='vtk-folder-tabs',
+            value='current',
+            className='vtk-tabs',
+            children=[
+            dcc.Tab(
+                label=DEFAULT_VTK_FOLDER_LABEL,
+                value='current',
+                className='vtk-tab',
+                selected_className='vtk-tab--selected'
+            ),
+            dcc.Tab(
+                label='Comparison',
+                value='comparison',
+                className='vtk-tab',
+                selected_className='vtk-tab--selected'
+            )
+            ]
+        ),
+        html.Div(id='vtk-folder-actions', className='vtk-folder-actions'),
+        html.Div(id='vtk-upload-feedback', className='vtk-upload-feedback')
+], className='vtk-folder-row')
         ], className='vtk-folder-section'),
             html.Div([
                 html.Div([
@@ -1320,6 +1846,91 @@ app.layout = dmc.MantineProvider(
 
 
 @app.callback(
+    Output('vtk-upload-feedback', 'children'),
+    Output('comparison-files-store', 'data'),
+    Input('vtk-file-upload', 'contents'),
+    State('vtk-file-upload', 'filename'),
+    State('comparison-files-store', 'data'),
+    State('vtk-folder-tabs', 'value'),
+    prevent_initial_call=True
+)
+def handle_vtk_upload(contents, filename, stored_files, active_folder):
+    """Save an uploaded VTK file into the comparison directory."""
+    if active_folder != 'comparison':
+        raise PreventUpdate
+    if not contents or not filename:
+        raise PreventUpdate
+    if not filename.lower().endswith(ALLOWED_VTK_EXTENSIONS):
+        return (
+            html.Div(
+                "Only VTK files (.vtk/.vti/.vtp/.vtr/.vts) are supported.",
+                className='vtk-upload-feedback vtk-upload-feedback--error'
+            ),
+            stored_files or []
+        )
+    try:
+        _, encoded = contents.split(',', 1)
+    except ValueError:
+        return (
+            html.Div(
+                "Unable to parse the uploaded file.",
+                className='vtk-upload-feedback vtk-upload-feedback--error'
+            ),
+            stored_files or []
+        )
+    try:
+        payload = base64.b64decode(encoded)
+    except Exception:
+        return (
+            html.Div(
+                "Uploaded data could not be decoded.",
+                className='vtk-upload-feedback vtk-upload-feedback--error'
+            ),
+            stored_files or []
+        )
+    target_dir = comparison_data_dir()
+    target_path = target_dir / Path(filename).name
+    reader_cache.pop(str(target_path), None)
+    try:
+        target_path.write_bytes(payload)
+    except OSError as exc:
+        return (
+            html.Div(
+                f"Failed to save {target_path.name}: {exc}",
+                className='vtk-upload-feedback vtk-upload-feedback--error'
+            ),
+            stored_files or []
+        )
+    return (
+        html.Div(
+            f"Saved {target_path.name} to {target_dir}",
+            className='vtk-upload-feedback vtk-upload-feedback--success'
+        ),
+        list_comparison_files()
+    )
+
+
+def _comparison_upload():
+    """Return the upload button for the Comparison tab."""
+    return dcc.Upload(
+        id='vtk-file-upload',
+        accept='.vtk,.vti,.vtp,.vtr,.vts',
+        multiple=False,
+        className='vtk-file-upload',
+        children=html.Span("Add VTK File", className='vtk-file-upload__text')
+    )
+
+
+@app.callback(
+    Output('vtk-folder-actions', 'children'),
+    Input('vtk-folder-tabs', 'value')
+)
+def update_folder_actions(active_tab):
+    if active_tab == 'comparison':
+        return _comparison_upload()
+    return None
+
+@app.callback(
     Output('active-tab', 'data'),
     Input({'type': 'tab-button', 'tab': ALL}, 'n_clicks'),
     State('active-tab', 'data'),
@@ -1335,16 +1946,20 @@ def set_active_tab(n_clicks, current_tab):
 @app.callback(
     Output('tab-content', 'children'),
     Output({'type': 'tab-button', 'tab': ALL}, 'className'),
-    Input('active-tab', 'data')
+    Input('active-tab', 'data'),
+    Input('comparison-files-store', 'data'),
+    Input('vtk-folder-tabs', 'value')
 )
-def render_active_tab(active_tab):
-    if active_tab is None:
+def render_active_tab(active_tab, comparison_files, active_folder):
+    if active_tab is None and active_folder != 'comparison':
         return html.Div("No tabs available", className='dataset-empty'), ['custom-tab'] * len(TAB_ORDER)
-    children = build_tab_children(active_tab)
     classes = [
         'custom-tab active-tab' if tab_id == active_tab else 'custom-tab'
         for tab_id in TAB_ORDER
     ]
+    if active_folder == 'comparison':
+        return build_comparison_content(comparison_files or []), classes
+    children = build_tab_children(active_tab)
     return children, classes
 
 

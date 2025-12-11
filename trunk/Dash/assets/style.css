@@ -28,6 +28,7 @@
 
     /* Standard control height (inner content) */
     --control-height: 32px;
+    color-scheme: light;
 }
 
 body {
@@ -39,6 +40,7 @@ body {
     min-height: 100vh;
     line-height: 1.5;
     overflow-x: hidden;
+    color-scheme: light;
 }
 
 #app-container {
@@ -153,6 +155,24 @@ body {
     box-shadow: none;
 }
 
+.vtk-upload-feedback {
+    flex: 1;
+    margin-left: auto;
+    font-size: 0.85rem;
+    color: #183568;
+    display: flex;
+    justify-content: flex-end;
+    letter-spacing: 0.02em;
+}
+
+.vtk-upload-feedback--error {
+    color: #b73223;
+}
+
+.vtk-upload-feedback--success {
+    color: #006933;
+}
+
 .vtk-folder-heading {
     display: flex;
     align-items: center;
@@ -248,38 +268,35 @@ body {
     outline-offset: 3px;
 }
 
-.vtk-tab-add-btn {
+.vtk-folder-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.vtk-file-upload {
     border: none;
-    background: #f0f3f8;
-    color: #c50623;
-    padding: 6px 10px;
+    background: #c50623;
+    color: #ffffff;
+    padding: 6px 16px;
     border-radius: 6px;
     font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: var(--transition);
+    letter-spacing: 0.1em;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: none;
 }
 
-.vtk-tab-add-btn:hover {
-    background: #c50623;
-    color: #ffffff;
-    box-shadow: none;
+.vtk-file-upload:hover {
+    background: #a20516;
 }
 
-.vtk-tab-add-btn:hover .vtk-tab-add-icon {
-    filter: brightness(0) invert(1);
-}
-
-.vtk-tab-add-icon {
-    width: 16px;
-    height: 16px;
-    display: block;
-    object-fit: contain;
-    filter: brightness(0) invert(0.3);
+.vtk-file-upload__text {
+    display: inline-block;
 }
 
 .doc-sidebar .sidebar-tabs {
@@ -333,6 +350,14 @@ h1.app-title {
     margin: 0;
     padding: 0;
     flex: 1;
+}
+
+#app-container > .vtk-folder-section {
+    padding-bottom: 0;
+}
+
+#app-container > .vtk-folder-section + .layout-shell {
+    margin-top: 0;
 }
 
 /* Sidebar - Full Height */
@@ -466,6 +491,169 @@ h1.app-title {
     transition: var(--transition);
     display: flex;
     flex-direction: column;
+}
+
+.comparison-card {
+    border-radius: var(--radius-lg);
+    border-color: #d6d9e6;
+}
+
+.comparison-empty {
+    padding: 16px;
+    border-radius: 6px;
+    background: #fff9f0;
+    border: 1px dashed #f0c2a2;
+    color: #8b3d2f;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.comparison-root {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.comparison-heatmap-panel {
+    padding: 0px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+}
+
+.comparison-controls-grid {
+    background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1px solid #e0e7f3;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin: 4px;
+    transition: var(--transition);
+    width: min(960px, 100%);
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.comparison-control-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.comparison-range-group,
+.comparison-palette-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.comparison-range-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+.comparison-range-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--surface-border);
+    background: #ffffff;
+    font-size: 0.9rem;
+}
+
+.comparison-slice-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comparison-range-slider-row {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.comparison-range-slider {
+    width: 100%;
+}
+
+.comparison-slice-slider {
+    width: 100%;
+}
+
+.comparison-heatmap-row {
+    display: grid;
+    grid-template-columns: 70px repeat(auto-fit, minmax(320px, 1fr)) 160px;
+    align-items: stretch;
+    gap: 14px;
+}
+
+.comparison-heatmap-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
+
+.comparison-heatmap-area-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.comparison-group-block {
+    background: white;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(24, 53, 104, 0.08);
+}
+
+.comparison-group-header {
+    margin-bottom: 0;
+}
+
+.comparison-heatmap-logo-card {
+    width: 70px;
+    min-height: 380px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--surface-border);
+}
+
+.comparison-heatmap-main-card,
+.comparison-heatmap-colorbar-card {
+    min-height: 380px;
+}
+
+.comparison-heatmap-main-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--surface-border);
+}
+
+.comparison-heatmap-colorbar-card {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--surface-border);
+}
+
+.comparison-heatmap-graph,
+.comparison-heatmap-colorbar-graph {
+    width: 100%;
+    height: 100%;
+}
+
+.comparison-hidden-layout {
+    display: none !important;
 }
 
 .textdata-card .dataset-body {
