@@ -133,6 +133,13 @@ reader_cache = {}
 comparison_grid_cache = {}
 comparison_grid_cache_data = {}  # key = (file_name, scalar, slice_index) → (X_grid, Y_grid, Z_grid, stats, state_dict)
 
+# Cache for rendered heatmap rows to avoid rebuilding on tab switches
+comparison_heatmap_rows_cache = {
+    'settings_key': None,  # Hash of current settings
+    'files_key': None,     # Hash of current files
+    'rows': None           # Cached rendered rows
+}
+
 
 def vtk_data_dir():
     """Return the VTK data directory preferring the caller's CWD/VTK, else repo VTK."""
@@ -1134,14 +1141,20 @@ def _comparison_heatmap_data(panel, file_name: str, settings):
 
             # Store state as dict for serialization
             state_dict = {
+                'scalar_key': state.scalar_key,
+                'scalar_label': state.scalar_label,
+                'axis': state.axis,
+                'slice_index': state.slice_index,
+                'colorA': state.colorA,
+                'colorB': state.colorB,
+                'palette': state.palette,
+                'threshold': state.threshold,
                 'range_min': state.range_min,
                 'range_max': state.range_max,
-                'threshold': state.threshold,
-                'palette': state.palette,
-                'colorscale_mode': state.colorscale_mode,
-                'slice_index': state.slice_index,
-                'axis': state.axis,
+                'file_path': state.file_path,
                 'scale': state.scale,
+                'units': state.units,
+                'colorscale_mode': state.colorscale_mode,
             }
             comparison_grid_cache_data[grid_cache_key] = (X_grid, Y_grid, Z_grid, stats, state_dict)
 
@@ -1370,6 +1383,13 @@ def build_comparison_content(files):
     return [html.Div(cards, className='comparison-root')]
 
 
+def _make_comparison_cache_key(files, field, range_min, range_max, palette, full_scale, slider_range):
+    """Create a hashable cache key from comparison settings."""
+    files_tuple = tuple(sorted(files)) if files else ()
+    slider_tuple = tuple(slider_range) if slider_range else ()
+    return (files_tuple, field, range_min, range_max, palette, full_scale, slider_tuple)
+
+
 @app.callback(
     Output('comparison-heatmap-rows', 'children'),
     Input('comparison-files-store', 'data'),
@@ -1384,21 +1404,34 @@ def _update_comparison_heatmaps(files, field, range_min, range_max, palette, ful
     """Update comparison heatmap rows with optimizations.
 
     Uses grid caching to avoid re-interpolation when only range/palette changes.
+    Only rebuilds heatmaps if settings actually changed (avoids rebuild on tab switches).
     """
     panels = get_comparison_panels(files or [])
     if not panels:
         return []
-    grouped = _group_comparison_files(files or [])
 
-    # Detect what triggered the callback for optimization
-    triggered_id = ctx.triggered_id if ctx else None
+    # Create cache key from current settings
+    cache_key = _make_comparison_cache_key(files, field, range_min, range_max, palette, full_scale, slider_range)
+
+    # Check if settings haven't changed - return cached rows
+    if comparison_heatmap_rows_cache['settings_key'] == cache_key and comparison_heatmap_rows_cache['rows'] is not None:
+        return comparison_heatmap_rows_cache['rows']
+
+    # Settings changed, need to rebuild
+    grouped = _group_comparison_files(files or [])
 
     # For palette-only or range-only changes, the grid data is cached
     # so we'll get instant updates from _comparison_heatmap_data
     settings, _, _ = _comparison_settings(
         panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
     )
-    return build_comparison_heatmap_rows(panels, grouped, settings)
+    rows = build_comparison_heatmap_rows(panels, grouped, settings)
+
+    # Cache the rendered rows and settings key for next call
+    comparison_heatmap_rows_cache['settings_key'] = cache_key
+    comparison_heatmap_rows_cache['rows'] = rows
+
+    return rows
 
 
 @app.callback(
