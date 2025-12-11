@@ -1233,8 +1233,14 @@ def build_comparison_heatmap_rows(panels, grouped, settings):
     return rows
 
 
-def build_comparison_content(files):
-    """Render the comparison tab body showing uploaded files."""
+# ===== SECTION 4: Build Comparison Content with Persistent Values =====
+def build_comparison_content(files, comparison_controls=None):
+    """Render the comparison tab body showing uploaded files.
+
+    Args:
+        files: List of comparison file names
+        comparison_controls: Dict with persisted control values {scalar, range_min, range_max, palette, full_scale, slider_range}
+    """
     panels = get_comparison_panels(files)
     if not panels:
         return [html.Div([
@@ -1249,7 +1255,30 @@ def build_comparison_content(files):
         ], className='dataset-block comparison-card')]
 
     grouped = _group_comparison_files(files)
+
+    # Use stored control values if available, otherwise use defaults
+    stored_scalar = comparison_controls.get('scalar') if comparison_controls else None
+    stored_range_min = comparison_controls.get('range_min') if comparison_controls else None
+    stored_range_max = comparison_controls.get('range_max') if comparison_controls else None
+    stored_palette = comparison_controls.get('palette') if comparison_controls else None
+    stored_full_scale = comparison_controls.get('full_scale') if comparison_controls else False
+    stored_slider_range = comparison_controls.get('slider_range') if comparison_controls else None
+
+    # Get default settings first
     settings, scalar_options, palette_options = _comparison_settings(panels)
+
+    # Override with stored values if available
+    if stored_scalar:
+        settings, scalar_options, palette_options = _comparison_settings(
+            panels,
+            scalar_value=stored_scalar,
+            range_min=stored_range_min,
+            range_max=stored_range_max,
+            palette_value=stored_palette,
+            full_scale=stored_full_scale,
+            slider_range=stored_slider_range
+        )
+
     slider_min_default, slider_max_default = _comparison_range_defaults(panels, settings['scalar'])
     if slider_min_default is None or slider_max_default is None:
         slider_min_default, slider_max_default = 0.0, 1.0
@@ -1381,6 +1410,7 @@ def build_comparison_content(files):
         cards.append(html.Div(panel.build_layout(), className='comparison-hidden-layout'))
 
     return [html.Div(cards, className='comparison-root')]
+# ===== END SECTION 4 =====
 
 
 def _make_comparison_cache_key(files, field, range_min, range_max, palette, full_scale, slider_range):
@@ -1553,6 +1583,34 @@ def _update_single_comparison_graph(palette, range_min, range_max, full_scale, s
         return heatmap_data['figure']
 
     raise PreventUpdate
+
+
+# ===== SECTION 2: Update Persistent Control Values Store =====
+@app.callback(
+    Output('comparison-controls-store', 'data'),
+    Input('comparison-heatmap-field', 'value'),
+    Input('comparison-heatmap-range-min', 'value'),
+    Input('comparison-heatmap-range-max', 'value'),
+    Input('comparison-heatmap-palette', 'value'),
+    Input('comparison-heatmap-full-scale', 'checked'),
+    Input('comparison-heatmap-range-slider', 'value'),
+    prevent_initial_call=True
+)
+def update_comparison_controls_store(field, range_min, range_max, palette, full_scale, slider_range):
+    """Save user control values to persistent store whenever they change.
+
+    This ensures that when switching tabs, the control values are preserved
+    and not reset to defaults on tab switch.
+    """
+    return {
+        'scalar': field,
+        'range_min': range_min,
+        'range_max': range_max,
+        'palette': palette,
+        'full_scale': full_scale,
+        'slider_range': slider_range
+    }
+# ===== END SECTION 2 =====
 
 
 TAB_ORDER = [tab['id'] for tab in TAB_CONFIGS]
@@ -1933,6 +1991,20 @@ app.layout = dmc.MantineProvider(
         children=[
             dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
             dcc.Store(id='comparison-files-store', data=list_comparison_files()),
+            # ===== SECTION 1: Persistent Control Values Storage =====
+            # This store persists user's control values across tab switches
+            dcc.Store(
+                id='comparison-controls-store',
+                data={
+                    'scalar': None,
+                    'range_min': None,
+                    'range_max': None,
+                    'palette': None,
+                    'full_scale': False,
+                    'slider_range': None
+                }
+            ),
+            # ===== END SECTION 1 =====
             html.Div([
                 html.Div([
                     html.Div([
@@ -2091,14 +2163,16 @@ def set_active_tab(n_clicks, current_tab):
     return current_tab
 
 
+# ===== SECTION 3: Render Tab with Persistent Control Values =====
 @app.callback(
     Output('tab-content', 'children'),
     Output({'type': 'tab-button', 'tab': ALL}, 'className'),
     Input('active-tab', 'data'),
     Input('comparison-files-store', 'data'),
-    Input('vtk-folder-tabs', 'value')
+    Input('vtk-folder-tabs', 'value'),
+    Input('comparison-controls-store', 'data'),
 )
-def render_active_tab(active_tab, comparison_files, active_folder):
+def render_active_tab(active_tab, comparison_files, active_folder, comparison_controls):
     if active_tab is None and active_folder != 'comparison':
         return html.Div("No tabs available", className='dataset-empty'), ['custom-tab'] * len(TAB_ORDER)
     classes = [
@@ -2106,9 +2180,11 @@ def render_active_tab(active_tab, comparison_files, active_folder):
         for tab_id in TAB_ORDER
     ]
     if active_folder == 'comparison':
-        return build_comparison_content(comparison_files or []), classes
+        # Pass stored control values to build_comparison_content
+        return build_comparison_content(comparison_files or [], comparison_controls), classes
     children = build_tab_children(active_tab)
     return children, classes
+# ===== END SECTION 3 =====
 
 
 if SIZE_DETAILS_DATA:
