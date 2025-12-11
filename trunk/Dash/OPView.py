@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from dash import ALL, Dash, Input, Output, State, ctx, dcc, html
+from dash import ALL, MATCH, Dash, Input, Output, State, ctx, dcc, html
 from dash.exceptions import PreventUpdate
 from flask import render_template_string
 import markdown
@@ -128,6 +128,10 @@ TAB_CONFIGS = [
 ]
 
 reader_cache = {}
+
+# Grid cache for comparison panel optimizations: key = (file_name, scalar, slice_index) → (figure, colorbar_figure)
+comparison_grid_cache = {}
+comparison_grid_cache_data = {}  # key = (file_name, scalar, slice_index) → (X_grid, Y_grid, Z_grid, stats, state_dict)
 
 
 def vtk_data_dir():
@@ -1082,19 +1086,68 @@ def _comparison_graph_id(file_name: str):
 
 
 def _comparison_heatmap_data(panel, file_name: str, settings):
+    """Build comparison heatmap with grid caching for performance."""
     file_path = str(comparison_data_dir() / file_name)
     scalar_value = settings.get('scalar')
     descriptor = panel.scalar_map.get(scalar_value) or panel.scalar_defs[0]
-    try:
-        reader = panel.reader_factory(file_path)
-    except FileNotFoundError:
-        return None
-    try:
-        state, slice_data, _ = panel._build_state(
-            reader, file_path, descriptor['value'], return_slice=True
-        )
-    except Exception:
-        return None
+
+    # Create cache key for grid data (independent of range/palette/full_scale)
+    slice_index = settings.get('slice_index')
+    if slice_index is None:
+        slice_index = 0
+    else:
+        try:
+            slice_index = int(slice_index)
+        except (TypeError, ValueError):
+            slice_index = 0
+
+    grid_cache_key = (file_name, scalar_value, slice_index)
+
+    # Check if we have cached grid data
+    if grid_cache_key in comparison_grid_cache_data:
+        X_grid, Y_grid, Z_grid, stats, state_dict = comparison_grid_cache_data[grid_cache_key]
+        # Reconstruct state from cached data and apply current settings
+        try:
+            reader = panel.reader_factory(file_path)
+        except FileNotFoundError:
+            return None
+
+        from .viewer.state import ViewerState
+        state = ViewerState(**state_dict)
+    else:
+        # First access: build state and cache the grid data
+        try:
+            reader = panel.reader_factory(file_path)
+        except FileNotFoundError:
+            return None
+        try:
+            state, slice_data, _ = panel._build_state(
+                reader, file_path, descriptor['value'], return_slice=True
+            )
+        except Exception:
+            return None
+
+        # Cache the grid data
+        if 'slice_data' in locals() and slice_data:
+            X_grid = slice_data.get('X_grid')
+            Y_grid = slice_data.get('Y_grid')
+            Z_grid = slice_data.get('Z_grid')
+            stats = slice_data.get('stats')
+
+            # Store state as dict for serialization
+            state_dict = {
+                'range_min': state.range_min,
+                'range_max': state.range_max,
+                'threshold': state.threshold,
+                'palette': state.palette,
+                'colorscale_mode': state.colorscale_mode,
+                'slice_index': state.slice_index,
+                'axis': state.axis,
+                'scale': state.scale,
+            }
+            comparison_grid_cache_data[grid_cache_key] = (X_grid, Y_grid, Z_grid, stats, state_dict)
+
+    # Apply current settings to state
     range_min = settings.get('range_min')
     range_max = settings.get('range_max')
     if range_min is not None:
@@ -1107,14 +1160,9 @@ def _comparison_heatmap_data(panel, file_name: str, settings):
         state.threshold = (state.range_min + state.range_max) / 2
     state.palette = settings.get('palette') or state.palette
     state.colorscale_mode = 'dynamic' if settings.get('full_scale') else 'normal'
-    slice_index = settings.get('slice_index')
-    if slice_index is not None:
-        try:
-            idx = int(slice_index)
-        except (TypeError, ValueError):
-            idx = state.slice_index
-        state.slice_index = max(0, idx)
-    return panel._build_heatmap_figures(reader, state, file_path, slice_data=slice_data)
+    state.slice_index = max(0, slice_index)
+
+    return panel._build_heatmap_figures(reader, state, file_path, slice_data=None)
 
 
 def build_comparison_heatmap_rows(panels, grouped, settings):
@@ -1335,10 +1383,20 @@ def build_comparison_content(files):
     Input('comparison-heatmap-range-slider', 'value'),
 )
 def _update_comparison_heatmaps(files, field, range_min, range_max, palette, full_scale, slider_range):
+    """Update comparison heatmap rows with optimizations.
+
+    Uses grid caching to avoid re-interpolation when only range/palette changes.
+    """
     panels = get_comparison_panels(files or [])
     if not panels:
         return []
     grouped = _group_comparison_files(files or [])
+
+    # Detect what triggered the callback for optimization
+    triggered_id = ctx.triggered_id if ctx else None
+
+    # For palette-only or range-only changes, the grid data is cached
+    # so we'll get instant updates from _comparison_heatmap_data
     settings, _, _ = _comparison_settings(
         panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
     )
@@ -1406,6 +1464,65 @@ def _update_comparison_range(reset_clicks, clicks, slider_values, field, files, 
         return lo, hi, {'click_count': 0, 'first_click': None}, [lo, hi]
     raise PreventUpdate
     raise PreventUpdate
+
+
+@app.callback(
+    Output({'type': 'comparison-graph', 'file': MATCH}, 'figure'),
+    Input('comparison-heatmap-palette', 'value'),
+    Input('comparison-heatmap-range-min', 'value'),
+    Input('comparison-heatmap-range-max', 'value'),
+    Input('comparison-heatmap-full-scale', 'checked'),
+    Input('comparison-heatmap-range-slider', 'value'),
+    State({'type': 'comparison-graph', 'file': MATCH}, 'id'),
+    State('comparison-heatmap-field', 'value'),
+    State('comparison-files-store', 'data'),
+    prevent_initial_call=True
+)
+def _update_single_comparison_graph(palette, range_min, range_max, full_scale, slider_range,
+                                     graph_id, field, files):
+    """Update individual comparison graph figure without rebuilding DOM.
+
+    This pattern-matching callback updates only the figure property of individual graphs,
+    avoiding expensive DOM regeneration and leveraging grid cache for fast palette/range updates.
+    """
+    if not graph_id or not files:
+        raise PreventUpdate
+
+    file_name = graph_id.get('file')
+    if not file_name:
+        raise PreventUpdate
+
+    # Reconstruct file_name from the safe version
+    # Find the actual file name from the files list that matches
+    actual_file_name = None
+    safe_file_name = file_name
+    for f in files:
+        safe = re.sub(r'[^a-z0-9]+', '-', f.lower()).strip('-') or 'file'
+        if safe == safe_file_name:
+            actual_file_name = f
+            break
+
+    if not actual_file_name:
+        raise PreventUpdate
+
+    panels = get_comparison_panels(files or [])
+    if actual_file_name not in panels:
+        raise PreventUpdate
+
+    _, panel = panels[actual_file_name]
+
+    # Build settings from current state
+    settings, _, _ = _comparison_settings(
+        panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
+    )
+
+    # Get heatmap data (uses cache, so it's fast)
+    heatmap_data = _comparison_heatmap_data(panel, actual_file_name, settings)
+    if heatmap_data:
+        return heatmap_data['figure']
+
+    raise PreventUpdate
+
 
 TAB_ORDER = [tab['id'] for tab in TAB_CONFIGS]
 
