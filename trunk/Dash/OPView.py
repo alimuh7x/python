@@ -1112,7 +1112,7 @@ def _comparison_heatmap_data(panel, file_name: str, settings):
         except FileNotFoundError:
             return None
 
-        from .viewer.state import ViewerState
+        from viewer.state import ViewerState
         state = ViewerState(**state_dict)
     else:
         # First access: build state and cache the grid data
