@@ -1129,10 +1129,8 @@ def _comparison_heatmap_data(panel, file_name: str, settings):
 
         # Cache the grid data
         if 'slice_data' in locals() and slice_data:
-            X_grid = slice_data.get('X_grid')
-            Y_grid = slice_data.get('Y_grid')
-            Z_grid = slice_data.get('Z_grid')
-            stats = slice_data.get('stats')
+            # slice_data is a tuple: (X_grid, Y_grid, Z_grid, stats)
+            X_grid, Y_grid, Z_grid, stats = slice_data
 
             # Store state as dict for serialization
             state_dict = {
