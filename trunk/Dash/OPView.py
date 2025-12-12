@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 import plotly.graph_objects as go
-from dash import ALL, MATCH, Dash, Input, Output, State, ctx, dcc, html
+from dash import ALL, MATCH, Dash, Input, Output, State, ctx, dcc, html, no_update
 from dash.exceptions import PreventUpdate
 from flask import render_template_string
 import markdown
@@ -134,13 +134,6 @@ comparison_grid_cache = {}
 comparison_grid_cache_data = {}  # key = (file_name, scalar, slice_index) → (X_grid, Y_grid, Z_grid, stats, state_dict)
 
 # Cache for rendered heatmap rows to avoid rebuilding on tab switches
-comparison_heatmap_rows_cache = {
-    'settings_key': None,  # Hash of current settings
-    'files_key': None,     # Hash of current files
-    'rows': None           # Cached rendered rows
-}
-
-
 def vtk_data_dir():
     """Return the VTK data directory preferring the caller's CWD/VTK, else repo VTK."""
     cwd_vtk = Path.cwd() / "VTK"
@@ -1087,9 +1080,10 @@ def build_tab_children(tab_id):
     return [html.Div(cards, className='dataset-grid')]
 
 
-def _comparison_graph_id(file_name: str):
-    safe = re.sub(r'[^a-z0-9]+', '-', file_name.lower()).strip('-')
-    return {'type': 'comparison-graph', 'file': safe or 'file'}
+def _comparison_graph_id(file_name: str, group: str):
+    safe_file = re.sub(r'[^a-z0-9]+', '-', file_name.lower()).strip('-')
+    # Use the raw group key consistently across controls, stores, and graphs.
+    return {'type': 'comparison-graph', 'group': group, 'file': safe_file or 'file'}
 
 
 def _comparison_heatmap_data(panel, file_name: str, settings):
@@ -1173,73 +1167,81 @@ def _comparison_heatmap_data(panel, file_name: str, settings):
     state.colorscale_mode = 'dynamic' if settings.get('full_scale') else 'normal'
     state.slice_index = max(0, slice_index)
 
-    return panel._build_heatmap_figures(reader, state, file_path, slice_data=None)
+    heatmap_bundle = panel._build_heatmap_figures(reader, state, file_path, slice_data=None)
+    # Widen colorbar only for comparison panels.
+    try:
+        colorbar_fig = heatmap_bundle.get('colorbar')
+        if colorbar_fig is not None:
+            colorbar_fig.update_layout(width=140)
+            colorbar_fig.update_traces(
+                marker=dict(colorbar=dict(thickness=18, thicknessmode="pixels"))
+            )
+    except Exception:
+        pass
+    return heatmap_bundle
 
 
-def build_comparison_heatmap_rows(panels, grouped, settings):
-    """Return header + heatmap rows for each comparison group."""
-    rows = []
+def build_comparison_heatmap_row(panels, file_names, settings, group):
+    """Return a single heatmap row for a comparison group."""
+    ordered = [(name, panels.get(name)) for name in file_names if name in panels]
+    if not ordered:
+        return []
     graph_config = {
         'displayModeBar': True,
         'displaylogo': False,
         'responsive': False,
         'toImageButtonOptions': {'scale': 4}
     }
-    for group, file_names in grouped.items():
-        ordered = [(name, panels.get(name)) for name in file_names if name in panels]
-        if not ordered:
+    heatmap_children = [
+        html.Div(
+            html.Img(src='/assets/OP_Logo.png', className='heatmap-logo', alt='OP logo'),
+            className='heatmap-logo-card comparison-heatmap-logo-card'
+        )
+    ]
+    colorbar_fig = None
+    for file_name, panel_entry in ordered:
+        if not panel_entry:
             continue
-        heatmap_children = [
-            html.Div(
-                html.Img(src='/assets/OP_Logo.png', className='heatmap-logo', alt='OP logo'),
-                className='heatmap-logo-card comparison-heatmap-logo-card'
-            )
-        ]
-        colorbar_fig = None
-        for file_name, panel_entry in ordered:
-            if not panel_entry:
-                continue
-            _, panel = panel_entry
-            heatmap_data = _comparison_heatmap_data(panel, file_name, settings)
-            if not heatmap_data:
-                continue
-            if colorbar_fig is None:
-                colorbar_fig = heatmap_data['colorbar']
-            heatmap_children.append(html.Div(
-                dcc.Graph(
-                    id=_comparison_graph_id(file_name),
-                    className='heatmap-main-graph comparison-heatmap-graph',
-                    figure=heatmap_data['figure'],
-                    config=graph_config
-                ),
-                className='heatmap-main-card comparison-heatmap-main-card'
-            ))
-
-        if colorbar_fig:
-            heatmap_children.append(html.Div(
-                dcc.Graph(
-                    className='heatmap-colorbar-graph comparison-heatmap-colorbar-graph',
-                    figure=colorbar_fig,
-                    config={'displayModeBar': False, 'displaylogo': False, 'responsive': False}
-                ),
-                className='heatmap-colorbar-card comparison-heatmap-colorbar-card',
-                style={'width': '120px', 'height': '380px'}
-            ))
-
-        rows.append(html.Div(
-            html.Div(heatmap_children, className='comparison-heatmap-row heatmap-row'),
-            className='comparison-group-block'
+        _, panel = panel_entry
+        heatmap_data = _comparison_heatmap_data(panel, file_name, settings)
+        if not heatmap_data:
+            continue
+        if colorbar_fig is None:
+            colorbar_fig = heatmap_data['colorbar']
+        heatmap_children.append(html.Div(
+            dcc.Graph(
+                id=_comparison_graph_id(file_name, group),
+                className='heatmap-main-graph comparison-heatmap-graph',
+                figure=heatmap_data['figure'],
+                config=graph_config
+            ),
+            className='heatmap-main-card comparison-heatmap-main-card'
         ))
-    return rows
+
+    if colorbar_fig:
+        heatmap_children.append(html.Div(
+            dcc.Graph(
+                className='heatmap-colorbar-graph comparison-heatmap-colorbar-graph',
+                figure=colorbar_fig,
+                config={'displayModeBar': False, 'displaylogo': False, 'responsive': False}
+            ),
+            className='heatmap-colorbar-card comparison-heatmap-colorbar-card',
+            style={'width': '160px', 'height': '380px'}
+        ))
+
+    return [html.Div(
+        html.Div(heatmap_children, className='comparison-heatmap-row heatmap-row'),
+        className='comparison-group-block'
+    )]
 
 
-# ===== SECTION 4: Build Comparison Content with Persistent Values =====
-def build_comparison_content(files, comparison_controls=None):
-    """Render the comparison tab body showing uploaded files.
+# ===== SECTION 4: Build Comparison Content with Grouped Controls =====
+def build_comparison_content(files, group_controls_by_group=None):
+    """Render the comparison tab body showing uploaded files, grouped by prefix.
 
     Args:
-        files: List of comparison file names
-        comparison_controls: Dict with persisted control values {scalar, range_min, range_max, palette, full_scale, slider_range}
+        files: List of comparison file names.
+        group_controls_by_group: Optional dict {group: stored_controls}.
     """
     panels = get_comparison_panels(files)
     if not panels:
@@ -1255,99 +1257,94 @@ def build_comparison_content(files, comparison_controls=None):
         ], className='dataset-block comparison-card')]
 
     grouped = _group_comparison_files(files)
+    cards = []
 
-    # Use stored control values if available, otherwise use defaults
-    stored_scalar = comparison_controls.get('scalar') if comparison_controls else None
-    stored_range_min = comparison_controls.get('range_min') if comparison_controls else None
-    stored_range_max = comparison_controls.get('range_max') if comparison_controls else None
-    stored_palette = comparison_controls.get('palette') if comparison_controls else None
-    stored_full_scale = comparison_controls.get('full_scale') if comparison_controls else False
-    stored_slider_range = comparison_controls.get('slider_range') if comparison_controls else None
+    stored_controls_by_group = group_controls_by_group or {}
 
-    # Get default settings first
-    settings, scalar_options, palette_options = _comparison_settings(panels)
+    for group, file_names in grouped.items():
+        panels_for_group = {name: panels.get(name) for name in file_names if name in panels}
+        if not panels_for_group:
+            continue
 
-    # Override with stored values if available
-    if stored_scalar:
+        stored = stored_controls_by_group.get(group) or {}
+
         settings, scalar_options, palette_options = _comparison_settings(
-            panels,
-            scalar_value=stored_scalar,
-            range_min=stored_range_min,
-            range_max=stored_range_max,
-            palette_value=stored_palette,
-            full_scale=stored_full_scale,
-            slider_range=stored_slider_range
+            panels_for_group,
+            scalar_value=stored.get('scalar'),
+            range_min=stored.get('range_min'),
+            range_max=stored.get('range_max'),
+            palette_value=stored.get('palette'),
+            full_scale=stored.get('full_scale', False),
+            slider_range=stored.get('slider_range'),
         )
+        slider_min_default, slider_max_default = _comparison_range_defaults(panels_for_group, settings['scalar'])
+        if slider_min_default is None or slider_max_default is None:
+            slider_min_default, slider_max_default = 0.0, 1.0
+        slider_value_min = settings['range_min'] if settings['range_min'] is not None else slider_min_default
+        slider_value_max = settings['range_max'] if settings['range_max'] is not None else slider_max_default
 
-    slider_min_default, slider_max_default = _comparison_range_defaults(panels, settings['scalar'])
-    if slider_min_default is None or slider_max_default is None:
-        slider_min_default, slider_max_default = 0.0, 1.0
-    slider_value_min = settings['range_min'] if settings['range_min'] is not None else slider_min_default
-    slider_value_max = settings['range_max'] if settings['range_max'] is not None else slider_max_default
-
-    controls_layout = html.Div([
-        html.Div([
-            html.Label([
-                html.Span("S", className="label-icon"),
-                "Field"
-            ], className='field-label grid-label'),
-            dcc.Dropdown(
-                id='comparison-heatmap-field',
-                options=scalar_options,
-                value=settings['scalar'],
-                clearable=False,
-                searchable=True,
-                className='dropdown-wrapper'
-            ),
-            html.Label([
-                html.Img(src='/assets/color-scale.png', className="label-img"),
-                "Palette"
-            ], className='field-label grid-label'),
-            dcc.Dropdown(
-                id='comparison-heatmap-palette',
-                options=palette_options,
-                value=settings['palette'],
-                clearable=False,
-                searchable=True,
-                className='dropdown-wrapper'
-            )
-        ], className='comparison-control-row comparison-palette-group'),
-
-
-        html.Div([
-            html.Label([
-                html.Img(src='/assets/bar-chart.png', className="label-img"),
-                "Range"
-            ], className='field-label grid-label'),
+        controls_layout = html.Div([
             html.Div([
-                dcc.Input(
-                    id='comparison-heatmap-range-min',
-                    type='number',
-                    value=settings['range_min'],
-                    step='any',
-                    placeholder='Min',
-                    className='comparison-range-input'
+                html.Label([
+                    html.Span("S", className="label-icon"),
+                    "Field"
+                ], className='field-label grid-label'),
+                dcc.Dropdown(
+                    id={'type': 'comparison-heatmap-field', 'group': group},
+                    options=scalar_options,
+                    value=settings['scalar'],
+                    clearable=False,
+                    searchable=True,
+                    className='dropdown-wrapper'
                 ),
-                dcc.Input(
-                    id='comparison-heatmap-range-max',
-                    type='number',
-                    value=settings['range_max'],
-                    step='any',
-                    placeholder='Max',
-                    className='comparison-range-input'
-                ),
-                html.Button(
-                    html.Img(src='/assets/Reset.png', alt='Reset range', className='btn-icon'),
-                    id='comparison-heatmap-reset',
-                    n_clicks=0,
-                    className='btn btn-danger reset-btn',
-                    title='Reset range'
+                html.Label([
+                    html.Img(src='/assets/color-scale.png', className="label-img"),
+                    "Palette"
+                ], className='field-label grid-label'),
+                dcc.Dropdown(
+                    id={'type': 'comparison-heatmap-palette', 'group': group},
+                    options=palette_options,
+                    value=settings['palette'],
+                    clearable=False,
+                    searchable=True,
+                    className='dropdown-wrapper'
                 )
-            ], className='comparison-range-row'),
+            ], className='comparison-control-row comparison-palette-group'),
+
+            html.Div([
+                html.Label([
+                    html.Img(src='/assets/bar-chart.png', className="label-img"),
+                    "Range"
+                ], className='field-label grid-label'),
+                html.Div([
+                    dcc.Input(
+                        id={'type': 'comparison-heatmap-range-min', 'group': group},
+                        type='number',
+                        value=settings['range_min'],
+                        step='any',
+                        placeholder='Min',
+                        className='comparison-range-input'
+                    ),
+                    dcc.Input(
+                        id={'type': 'comparison-heatmap-range-max', 'group': group},
+                        type='number',
+                        value=settings['range_max'],
+                        step='any',
+                        placeholder='Max',
+                        className='comparison-range-input'
+                    ),
+                    html.Button(
+                        html.Img(src='/assets/Reset.png', alt='Reset range', className='btn-icon'),
+                        id={'type': 'comparison-heatmap-reset', 'group': group},
+                        n_clicks=0,
+                        className='btn btn-danger reset-btn',
+                        title='Reset range'
+                    )
+                ], className='comparison-range-row'),
 
                 html.Div([
                     dcc.RangeSlider(
-                        id='comparison-heatmap-range-slider',
+                        id={'type': 'comparison-heatmap-range-slider', 'group': group},
                         min=slider_min_default,
                         max=slider_max_default,
                         value=[slider_value_min, slider_value_max],
@@ -1356,147 +1353,143 @@ def build_comparison_content(files, comparison_controls=None):
                         className='comparison-range-slider'
                     )
                 ], className='comparison-range-slider-row'),
-            dmc.Switch(
-                id='comparison-heatmap-full-scale',
-                label="Full Scale",
-                checked=settings['full_scale'],
-                labelPosition="right",
-                size="xs",
-                radius="xs",
-                color="#c50623",
-                withThumbIndicator=True,
-            )
+                dmc.Switch(
+                    id={'type': 'comparison-heatmap-full-scale', 'group': group},
+                    label="Full Scale",
+                    checked=settings['full_scale'],
+                    labelPosition="right",
+                    size="xs",
+                    radius="xs",
+                    color="#c50623",
+                    withThumbIndicator=True,
+                )
 
-        ], className='comparison-control-row comparison-range-group'),
-    ], className='comparison-controls-grid')
+            ], className='comparison-control-row comparison-range-group'),
+        ], className='comparison-controls-grid')
 
-    range_selector_store = dcc.Store(
-        id='comparison-range-selection',
-        data={'click_count': 0, 'first_click': None},
-    )
+        range_selector_store = dcc.Store(
+            id={'type': 'comparison-range-selection', 'group': group},
+            data={'click_count': 0, 'first_click': None},
+        )
 
-    heatmap_sections = build_comparison_heatmap_rows(panels, grouped, settings)
-    comparison_block = html.Div([
-        html.Div([
-            html.Span(className='dataset-accent'),
-            html.H3('Composition', className='dataset-title')
-        ], className='dataset-header'),
-        html.Div([
-            controls_layout,
-            range_selector_store,
-            html.Div(heatmap_sections, id='comparison-heatmap-rows', className='comparison-heatmap-area-inner')
-        ], className='comparison-heatmap-area')
-    ], className='dataset-block comparison-card comparison-heatmap-panel')
+        group_controls_store = dcc.Store(
+            id={'type': 'comparison-controls-store', 'group': group},
+            data={
+                'scalar': settings['scalar'],
+                'range_min': settings['range_min'],
+                'range_max': settings['range_max'],
+                'palette': settings['palette'],
+                'full_scale': settings['full_scale'],
+                'slider_range': [slider_value_min, slider_value_max],
+            },
+        )
 
-    cards = [comparison_block]
+        heatmap_sections = build_comparison_heatmap_row(panels_for_group, file_names, settings, group)
+        comparison_block = html.Div([
+            html.Div([
+                html.Span(className='dataset-accent'),
+                html.H3(f'Comparison: {group}', className='dataset-title')
+            ], className='dataset-header'),
+            html.Div([
+                controls_layout,
+                range_selector_store,
+                group_controls_store,
+                html.Div(heatmap_sections, id={'type': 'comparison-heatmap-rows', 'group': group}, className='comparison-heatmap-area-inner')
+            ], className='comparison-heatmap-area')
+        ], className='dataset-block comparison-card comparison-heatmap-panel')
 
-    for group, file_names in grouped.items():
-        for file_name in file_names:
-            panel_entry = panels.get(file_name)
-            if not panel_entry:
-                continue
-            _, panel = panel_entry
-            line_scan_card = panel.build_line_scan_card()
-            if line_scan_card:
-                cards.append(line_scan_card)
-            histogram_card = panel.build_histogram_card()
-            if histogram_card:
-                cards.append(histogram_card)
-
-    for panel_entry in panels.values():
-        if not panel_entry:
-            continue
-        _, panel = panel_entry
-        cards.append(html.Div(panel.build_layout(), className='comparison-hidden-layout'))
+        cards.append(comparison_block)
 
     return [html.Div(cards, className='comparison-root')]
 # ===== END SECTION 4 =====
 
 
 def _make_comparison_cache_key(files, field, range_min, range_max, palette, full_scale, slider_range):
-    """Create a hashable cache key from comparison settings."""
+    """Deprecated: cache key helper (unused)."""
     files_tuple = tuple(sorted(files)) if files else ()
     slider_tuple = tuple(slider_range) if slider_range else ()
     return (files_tuple, field, range_min, range_max, palette, full_scale, slider_tuple)
 
 
 @app.callback(
-    Output('comparison-heatmap-rows', 'children'),
-    Input('comparison-files-store', 'data'),
-    Input('comparison-heatmap-field', 'value'),
-    Input('comparison-heatmap-range-min', 'value'),
-    Input('comparison-heatmap-range-max', 'value'),
-    Input('comparison-heatmap-palette', 'value'),
-    Input('comparison-heatmap-full-scale', 'checked'),
-    Input('comparison-heatmap-range-slider', 'value'),
+    Output({'type': 'comparison-heatmap-rows', 'group': MATCH}, 'children'),
+    Input({'type': 'comparison-heatmap-field', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-range-min', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-full-scale', 'group': MATCH}, 'checked'),
+    Input({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'value'),
+    State({'type': 'comparison-heatmap-rows', 'group': MATCH}, 'id'),
+    State('comparison-files-store', 'data'),
 )
-def _update_comparison_heatmaps(files, field, range_min, range_max, palette, full_scale, slider_range):
-    """Update comparison heatmap rows with optimizations.
-
-    Uses grid caching to avoid re-interpolation when only range/palette changes.
-    Only rebuilds heatmaps if settings actually changed (avoids rebuild on tab switches).
-    """
+def _update_comparison_heatmaps(field, range_min, range_max, palette, full_scale, slider_range, rows_id, files):
+    """Update heatmaps for a single comparison group."""
+    group = rows_id.get('group') if isinstance(rows_id, dict) else None
+    grouped = _group_comparison_files(files or [])
+    file_names = grouped.get(group, [])
     panels = get_comparison_panels(files or [])
-    if not panels:
+    panels_for_group = {name: panels.get(name) for name in file_names if name in panels}
+    if not panels_for_group:
         return []
 
-    # Create cache key from current settings
-    cache_key = _make_comparison_cache_key(files, field, range_min, range_max, palette, full_scale, slider_range)
-
-    # Check if settings haven't changed - return cached rows
-    if comparison_heatmap_rows_cache['settings_key'] == cache_key and comparison_heatmap_rows_cache['rows'] is not None:
-        return comparison_heatmap_rows_cache['rows']
-
-    # Settings changed, need to rebuild
-    grouped = _group_comparison_files(files or [])
-
-    # For palette-only or range-only changes, the grid data is cached
-    # so we'll get instant updates from _comparison_heatmap_data
     settings, _, _ = _comparison_settings(
-        panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
+        panels_for_group, field, range_min, range_max, palette, full_scale, slider_range=slider_range
     )
-    rows = build_comparison_heatmap_rows(panels, grouped, settings)
-
-    # Cache the rendered rows and settings key for next call
-    comparison_heatmap_rows_cache['settings_key'] = cache_key
-    comparison_heatmap_rows_cache['rows'] = rows
-
-    return rows
+    return build_comparison_heatmap_row(panels_for_group, file_names, settings, group)
 
 
 @app.callback(
-    Output('comparison-heatmap-range-min', 'value'),
-    Output('comparison-heatmap-range-max', 'value'),
-    Output('comparison-range-selection', 'data'),
-    Output('comparison-heatmap-range-slider', 'value'),
-    Input('comparison-heatmap-reset', 'n_clicks'),
-    Input({'type': 'comparison-graph', 'file': ALL}, 'clickData'),
-    Input('comparison-heatmap-range-slider', 'value'),
-    State('comparison-heatmap-field', 'value'),
+    Output({'type': 'comparison-heatmap-range-min', 'group': MATCH}, 'value'),
+    Output({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'value'),
+    Output({'type': 'comparison-range-selection', 'group': MATCH}, 'data'),
+    Output({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'value'),
+    Output({'type': 'comparison-heatmap-full-scale', 'group': MATCH}, 'checked'),
+    Input({'type': 'comparison-heatmap-reset', 'group': MATCH}, 'n_clicks'),
+    Input({'type': 'comparison-graph', 'group': MATCH, 'file': ALL}, 'clickData'),
+    Input({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'value'),
+    State({'type': 'comparison-heatmap-range-min', 'group': MATCH}, 'value'),
+    State({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'value'),
+    State({'type': 'comparison-heatmap-field', 'group': MATCH}, 'value'),
     State('comparison-files-store', 'data'),
-    State('comparison-range-selection', 'data'),
-    State('comparison-heatmap-range-min', 'value'),
-    State('comparison-heatmap-range-max', 'value'),
+    State({'type': 'comparison-range-selection', 'group': MATCH}, 'data'),
+    State({'type': 'comparison-heatmap-rows', 'group': MATCH}, 'id'),
     prevent_initial_call=True
 )
-def _update_comparison_range(reset_clicks, clicks, slider_values, field, files, store_data, current_min, current_max):
+def _update_comparison_range(reset_clicks, clicks, slider_values, input_min, input_max, field, files, store_data, rows_id):
+    group = rows_id.get('group') if isinstance(rows_id, dict) else None
+    grouped = _group_comparison_files(files or [])
+    file_names = grouped.get(group, [])
+    panels = get_comparison_panels(files or [])
+    panels_for_group = {name: panels.get(name) for name in file_names if name in panels}
+
     triggered = ctx.triggered_id
-    if triggered == 'comparison-heatmap-reset':
-        if not files:
+    if isinstance(triggered, dict) and triggered.get('type') == 'comparison-heatmap-reset':
+        if not panels_for_group:
             raise PreventUpdate
-        panels = get_comparison_panels(files)
-        if not panels:
-            raise PreventUpdate
-        min_val, max_val = _comparison_range_defaults(panels, field)
+        min_val, max_val = _comparison_range_defaults(panels_for_group, field)
         if min_val is None or max_val is None:
             raise PreventUpdate
-        return min_val, max_val, {'click_count': 0, 'first_click': None}, [min_val, max_val]
-    if isinstance(triggered, dict):
-        triggered_value = ctx.triggered[0]['value']
-        if not triggered_value or 'points' not in triggered_value or not triggered_value['points']:
+        return (
+            min_val,
+            max_val,
+            {'click_count': 0, 'first_click': None},
+            [min_val, max_val],
+            False,
+        )
+
+    if isinstance(triggered, dict) and triggered.get('type') == 'comparison-graph':
+        triggered_value = ctx.triggered[0].get('value') if ctx.triggered else None
+        click_data = triggered_value if triggered_value and 'points' in triggered_value else None
+        if not click_data:
+            click_list = clicks or []
+            for cd in click_list:
+                if cd and 'points' in cd and cd['points']:
+                    click_data = cd
+                    break
+        if not click_data or 'points' not in click_data or not click_data['points']:
             raise PreventUpdate
         try:
-            point = triggered_value['points'][0]
+            point = click_data['points'][0]
         except (IndexError, KeyError):
             raise PreventUpdate
         z_val = point.get('z')
@@ -1510,10 +1503,23 @@ def _update_comparison_range(reset_clicks, clicks, slider_values, field, files, 
         click_count = store.get('click_count', 0)
         first_click = store.get('first_click')
         if click_count == 0 or first_click is None:
-            return current_min, current_max, {'click_count': 1, 'first_click': z_val}, [current_min, current_max]
+            return (
+                input_min,
+                input_max,
+                {'click_count': 1, 'first_click': z_val},
+                [input_min, input_max],
+                False,
+            )
         lo, hi = sorted([first_click, z_val])
-        return lo, hi, {'click_count': 0, 'first_click': None}, [lo, hi]
-    if triggered == 'comparison-heatmap-range-slider':
+        return (
+            lo,
+            hi,
+            {'click_count': 0, 'first_click': None},
+            [lo, hi],
+            False,
+        )
+
+    if triggered == {'type': 'comparison-heatmap-range-slider', 'group': group}:
         if not slider_values or len(slider_values) != 2:
             raise PreventUpdate
         try:
@@ -1522,95 +1528,37 @@ def _update_comparison_range(reset_clicks, clicks, slider_values, field, files, 
         except (TypeError, ValueError):
             raise PreventUpdate
         lo, hi = sorted([lo, hi])
-        return lo, hi, {'click_count': 0, 'first_click': None}, [lo, hi]
-    raise PreventUpdate
+        return (
+            lo,
+            hi,
+            {'click_count': 0, 'first_click': None},
+            [lo, hi],
+            False,
+        )
+
     raise PreventUpdate
 
 
 @app.callback(
-    Output({'type': 'comparison-graph', 'file': MATCH}, 'figure'),
-    Input('comparison-heatmap-palette', 'value'),
-    Input('comparison-heatmap-range-min', 'value'),
-    Input('comparison-heatmap-range-max', 'value'),
-    Input('comparison-heatmap-full-scale', 'checked'),
-    Input('comparison-heatmap-range-slider', 'value'),
-    State({'type': 'comparison-graph', 'file': MATCH}, 'id'),
-    State('comparison-heatmap-field', 'value'),
-    State('comparison-files-store', 'data'),
+    Output({'type': 'comparison-controls-store', 'group': MATCH}, 'data'),
+    Input({'type': 'comparison-heatmap-field', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-range-min', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'value'),
+    Input({'type': 'comparison-heatmap-full-scale', 'group': MATCH}, 'checked'),
+    Input({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'value'),
     prevent_initial_call=True
 )
-def _update_single_comparison_graph(palette, range_min, range_max, full_scale, slider_range,
-                                     graph_id, field, files):
-    """Update individual comparison graph figure without rebuilding DOM.
-
-    This pattern-matching callback updates only the figure property of individual graphs,
-    avoiding expensive DOM regeneration and leveraging grid cache for fast palette/range updates.
-    """
-    if not graph_id or not files:
-        raise PreventUpdate
-
-    file_name = graph_id.get('file')
-    if not file_name:
-        raise PreventUpdate
-
-    # Reconstruct file_name from the safe version
-    # Find the actual file name from the files list that matches
-    actual_file_name = None
-    safe_file_name = file_name
-    for f in files:
-        safe = re.sub(r'[^a-z0-9]+', '-', f.lower()).strip('-') or 'file'
-        if safe == safe_file_name:
-            actual_file_name = f
-            break
-
-    if not actual_file_name:
-        raise PreventUpdate
-
-    panels = get_comparison_panels(files or [])
-    if actual_file_name not in panels:
-        raise PreventUpdate
-
-    _, panel = panels[actual_file_name]
-
-    # Build settings from current state
-    settings, _, _ = _comparison_settings(
-        panels, field, range_min, range_max, palette, full_scale, slider_range=slider_range
-    )
-
-    # Get heatmap data (uses cache, so it's fast)
-    heatmap_data = _comparison_heatmap_data(panel, actual_file_name, settings)
-    if heatmap_data:
-        return heatmap_data['figure']
-
-    raise PreventUpdate
-
-
-# ===== SECTION 2: Update Persistent Control Values Store =====
-@app.callback(
-    Output('comparison-controls-store', 'data'),
-    Input('comparison-heatmap-field', 'value'),
-    Input('comparison-heatmap-range-min', 'value'),
-    Input('comparison-heatmap-range-max', 'value'),
-    Input('comparison-heatmap-palette', 'value'),
-    Input('comparison-heatmap-full-scale', 'checked'),
-    Input('comparison-heatmap-range-slider', 'value'),
-    prevent_initial_call=True
-)
-def update_comparison_controls_store(field, range_min, range_max, palette, full_scale, slider_range):
-    """Save user control values to persistent store whenever they change.
-
-    This ensures that when switching tabs, the control values are preserved
-    and not reset to defaults on tab switch.
-    """
+def _save_comparison_group_controls(field, range_min, range_max, palette, full_scale, slider_range):
+    """Persist control values per comparison group."""
     return {
         'scalar': field,
         'range_min': range_min,
         'range_max': range_max,
         'palette': palette,
-        'full_scale': full_scale,
-        'slider_range': slider_range
+        'full_scale': bool(full_scale),
+        'slider_range': slider_range,
     }
-# ===== END SECTION 2 =====
 
 
 TAB_ORDER = [tab['id'] for tab in TAB_CONFIGS]
@@ -1991,20 +1939,6 @@ app.layout = dmc.MantineProvider(
         children=[
             dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
             dcc.Store(id='comparison-files-store', data=list_comparison_files()),
-            # ===== SECTION 1: Persistent Control Values Storage =====
-            # This store persists user's control values across tab switches
-            dcc.Store(
-                id='comparison-controls-store',
-                data={
-                    'scalar': None,
-                    'range_min': None,
-                    'range_max': None,
-                    'palette': None,
-                    'full_scale': False,
-                    'slider_range': None
-                }
-            ),
-            # ===== END SECTION 1 =====
             html.Div([
                 html.Div([
                     html.Div([
@@ -2057,7 +1991,12 @@ app.layout = dmc.MantineProvider(
                     html.Div(
                         id='tab-content',
                         children=build_tab_children(INITIAL_ACTIVE_TAB) if INITIAL_ACTIVE_TAB else []
-                    )
+                    ),
+                    html.Div(
+                        id='comparison-content',
+                        children=build_comparison_content(list_comparison_files(), {}),
+                        style={'display': 'none'}
+                    ),
                 ], className='main-panel')
             ], className='layout-shell')
         ]
@@ -2166,24 +2105,53 @@ def set_active_tab(n_clicks, current_tab):
 # ===== SECTION 3: Render Tab with Persistent Control Values =====
 @app.callback(
     Output('tab-content', 'children'),
+    Output('tab-content', 'style'),
+    Output('comparison-content', 'children'),
+    Output('comparison-content', 'style'),
     Output({'type': 'tab-button', 'tab': ALL}, 'className'),
     Input('active-tab', 'data'),
     Input('comparison-files-store', 'data'),
     Input('vtk-folder-tabs', 'value'),
-    Input('comparison-controls-store', 'data'),
+    State({'type': 'comparison-controls-store', 'group': ALL}, 'data'),
+    State({'type': 'comparison-controls-store', 'group': ALL}, 'id'),
 )
-def render_active_tab(active_tab, comparison_files, active_folder, comparison_controls):
+def render_active_tab(active_tab, comparison_files, active_folder, group_controls_data, group_controls_ids):
     if active_tab is None and active_folder != 'comparison':
-        return html.Div("No tabs available", className='dataset-empty'), ['custom-tab'] * len(TAB_ORDER)
+        return (
+            html.Div("No tabs available", className='dataset-empty'),
+            {},
+            [],
+            {'display': 'none'},
+            ['custom-tab'] * len(TAB_ORDER),
+        )
     classes = [
         'custom-tab active-tab' if tab_id == active_tab else 'custom-tab'
         for tab_id in TAB_ORDER
     ]
     if active_folder == 'comparison':
-        # Pass stored control values to build_comparison_content
-        return build_comparison_content(comparison_files or [], comparison_controls), classes
+        stored_by_group = {}
+        if group_controls_data and group_controls_ids:
+            for store_id, store_data in zip(group_controls_ids, group_controls_data):
+                if not isinstance(store_id, dict) or not store_data:
+                    continue
+                grp = store_id.get('group')
+                if grp is not None:
+                    stored_by_group[grp] = store_data
+        return (
+            no_update,
+            {'display': 'none'},
+            build_comparison_content(comparison_files or [], stored_by_group),
+            {'display': 'block'},
+            classes,
+        )
     children = build_tab_children(active_tab)
-    return children, classes
+    return (
+        children,
+        {'display': 'block'},
+        no_update,
+        {'display': 'none'},
+        classes,
+    )
 # ===== END SECTION 3 =====
 
 
