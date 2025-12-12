@@ -486,7 +486,8 @@ h1.app-title {
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--surface-border);
     border-radius: var(--radius-lg);
-    overflow: hidden;
+    /* Allow dropdown menus/tooltips to extend outside cards. */
+    overflow: visible;
     box-shadow: var(--shadow-md);
     transition: var(--transition);
     display: flex;
@@ -654,6 +655,41 @@ h1.app-title {
 
 .comparison-hidden-layout {
     display: none !important;
+}
+
+/* Title row above comparison heatmaps */
+.comparison-heatmap-title-row {
+    display: grid;
+    grid-template-columns: 70px repeat(auto-fit, minmax(320px, 1fr)) 160px;
+    align-items: start;
+    gap: 14px;
+    margin-bottom: 2px;
+}
+
+.comparison-heatmap-title-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.comparison-heatmap-title-spacer {
+    width: 70px;
+}
+
+.comparison-heatmap-remove {
+    border: 1px solid rgba(0,0,0,0.35);
+    background: transparent;
+    color: inherit;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    padding: 0;
+    cursor: pointer;
 }
 
 .textdata-card .dataset-body {
@@ -1075,9 +1111,9 @@ h1.app-title {
 
 .dropdown-wrapper .Select,
 .dropdown-wrapper .dash-dropdown {
-    width: 110%;
-    height: 90%;
-    font-size: 0.75rem;
+    width: 100%;
+    height: auto;
+    font-size: 0.85rem;
     font-family: 'Inter', sans-serif;
 }
 
@@ -1088,6 +1124,37 @@ h1.app-title {
 .dropdown-wrapper .Select-placeholder {
     font-size: 0.85rem !important;
     font-family: 'Inter', sans-serif !important;
+}
+
+/* Hide selected pills in comparison file pickers.
+   Files remain removable via the × on each heatmap. */
+.comparison-file-picker .Select--multi .Select-value,
+.comparison-file-picker .Select--multi .Select-value-icon,
+.comparison-file-picker .Select--multi .Select-value-label {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.comparison-file-picker .Select-multi-value-wrapper {
+    max-height: 0 !important;
+    padding: 0 !important;
+}
+.comparison-file-picker .Select--multi .Select-input {
+    margin-left: 0 !important;
+    padding: 0 !important;
+}
+
+/* Dash newer react-select classnames */
+.comparison-file-picker .Select__multi-value,
+.comparison-file-picker .Select__multi-value__label,
+.comparison-file-picker .Select__multi-value__remove {
+    display: none !important;
+    visibility: hidden !important;
+}
+.comparison-file-picker [class*="Select__multi-value"] {
+    display: none !important;
 }
 
 .grid-label {
@@ -1423,15 +1490,15 @@ input[type="text"] {
 }
 
 .Select-control {
-    width: 80% !important;
-    height: 80% !important;
+    width: 100% !important;
+    height: var(--control-height) !important;
     padding: 0px 8px;
     border-radius: 7px !important;
     border: 1.5px solid #cbd5e1 !important;
     background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
     transition: var(--transition);
     font-family: inherit;
-    font-size: 0.25rem;
+    font-size: 0.85rem;
     font-weight: 500;
     box-sizing: border-box;
     color: var(--text-main);
@@ -1445,11 +1512,25 @@ input[type="text"] {
     border-radius: 10px !important;
     border: 1.4px solid #cbd5e1 !important;
     box-shadow: var(--shadow-sm);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 2000 !important;
+    position: absolute !important;
+}
+
+/* Prevent parent containers from clipping dropdown menus */
+.dropdown-wrapper,
+.dropdown-wrapper > div,
+.comparison-control-row,
+.comparison-controls-grid,
+.controls-grid-row,
+.dataset-body {
+    overflow: visible !important;
 }
 
 .Select-menu-outer .Select-option {
-    font-size: 0.55rem !important;
-    padding: 2px 2px !important;
+    font-size: 0.85rem !important;
+    padding: 8px 10px !important;
 }
 
 .Select-placeholder,
