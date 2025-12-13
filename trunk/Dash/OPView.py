@@ -994,22 +994,22 @@ def format_fit_summary(best_fit):
     )
 
 
-def initialize_tab_datasets_lazy():
+def initialize_tab_datasets_static():
     """
-    Lazily initialize tab datasets - scans for files and creates panels.
-    Called when a project folder is selected.
+    Initialize main tab panels at startup (no VTK reads).
+
+    Why: Dash must know all callback dependencies on first page load; if we create
+    ViewerPanels (and register callbacks) only after the user selects a project,
+    the browser won't see those callbacks until a refresh.
+
+    Panels use `projects-store` for project/file dropdown options and only read
+    a VTK file when the user selects a file.
     """
-    # Import ViewerPanel now (it was deferred for fast startup)
     from viewer import ViewerPanel
 
     tab_data = {}
     debug = bool(os.environ.get("OPVIEW_DEBUG"))
     active_project_name = None
-    try:
-        if current_project_vtk_path:
-            active_project_name = Path(current_project_vtk_path).resolve().parent.name
-    except Exception:
-        active_project_name = None
     # Panels populate project/file pickers from `projects-store` (paths only; no VTK reads).
     for tab in TAB_CONFIGS:
         datasets = []
@@ -1094,13 +1094,7 @@ def initialize_tab_datasets_lazy():
 
 
 print(f"[{time.time()-_start_time:.2f}s] Initializing tab_datasets...")
-# Initialize with empty datasets for fast startup
-tab_datasets = {}
-for tab in TAB_CONFIGS:
-    tab_datasets[tab["id"]] = {
-        "label": tab["label"],
-        "panels": []
-    }
+tab_datasets = initialize_tab_datasets_static()
 print(f"[{time.time()-_start_time:.2f}s] tab_datasets initialized")
 
 comparison_panels = {}
@@ -2850,9 +2844,6 @@ def handle_project_folder_selection(selected_folders, active_tab):
     active_name = selected_folders[0] if selected_folders else None
     if not active_name:
         current_project_vtk_path = None
-        # Clear module panels.
-        for tab in TAB_CONFIGS:
-            tab_datasets[tab["id"]]["panels"] = []
         msg = html.Div("No project loaded. Load one or more projects to enable Dash tabs and Comparison pickers.",
                        className='vtk-upload-feedback vtk-upload-feedback--error')
         return selected_folders, None, msg, {'names': loaded_project_names, 'active': None, 'files_by_project': loaded_project_vtk_files_by_project}
@@ -2865,14 +2856,8 @@ def handle_project_folder_selection(selected_folders, active_tab):
     else:
         current_project_vtk_path = None
 
-    # Build main module tabs for the active project (one file at a time per dataset).
-    try:
-        new_tabs = initialize_tab_datasets_lazy()
-        for tab_id, info in new_tabs.items():
-            tab_datasets[tab_id] = info
-    except Exception:
-        # Leave existing data if initialization fails.
-        pass
+    # Main tabs are initialized at startup (no VTK reads). Selecting projects only
+    # updates `projects-store`; panels react instantly without requiring a refresh.
 
     print(f"\n{'='*60}")
     print(f"PROJECTS LOADED: {', '.join(selected_folders) if selected_folders else '(none)'}")
