@@ -153,6 +153,7 @@ current_project_vtk_path = None
 # Loaded project VTK file paths (across multiple projects)
 loaded_project_vtk_files = []
 loaded_project_names = []
+loaded_project_vtk_files_by_project = {}
 
 # Cache main ViewerPanels by dataset id to avoid duplicate callback registration.
 main_panels_by_id = {}
@@ -1003,6 +1004,13 @@ def initialize_tab_datasets_lazy():
 
     tab_data = {}
     debug = bool(os.environ.get("OPVIEW_DEBUG"))
+    active_project_name = None
+    try:
+        if current_project_vtk_path:
+            active_project_name = Path(current_project_vtk_path).resolve().parent.name
+    except Exception:
+        active_project_name = None
+    # Panels populate project/file pickers from `projects-store` (paths only; no VTK reads).
     for tab in TAB_CONFIGS:
         datasets = []
         # Initialize the tab entry first to ensure it exists even if no datasets are found
@@ -1012,26 +1020,13 @@ def initialize_tab_datasets_lazy():
         }
 
         for dataset in tab.get("datasets", []):
-            # Collect all available files for this dataset (file picker; no default selection).
+            # Panels start empty until user picks project+file.
             files = []
+            file_pattern = None
             if dataset.get("file_glob"):
-                pattern = Path(dataset["file_glob"]).name
-                # Dash/module tabs should use the Active project's VTK folder only (not the union),
-                # while Comparison uses the union.
-                base_dir = current_project_vtk_path if current_project_vtk_path and Path(current_project_vtk_path).exists() else None
-                vtk_paths = _scan_vtk_dir(Path(base_dir)) if base_dir else (list_vtk_files() or [])
-                if vtk_paths:
-                    files = sorted([p for p in vtk_paths if fnmatch.fnmatchcase(Path(p).name, pattern)])
-                else:
-                    glob_pattern = resolve_vtk_path(dataset["file_glob"])
-                    files = sorted(glob(str(glob_pattern)))
+                file_pattern = Path(dataset["file_glob"]).name
             elif dataset.get("file"):
-                target = resolve_vtk_path(dataset["file"])
-                if target.exists():
-                    files = [str(target)]
-                else:
-                    target_name = Path(dataset["file"]).name
-                    files = sorted([p for p in (list_vtk_files() or []) if Path(p).name == target_name])
+                file_pattern = Path(dataset["file"]).name
 
             dataset_config = {
                 "id": f"{tab['id']}-{dataset['id']}",
@@ -1041,6 +1036,9 @@ def initialize_tab_datasets_lazy():
                 "colorB": dataset.get("colorB"),
                 "file": None,
                 "files": files,
+                "project_value": active_project_name,
+                "enable_project_picker": True,
+                "file_pattern": file_pattern,
                 "scale": dataset.get("scale"),
                 "units": dataset.get("units"),
                 "overrides": dataset.get("overrides"),
@@ -1065,6 +1063,10 @@ def initialize_tab_datasets_lazy():
                 try:
                     panel.files = dataset_config.get("files") or []
                     panel.file_path = None
+                    panel.file_pattern = file_pattern
+                    panel.enable_project_picker = True
+                    panel.project_options = []
+                    panel.project_value = active_project_name
                     panel.time_options = panel._build_time_options(panel.files)
                     panel.time_value = None
                     panel.reader = None
@@ -1260,7 +1262,9 @@ def _comparison_scalar_options(panels):
 def _comparison_palette_options(panels):
     """Return palette dropdown options for comparison controls."""
     if not panels:
-        return [{'label': key.replace('-', ' ').title(), 'value': key} for key in ViewerPanel.PALETTES.keys()]
+        # ViewerPanel is lazily imported; fall back to importing it here when needed.
+        from viewer import ViewerPanel as VP
+        return [{'label': key.replace('-', ' ').title(), 'value': key} for key in VP.PALETTES.keys()]
     _, panel, _ = next(iter(panels.values()))
     return panel.palette_options
 
@@ -1761,8 +1765,8 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
             if entry and entry.get('path') in panels
         }
 
-        # If nothing is selected yet, use available entries to populate options/defaults.
-        panels_for_settings = panels_for_group or get_comparison_panels(available_group_entries)
+        # Lazy behavior: do NOT load/read any VTK files until the user selects at least one file.
+        panels_for_settings = panels_for_group
 
         def _label_for_entry(e):
             name = e.get('name') or Path(e.get('path') or '').name
@@ -1782,14 +1786,15 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
 
         stored = stored_controls_by_group.get(group) or {}
 
+        has_selection = bool(panels_for_settings)
         settings, scalar_options, palette_options = _comparison_settings(
             panels_for_settings,
-            scalar_value=stored.get('scalar'),
-            range_min=stored.get('range_min'),
-            range_max=stored.get('range_max'),
+            scalar_value=stored.get('scalar') if has_selection else None,
+            range_min=stored.get('range_min') if has_selection else None,
+            range_max=stored.get('range_max') if has_selection else None,
             palette_value=stored.get('palette'),
-            full_scale=stored.get('full_scale', False),
-            slider_range=stored.get('slider_range'),
+            full_scale=stored.get('full_scale', False) if has_selection else False,
+            slider_range=stored.get('slider_range') if has_selection else None,
         )
         slider_min_default, slider_max_default = _comparison_range_defaults(panels_for_settings, settings['scalar'])
         if slider_min_default is None or slider_max_default is None:
@@ -1809,6 +1814,8 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
                     value=settings['scalar'],
                     clearable=False,
                     searchable=False,
+                    disabled=not has_selection,
+                    placeholder="Select files first…" if not has_selection else None,
                     className='dropdown-wrapper'
                 ),
                 html.Label("Files", className='field-label grid-label'),
@@ -1842,30 +1849,33 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
                     "Range"
                 ], className='field-label grid-label'),
                 html.Div([
-                    dcc.Input(
-                        id={'type': 'comparison-heatmap-range-min', 'group': group},
-                        type='number',
-                        value=settings['range_min'],
-                        step='any',
-                        placeholder='Min',
-                        className='comparison-range-input'
-                    ),
-                    dcc.Input(
-                        id={'type': 'comparison-heatmap-range-max', 'group': group},
-                        type='number',
-                        value=settings['range_max'],
-                        step='any',
-                        placeholder='Max',
-                        className='comparison-range-input'
-                    ),
-                    html.Button(
-                        html.Img(src='/assets/Reset.png', alt='Reset range', className='btn-icon'),
-                        id={'type': 'comparison-heatmap-reset', 'group': group},
-                        n_clicks=0,
-                        className='btn btn-danger reset-btn',
-                        title='Reset range'
-                    )
-                ], className='comparison-range-row'),
+                dcc.Input(
+                    id={'type': 'comparison-heatmap-range-min', 'group': group},
+                    type='number',
+                    value=settings['range_min'],
+                    step='any',
+                    placeholder='Min',
+                    disabled=not has_selection,
+                    className='comparison-range-input'
+                ),
+                dcc.Input(
+                    id={'type': 'comparison-heatmap-range-max', 'group': group},
+                    type='number',
+                    value=settings['range_max'],
+                    step='any',
+                    placeholder='Max',
+                    disabled=not has_selection,
+                    className='comparison-range-input'
+                ),
+                html.Button(
+                    html.Img(src='/assets/Reset.png', alt='Reset range', className='btn-icon'),
+                    id={'type': 'comparison-heatmap-reset', 'group': group},
+                    n_clicks=0,
+                    className='btn btn-danger reset-btn',
+                    title='Reset range',
+                    disabled=not has_selection
+                )
+            ], className='comparison-range-row'),
 
                 html.Div([
                     dcc.RangeSlider(
@@ -1877,7 +1887,8 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
                         allowCross=False,
                         tooltip={"placement": "bottom", "always_visible": True},
                         # Reuse main-tab styling for a consistent look.
-                        className='range-slider-dual comparison-range-slider'
+                        className='range-slider-dual comparison-range-slider',
+                        disabled=not has_selection
                     )
                 ], className='comparison-range-slider-row'),
                 html.Div(
@@ -1890,6 +1901,7 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
                         radius="xs",
                         color="#c50623",
                         withThumbIndicator=True,
+                        disabled=not has_selection,
                     ),
                     className='scan-option scan-option--inline'
                 )
@@ -2017,6 +2029,48 @@ def _update_comparison_heatmaps(field, range_min, range_max, palette, full_scale
         panels_for_group, field, range_min, range_max, palette, full_scale, slider_range=slider_range
     )
     return build_comparison_heatmap_row(panels_for_group, group_entries, settings, group)
+
+
+@app.callback(
+    Output({'type': 'comparison-heatmap-field', 'group': MATCH}, 'options'),
+    Output({'type': 'comparison-heatmap-field', 'group': MATCH}, 'value'),
+    Output({'type': 'comparison-heatmap-field', 'group': MATCH}, 'disabled'),
+    Output({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'options'),
+    Output({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'value'),
+    Output({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'disabled'),
+    Input({'type': 'comparison-selected-files-store', 'group': MATCH}, 'data'),
+    State({'type': 'comparison-controls-store', 'group': MATCH}, 'data'),
+)
+def _sync_comparison_control_options(selected_paths, stored_controls):
+    """Lazy-load comparison control options only after user selects files."""
+    group_entries = _comparison_entries_from_selected(selected_paths)
+    panels = get_comparison_panels(group_entries)
+    panels_for_group = {
+        entry.get('path'): panels.get(entry.get('path'))
+        for entry in group_entries
+        if entry and entry.get('path') in panels
+    }
+
+    has_selection = bool(panels_for_group)
+    stored = stored_controls or {}
+    settings, scalar_options, palette_options = _comparison_settings(
+        panels_for_group,
+        scalar_value=stored.get('scalar') if has_selection else None,
+        range_min=stored.get('range_min') if has_selection else None,
+        range_max=stored.get('range_max') if has_selection else None,
+        palette_value=stored.get('palette'),
+        full_scale=stored.get('full_scale', False) if has_selection else False,
+        slider_range=stored.get('slider_range') if has_selection else None,
+    )
+
+    return (
+        scalar_options or [],
+        settings.get('scalar'),
+        not has_selection,
+        palette_options or [],
+        settings.get('palette'),
+        not has_selection,
+    )
 
 
 @app.callback(
@@ -2564,6 +2618,7 @@ app.layout = dmc.MantineProvider(
             dcc.Store(id='comparison-files-store', data=list_comparison_files()),
             dcc.Store(id='loaded-project-folders', data=[], storage_type='session'),
             dcc.Store(id='selected-project-folder', data=None, storage_type='session'),
+            dcc.Store(id='projects-store', data={'names': [], 'active': None, 'files_by_project': {}}, storage_type='session'),
             dcc.Location(id='url', refresh=False),
             html.Div([
                 html.Div([
@@ -2595,17 +2650,6 @@ app.layout = dmc.MantineProvider(
                             placeholder="Load project folder(s)…",
                             clearable=True,
                             multi=True,
-                            searchable=False,
-                            className='project-folder-dropdown',
-                            style={'minWidth': '320px'}
-                        ),
-                        html.Label("Active:", className='project-folder-label', style={'marginLeft': '12px', 'marginRight': '8px'}),
-                        dcc.Dropdown(
-                            id='active-project-dropdown',
-                            options=get_project_folder_options(),
-                            placeholder="Active project…",
-                            clearable=True,
-                            multi=False,
                             searchable=False,
                             className='project-folder-dropdown',
                             style={'minWidth': '320px'}
@@ -2764,17 +2808,15 @@ def update_folder_actions(active_tab):
     Output('loaded-project-folders', 'data'),
     Output('selected-project-folder', 'data'),
     Output('vtk-upload-feedback', 'children', allow_duplicate=True),
-    Output('active-project-dropdown', 'value'),
+    Output('projects-store', 'data'),
     Input('project-folder-dropdown', 'value'),
-    Input('active-project-dropdown', 'value'),
     State('active-tab', 'data'),
     prevent_initial_call=True
 )
-def handle_project_folder_selection(selected_folders, active_project, active_tab):
+def handle_project_folder_selection(selected_folders, active_tab):
     """Handle project folder selection for multi-project browsing.
 
     - `project-folder-dropdown` loads one or more project folders.
-    - `active-project-dropdown` selects the project used by the main module tabs.
     - Comparison can pick files from any loaded project without clearing selections.
     """
     global current_project_vtk_path
@@ -2785,7 +2827,6 @@ def handle_project_folder_selection(selected_folders, active_project, active_tab
     if isinstance(selected_folders, str):
         selected_folders = [selected_folders]
     selected_folders = [f for f in selected_folders if f in discovered_project_folders]
-
     # Update loaded VTK files union for comparison pickers.
     loaded_vtk_paths = []
     loaded_names = []
@@ -2795,15 +2836,18 @@ def handle_project_folder_selection(selected_folders, active_project, active_tab
             loaded_names.append(name)
             loaded_vtk_paths.append(info['vtk_path'])
 
-    global loaded_project_vtk_files, loaded_project_names
+    global loaded_project_vtk_files, loaded_project_names, loaded_project_vtk_files_by_project
     loaded_project_names = loaded_names
+    loaded_project_vtk_files_by_project = {}
     all_files = []
-    for vtk_dir in loaded_vtk_paths:
-        all_files.extend(_scan_vtk_dir(Path(vtk_dir)))
+    for name, vtk_dir in zip(loaded_names, loaded_vtk_paths):
+        scanned = _scan_vtk_dir(Path(vtk_dir))
+        loaded_project_vtk_files_by_project[name] = scanned
+        all_files.extend(scanned)
     loaded_project_vtk_files = sorted(set(all_files))
 
-    # Choose active project (for module tabs).
-    active_name = active_project if active_project in selected_folders else (selected_folders[0] if selected_folders else None)
+    # Choose active project (first loaded) for legacy paths and defaults.
+    active_name = selected_folders[0] if selected_folders else None
     if not active_name:
         current_project_vtk_path = None
         # Clear module panels.
@@ -2811,7 +2855,7 @@ def handle_project_folder_selection(selected_folders, active_project, active_tab
             tab_datasets[tab["id"]]["panels"] = []
         msg = html.Div("No project loaded. Load one or more projects to enable Dash tabs and Comparison pickers.",
                        className='vtk-upload-feedback vtk-upload-feedback--error')
-        return selected_folders, None, msg, None
+        return selected_folders, None, msg, {'names': loaded_project_names, 'active': None, 'files_by_project': loaded_project_vtk_files_by_project}
 
     folder_info = discovered_project_folders[active_name]
 
@@ -2858,7 +2902,7 @@ def handle_project_folder_selection(selected_folders, active_project, active_tab
                       style={'color': '#666', 'fontSize': '12px'}),
         ], style={'marginTop': '4px'}),
         html.Div([
-            html.Span("💡 Comparison can pick files from any loaded project; Dash tabs use the Active project.",
+            html.Span("💡 Comparison can pick files from any loaded project; module panels pick a project inside each panel.",
                       style={'color': '#0066cc', 'fontSize': '12px', 'fontStyle': 'italic'})
         ], style={'marginTop': '8px'})
     ], className='vtk-upload-feedback vtk-upload-feedback--success',
@@ -2873,7 +2917,7 @@ def handle_project_folder_selection(selected_folders, active_project, active_tab
         'loaded': selected_folders,
     }
 
-    return selected_folders, folder_data, feedback_msg, active_name
+    return selected_folders, folder_data, feedback_msg, {'names': loaded_project_names, 'active': active_name, 'files_by_project': loaded_project_vtk_files_by_project}
 
 @app.callback(
     Output('active-tab', 'data'),
@@ -2921,16 +2965,6 @@ def render_active_tab(active_tab, comparison_files, _active_project, _loaded_pro
         for tab_id in TAB_ORDER
     ]
     if active_folder == 'comparison':
-        # Don't rebuild comparison content when only the active project changes;
-        # comparison can draw from all loaded projects and should preserve UI state.
-        if ctx.triggered_id == 'selected-project-folder':
-            return (
-                no_update,
-                {'display': 'none'},
-                no_update,
-                {'display': 'block'},
-                classes,
-            )
         stored_by_group = {}
         if group_controls_data and group_controls_ids:
             for store_id, store_data in zip(group_controls_ids, group_controls_data):

@@ -21,6 +21,8 @@ def build_controls(
     slider_max,
     axis_label,
     palette_options,
+    project_options=None,
+    project_value=None,
     time_options=None,
     time_value=None,
     include_range_section: bool = True,
@@ -28,8 +30,28 @@ def build_controls(
 ):
     """Return control panel stacked above the graph."""
 
-    # Row 1: Optional File picker, Scalar Field
+    # Row 1: Optional Project picker, File picker, Scalar Field
     first_row_children = []
+
+    if project_options is not None:
+        first_row_children.extend([
+            html.Label([
+                html.Span("P", className="label-icon"),
+                "Project:",
+            ], className='field-label grid-label'),
+            html.Div([
+                dcc.Dropdown(
+                    id=component_id(viewer_id, 'project'),
+                    options=project_options or [],
+                    value=project_value,
+                    clearable=False,
+                    searchable=False,
+                    persistence=True,
+                    persistence_type='session',
+                    placeholder="Select project…",
+                )
+            ], className='dropdown-wrapper'),
+        ])
 
     if time_options is not None:
         first_row_children.extend([
@@ -67,9 +89,8 @@ def build_controls(
         ], className='dropdown-wrapper'),
     ])
 
-    rows = [
-        html.Div(first_row_children, className='controls-grid-row'),
-    ]
+    row_class = 'controls-grid-row controls-row-3' if project_options is not None else 'controls-grid-row'
+    rows = [html.Div(first_row_children, className=row_class)]
 
     if include_range_section:
         rows.extend([
@@ -384,6 +405,8 @@ def build_tab_layout(
     slider_max,
     axis_label,
     palette_options,
+    project_options=None,
+    project_value=None,
     time_options=None,
     time_value=None,
     include_range_section=True,
@@ -402,6 +425,8 @@ def build_tab_layout(
                 slider_max,
                 axis_label,
                 palette_options,
+                project_options=project_options,
+                project_value=project_value,
                 time_options=time_options,
                 time_value=time_value,
                 include_range_section=include_range_section,

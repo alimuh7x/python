@@ -1,6 +1,7 @@
 """Viewer panel: layout + callbacks for each tab."""
 from __future__ import annotations
 
+import fnmatch
 import os
 import traceback
 from dataclasses import replace
@@ -23,6 +24,7 @@ def _formatted_range_value(value):
         return float(f"{value:.6f}")
     return float(f"{value:.6e}")
 
+_REGISTERED_PANEL_CALLBACKS: set[str] = set()
 _REGISTERED_DOWNLOAD_CALLBACKS: set[str] = set()
 
 
@@ -182,6 +184,11 @@ class ViewerPanel:
         )
         # Time-step handling: list of all files for this dataset
         self.files = tab_config.get("files") or []
+        self.files_by_project = tab_config.get("files_by_project") or {}
+        self.file_pattern = tab_config.get("file_pattern")
+        self.enable_project_picker = bool(tab_config.get("enable_project_picker"))
+        self.project_options = [] if self.enable_project_picker else None
+        self.project_value = tab_config.get("project_value")
         self.file_path = tab_config.get("file")
         self.dataset_units = tab_config.get("units")
         self.dataset_scale = tab_config.get("scale", 1.0)
@@ -239,7 +246,7 @@ class ViewerPanel:
     def _build_time_options(self, files):
         """Return dropdown options for available time-step files.
 
-        Labels show `project/filename` (like Comparison), while values are absolute paths.
+        Labels show filenames, while values are absolute paths.
         """
         options = []
         for path in sorted(files):
@@ -249,17 +256,7 @@ class ViewerPanel:
                 value = str(p.resolve())
             except OSError:
                 value = str(p)
-            proj = ""
-            try:
-                parts = list(Path(value).parts)
-                for idx, part in enumerate(parts):
-                    if part.lower() == 'vtk' and idx > 0:
-                        proj = parts[idx - 1]
-                        break
-            except Exception:
-                proj = ""
-            label = f"{proj}/{name}" if proj else name
-            options.append({"label": label, "value": value})
+            options.append({"label": name, "value": value})
         return options
 
     def _colorscale_params(self, Z_grid, state: ViewerState):
@@ -440,8 +437,10 @@ class ViewerPanel:
             slider_max=self.initial_slider_max,
             axis_label=self.axis_label,
             palette_options=self.palette_options,
-             time_options=self.time_options,
-             time_value=self.time_value,
+            project_options=self.project_options,
+            project_value=self.project_value,
+            time_options=self.time_options,
+            time_value=self.time_value,
             include_range_section=True,
             include_hidden_line_toggle=not self.enable_line_scan,
             initial_figure=(self.initial_heatmap_bundle or {}).get("figure"),
@@ -460,6 +459,48 @@ class ViewerPanel:
 
     def register_callbacks(self):
         """Register Dash callbacks for this dataset panel."""
+
+        # Panels (especially in Comparison) can be rebuilt multiple times as the layout changes.
+        # Dash does not allow registering the same Output more than once, so we guard by panel id.
+        # Note: callbacks close over `self`; panel ids are designed to be stable per dataset/config.
+        if self.id in _REGISTERED_PANEL_CALLBACKS:
+            return
+        _REGISTERED_PANEL_CALLBACKS.add(self.id)
+
+        if self.enable_project_picker:
+            @self.app.callback(
+                Output(self.cid('project'), 'options'),
+                Output(self.cid('project'), 'value'),
+                Output(self.cid('time'), 'options'),
+                Output(self.cid('time'), 'value'),
+                Input('projects-store', 'data'),
+                Input(self.cid('project'), 'value'),
+                State(self.cid('time'), 'value'),
+            )
+            def _sync_project_and_files(projects_store, selected_project, selected_file):
+                store = projects_store or {}
+                names = store.get('names') or []
+                active = store.get('active')
+                files_by_project = store.get('files_by_project') or {}
+
+                project_options = [{'label': name, 'value': name} for name in names]
+
+                project_value = selected_project if selected_project in names else None
+                if project_value is None and active in names:
+                    project_value = active
+                if project_value is None and names:
+                    project_value = names[0]
+
+                files = files_by_project.get(project_value) or []
+                if self.file_pattern:
+                    files = [p for p in files if fnmatch.fnmatchcase(Path(p).name, self.file_pattern)]
+
+                time_options = self._build_time_options(files)
+                allowed = {opt.get('value') for opt in time_options}
+                time_value = selected_file if selected_file in allowed else None
+
+                self.project_value = project_value
+                return project_options, project_value, time_options, time_value
 
         # Build outputs list - conditionally include DMC Switch outputs
         outputs = [
