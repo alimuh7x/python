@@ -138,9 +138,27 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.vtk-container {
+  display: flex;
+  align-items: center;
+}
+
+.vtk-container-first {
+  flex: 1;
+}
+
+.vtk-container-second {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* right-aligned */
+  gap: 6px;
+}
+
 .vtk-folder-section {
     width: 100%;
     margin: 0;
+    display: column;
 }
 
 .vtk-folder-row {
@@ -1918,4 +1936,16 @@ input:focus,
         justify-content: space-between;
         width: 100%;
     }
+}
+
+/* Project folder dropdown styling */
+.project-folder-label {
+    color: #12294f;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.project-folder-dropdown .Select-control {
+    font-size: 13px;
 }

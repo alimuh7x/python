@@ -1,11 +1,18 @@
 """Multi-field VTK viewer with reusable tab panels."""
+import time
+_start_time = time.time()
+print(f"[{time.time()-_start_time:.2f}s] Starting imports...")
+
 import base64
+import fnmatch
 import hashlib
 import os
 import re
 import warnings
 from glob import glob
 from pathlib import Path
+
+print(f"[{time.time()-_start_time:.2f}s] Standard library imports done")
 
 import numpy as np
 import plotly.graph_objects as go
@@ -15,10 +22,15 @@ from flask import render_template_string
 import markdown
 from scipy import stats
 import dash_mantine_components as dmc
+from viewer.state import initial_state
+
+print(f"[{time.time()-_start_time:.2f}s] Third-party imports done")
 
 from utils.vtk_reader import VTKReader
-from viewer import ViewerPanel
+# Defer ViewerPanel import for faster startup - import only when needed
+ViewerPanel = None  # Lazy import later
 
+print(f"[{time.time()-_start_time:.2f}s] Local imports done (ViewerPanel deferred)")
 
 APP_TITLE = "OPView"
 TENSOR_COMPONENTS = ['xx', 'yy', 'zz', 'xy', 'yz', 'zx']
@@ -134,9 +146,134 @@ reader_cache = {}
 comparison_grid_cache = {}
 comparison_grid_cache_data = {}  # key = (file_name, scalar, slice_index) → (X_grid, Y_grid, Z_grid, stats, state_dict)
 
+# Storage for discovered project folders (initialized at startup)
+discovered_project_folders = {}
+# Currently selected project folder path (updated when user selects from dropdown)
+current_project_vtk_path = None
+# Loaded project VTK file paths (across multiple projects)
+loaded_project_vtk_files = []
+loaded_project_names = []
+
+# Cache main ViewerPanels by dataset id to avoid duplicate callback registration.
+main_panels_by_id = {}
+# Cache manual single-file ViewerPanels by absolute path.
+manual_panels_by_path = {}
+
+
+def _scan_vtk_dir(directory: Path):
+    """Scan a VTK directory for supported files."""
+    paths = []
+    if not directory or not directory.exists():
+        return paths
+    try:
+        for child in directory.rglob("*"):
+            if child.is_file() and child.suffix.lower() in ALLOWED_VTK_EXTENSIONS:
+                paths.append(str(child.resolve()))
+    except OSError:
+        return []
+    return sorted(paths)
+
+def get_project_folder_options():
+    """Convert discovered project folders to dropdown options."""
+    options = []
+    for folder_name, folder_info in sorted(discovered_project_folders.items()):
+        vtk_count = folder_info.get('vtk_file_count', 0)
+        textdata_count = folder_info.get('textdata_file_count', 0)
+        label = f"{folder_name} ({vtk_count} VTK, {textdata_count} TextData)"
+        options.append({'label': label, 'value': folder_name})
+    return options
+
+
+def scan_project_folders(base_path: Path = None):
+    """
+    Scan the current directory for folders containing VTK or TextData subdirectories.
+    Returns a dictionary mapping folder names to their contents.
+
+    Args:
+        base_path: Directory to scan (defaults to current working directory)
+
+    Returns:
+        Dictionary with structure:
+        {
+            'Project1': {
+                'path': Path object,
+                'has_vtk': True/False,
+                'has_textdata': True/False,
+                'vtk_path': Path to VTK folder or None,
+                'textdata_path': Path to TextData folder or None,
+                'vtk_file_count': number of VTK files,
+                'textdata_file_count': number of text data files
+            },
+            ...
+        }
+    """
+    if base_path is None:
+        base_path = Path.cwd()
+
+    project_folders = {}
+
+    # Scan only immediate subdirectories of the base path
+    for item in base_path.iterdir():
+        if not item.is_dir():
+            continue
+
+        # Skip hidden folders, virtual environments, and special folders
+        skip_folders = {'.git', '.vscode', '.claude', '.gemini', '__pycache__',
+                       'venv', 'venv312', 'venv_py312', 'assets', 'utils',
+                       'viewer', 'sample_data', 'node_modules'}
+        if item.name in skip_folders or item.name.startswith('.'):
+            continue
+
+        # Check for VTK and TextData subdirectories
+        vtk_path = item / "VTK"
+        textdata_variants = ["TextData", "Textdata", "textdata", "TEXTDATA"]
+        textdata_path = None
+
+        for variant in textdata_variants:
+            potential_path = item / variant
+            if potential_path.exists() and potential_path.is_dir():
+                textdata_path = potential_path
+                break
+
+        has_vtk = vtk_path.exists() and vtk_path.is_dir()
+        has_textdata = textdata_path is not None
+
+        # Only include folders that have at least VTK or TextData
+        if has_vtk or has_textdata:
+            # Count files
+            vtk_count = 0
+            if has_vtk:
+                vtk_count = sum(1 for f in vtk_path.iterdir()
+                              if f.is_file() and f.suffix.lower() in ALLOWED_VTK_EXTENSIONS)
+
+            textdata_count = 0
+            if has_textdata:
+                textdata_count = sum(1 for f in textdata_path.iterdir()
+                                   if f.is_file() and f.suffix.lower() in ('.txt', '.dat'))
+
+            project_folders[item.name] = {
+                'path': item,
+                'has_vtk': has_vtk,
+                'has_textdata': has_textdata,
+                'vtk_path': vtk_path if has_vtk else None,
+                'textdata_path': textdata_path,
+                'vtk_file_count': vtk_count,
+                'textdata_file_count': textdata_count
+            }
+
+    return project_folders
+
+
 # Cache for rendered heatmap rows to avoid rebuilding on tab switches
 def vtk_data_dir():
-    """Return the VTK data directory preferring the caller's CWD/VTK, else repo VTK."""
+    """Return the VTK data directory preferring the selected project folder, else CWD/VTK, else repo VTK."""
+    global current_project_vtk_path
+
+    # If a project folder is selected, use its VTK path
+    if current_project_vtk_path and current_project_vtk_path.exists():
+        return current_project_vtk_path
+
+    # Otherwise, use default behavior
     cwd_vtk = Path.cwd() / "VTK"
     if cwd_vtk.exists():
         return cwd_vtk
@@ -187,11 +324,30 @@ def resolve_vtk_path(pattern: str) -> Path:
 
 def get_reader(file_path):
     """Return cached VTKReader for a given file path."""
-    if not file_path or not os.path.exists(file_path):
+    debug = bool(os.environ.get("OPVIEW_DEBUG"))
+    if not file_path:
+        raise FileNotFoundError("VTK file not found: (empty path)")
+
+    # Accept both absolute and relative/basename values (Dash dropdowns may emit either).
+    resolved = Path(file_path)
+    if not resolved.is_absolute():
+        resolved = resolve_vtk_path(str(resolved))
+    resolved = resolved.resolve()
+
+    if not resolved.exists():
+        if debug:
+            print(
+                f"[OPVIEW_DEBUG] get_reader missing: input={file_path!r} resolved={str(resolved)!r} cwd={str(Path.cwd())!r}",
+                flush=True,
+            )
         raise FileNotFoundError(f"VTK file not found: {file_path}")
-    if file_path not in reader_cache:
-        reader_cache[file_path] = VTKReader(file_path)
-    return reader_cache[file_path]
+
+    key = str(resolved)
+    if key not in reader_cache:
+        if debug:
+            print(f"[OPVIEW_DEBUG] get_reader load: {key}", flush=True)
+        reader_cache[key] = VTKReader(key)
+    return reader_cache[key]
 
 
 def latest_file(pattern: str):
@@ -200,8 +356,10 @@ def latest_file(pattern: str):
     return matches[-1] if matches else None
 
 
+print(f"[{time.time()-_start_time:.2f}s] Creating Dash app...")
 app = Dash(__name__, suppress_callback_exceptions=True)
 app.title = APP_TITLE
+print(f"[{time.time()-_start_time:.2f}s] Dash app created")
 
 TEXTDATA_DIR = Path("TextData")
 SIZE_DETAILS_FILE   = TEXTDATA_DIR / "SizeDetails.dat"
@@ -269,8 +427,9 @@ def load_size_averages():
     return {"times": times, "averages": averages}
 
 
-SIZE_DETAILS_DATA = load_size_details()
-SIZE_AVERAGE_DATA = load_size_averages()
+# Defer loading TextData files for fast startup - load only when needed
+SIZE_DETAILS_DATA = None  # load_size_details()
+SIZE_AVERAGE_DATA = None  # load_size_averages()
 
 
 def load_stress_strain():
@@ -399,8 +558,9 @@ def load_crss():
     return {"times": times, "averages": averages, "series": series}
 
 
-STRESS_STRAIN_DATA = load_stress_strain()
-CRSS_DATA = load_crss()
+# Defer loading TextData files for fast startup - load only when needed
+STRESS_STRAIN_DATA = None  # load_stress_strain()
+CRSS_DATA = None  # load_crss()
 PLASTIC_STRAIN_DATA = None
 
 
@@ -833,44 +993,113 @@ def format_fit_summary(best_fit):
     )
 
 
-tab_datasets = {}
-for tab in TAB_CONFIGS:
-    datasets = []
-    for dataset in tab.get("datasets", []):
-        # Collect all available files for this dataset (time steps)
-        files = []
-        if dataset.get("file_glob"):
-            glob_pattern = resolve_vtk_path(dataset["file_glob"])
-            files = sorted(glob(str(glob_pattern)))
-        elif dataset.get("file"):
-            files = [str(resolve_vtk_path(dataset["file"]))]
-        if not files:
-            continue
-        # Default to latest file for initial view
-        file_path = files[-1]
-        dataset_config = {
-            "id": f"{tab['id']}-{dataset['id']}",
-            "label": dataset["label"],
-            "scalars": dataset.get("scalars"),
-            "colorA": dataset.get("colorA"),
-            "colorB": dataset.get("colorB"),
-            "file": file_path,
-            "files": files,
-            "scale": dataset.get("scale"),
-            "units": dataset.get("units"),
-            "overrides": dataset.get("overrides"),
-            "enable_line_scan": tab['id'] != 'phase-field',  # Enable for all tabs except phase-field
-        }
-        try:
-            panel = ViewerPanel(app, get_reader, dataset_config)
-        except (FileNotFoundError, ValueError):
-            continue
-        datasets.append((dataset["label"], panel))
-        tab_datasets[tab["id"]] = {
+def initialize_tab_datasets_lazy():
+    """
+    Lazily initialize tab datasets - scans for files and creates panels.
+    Called when a project folder is selected.
+    """
+    # Import ViewerPanel now (it was deferred for fast startup)
+    from viewer import ViewerPanel
+
+    tab_data = {}
+    debug = bool(os.environ.get("OPVIEW_DEBUG"))
+    for tab in TAB_CONFIGS:
+        datasets = []
+        # Initialize the tab entry first to ensure it exists even if no datasets are found
+        tab_data[tab["id"]] = {
             "label": tab["label"],
             "panels": datasets
         }
 
+        for dataset in tab.get("datasets", []):
+            # Collect all available files for this dataset (file picker; no default selection).
+            files = []
+            if dataset.get("file_glob"):
+                pattern = Path(dataset["file_glob"]).name
+                # Dash/module tabs should use the Active project's VTK folder only (not the union),
+                # while Comparison uses the union.
+                base_dir = current_project_vtk_path if current_project_vtk_path and Path(current_project_vtk_path).exists() else None
+                vtk_paths = _scan_vtk_dir(Path(base_dir)) if base_dir else (list_vtk_files() or [])
+                if vtk_paths:
+                    files = sorted([p for p in vtk_paths if fnmatch.fnmatchcase(Path(p).name, pattern)])
+                else:
+                    glob_pattern = resolve_vtk_path(dataset["file_glob"])
+                    files = sorted(glob(str(glob_pattern)))
+            elif dataset.get("file"):
+                target = resolve_vtk_path(dataset["file"])
+                if target.exists():
+                    files = [str(target)]
+                else:
+                    target_name = Path(dataset["file"]).name
+                    files = sorted([p for p in (list_vtk_files() or []) if Path(p).name == target_name])
+
+            dataset_config = {
+                "id": f"{tab['id']}-{dataset['id']}",
+                "label": dataset["label"],
+                "scalars": dataset.get("scalars"),
+                "colorA": dataset.get("colorA"),
+                "colorB": dataset.get("colorB"),
+                "file": None,
+                "files": files,
+                "scale": dataset.get("scale"),
+                "units": dataset.get("units"),
+                "overrides": dataset.get("overrides"),
+                "enable_line_scan": True,
+            }
+            panel_id = dataset_config["id"]
+            if debug:
+                sample = [Path(p).name for p in (files or [])[:5]]
+                print(
+                    f"[OPVIEW_DEBUG] init_tab panel={panel_id} files={len(files or [])} sample={sample}",
+                    flush=True,
+                )
+            panel = main_panels_by_id.get(panel_id)
+            if panel is None:
+                try:
+                    panel = ViewerPanel(app, get_reader, dataset_config)
+                except (FileNotFoundError, ValueError):
+                    continue
+                main_panels_by_id[panel_id] = panel
+            else:
+                # Update existing panel to new file list without re-registering callbacks.
+                try:
+                    panel.files = dataset_config.get("files") or []
+                    panel.file_path = None
+                    panel.time_options = panel._build_time_options(panel.files)
+                    panel.time_value = None
+                    panel.reader = None
+                    initial_scalar = panel.scalar_defs[0]['value']
+                    panel.base_state = initial_state(
+                        scalar_key=initial_scalar,
+                        scalar_label=panel.scalar_defs[0]['label'],
+                        axis=panel.axis,
+                        slice_index=0,
+                        stats={"min": 0.0, "max": 1.0},
+                        colorA=panel.color_defaults[0],
+                        colorB=panel.color_defaults[1],
+                        file_path="",
+                        scale=(panel.scalar_map.get(initial_scalar) or {}).get("scale", panel.dataset_scale or 1.0) or 1.0,
+                        units=(panel.scalar_map.get(initial_scalar) or {}).get("units", panel.dataset_units),
+                        palette="aqua-fire",
+                    )
+                    panel.initial_slider_max = 0
+                    panel.initial_slider_disabled = True
+                    panel.initial_heatmap_bundle = {"figure": go.Figure(), "colorbar": go.Figure(), "scaled_stats": {"min": 0.0, "max": 1.0}, "fig_width": 600}
+                except Exception:
+                    pass
+            datasets.append((dataset["label"], panel))
+    return tab_data
+
+
+print(f"[{time.time()-_start_time:.2f}s] Initializing tab_datasets...")
+# Initialize with empty datasets for fast startup
+tab_datasets = {}
+for tab in TAB_CONFIGS:
+    tab_datasets[tab["id"]] = {
+        "label": tab["label"],
+        "panels": []
+    }
+print(f"[{time.time()-_start_time:.2f}s] tab_datasets initialized")
 
 comparison_panels = {}
 
@@ -925,17 +1154,28 @@ def _group_comparison_files(file_names):
     return grouped
 
 
-def list_vtk_files():
-    """Return sorted absolute file paths from the main VTK folder."""
-    directory = vtk_data_dir()
-    paths = []
-    try:
-        for child in directory.rglob("*"):
-            if child.is_file() and child.suffix.lower() in ALLOWED_VTK_EXTENSIONS:
-                paths.append(str(child.resolve()))
-    except OSError:
-        return []
-    return sorted(paths)
+def list_vtk_files(directory=None):
+    """Return sorted absolute file paths from the main VTK folder.
+
+    Args:
+        directory: Optional directory to scan. If None, checks if a project folder is selected.
+
+    NOTE: Returns empty list at startup for speed. Scans when directory is provided or folder selected."""
+    global current_project_vtk_path
+
+    # If no directory specified, check if a project folder is selected
+    if directory is None:
+        # Multi-project mode: return union of loaded project files if present.
+        if loaded_project_vtk_files:
+            return sorted(set(loaded_project_vtk_files))
+        if current_project_vtk_path and current_project_vtk_path.exists():
+            directory = current_project_vtk_path
+        else:
+            # FAST STARTUP: Don't scan at import time
+            return []
+
+    # Scan the specified directory
+    return _scan_vtk_dir(directory)
 
 
 def _comparison_entries(comparison_file_names, selected_vtk_paths):
@@ -1132,8 +1372,50 @@ def _comparison_dataset_config_from_entry(entry: dict):
     return config
 
 
+def _manual_viewer_id(file_path: str) -> str:
+    digest = hashlib.md5(file_path.encode('utf-8')).hexdigest()[:10]
+    base = Path(file_path).name
+    safe = re.sub(r'[^a-z0-9]+', '-', base.lower()).strip('-') or 'file'
+    return f"manual-{safe}-{digest}"
+
+
+def get_manual_panel(file_path: str):
+    """Return a cached ViewerPanel for a single file path."""
+    from viewer import ViewerPanel as VP
+
+    if not file_path:
+        return None
+    path = Path(file_path)
+    if not path.is_absolute():
+        path = resolve_vtk_path(str(path))
+    path = path.resolve()
+    if not path.exists():
+        return None
+    key = str(path)
+    panel = manual_panels_by_path.get(key)
+    if panel is None:
+        config = {
+            "id": _manual_viewer_id(key),
+            "label": path.name,
+            "file": key,
+            "files": [key],
+            "scalars": None,
+            "enable_line_scan": True,
+            "axis": 'y',
+        }
+        try:
+            panel = VP(app, get_reader, config)
+        except (FileNotFoundError, ValueError):
+            return None
+        manual_panels_by_path[key] = panel
+    return panel
+
+
 def get_comparison_panels(entries):
     """Build/return ViewerPanels for comparison entries, keyed by absolute path."""
+    # Import ViewerPanel when needed (lazy loading for fast startup)
+    from viewer import ViewerPanel as VP
+
     panels = {}
     paths = sorted({e.get('path') for e in (entries or []) if e and e.get('path')})
     for path_str in paths:
@@ -1148,7 +1430,7 @@ def get_comparison_panels(entries):
         panel = entry['panel'] if entry and entry['axis'] == config["axis"] else None
         if panel is None:
             try:
-                panel = ViewerPanel(app, get_reader, config)
+                panel = VP(app, get_reader, config)
             except (FileNotFoundError, ValueError):
                 continue
             comparison_panels[cache_key] = {'axis': config["axis"], 'panel': panel}
@@ -1173,13 +1455,11 @@ def build_tab_children(tab_id):
             html.Div(panel.build_layout(), className='dataset-body')
         ], className='dataset-block'))
 
-        # Line scan and histogram cards - for all tabs EXCEPT Phase Field
-        if tab_id != 'phase-field':
-            cards.append(panel.build_line_scan_card())
-            # build_histogram_card() returns None (deprecated - now combined with line scan)
-            histogram_card = panel.build_histogram_card()
-            if histogram_card:
-                cards.append(histogram_card)
+        cards.append(panel.build_line_scan_card())
+        # build_histogram_card() returns None (deprecated - now combined with line scan)
+        histogram_card = panel.build_histogram_card()
+        if histogram_card:
+            cards.append(histogram_card)
 
     if tab_id == 'phase-field':
         # Phase-field tab: show size-details and grain distribution cards.
@@ -1484,13 +1764,21 @@ def build_comparison_content(files, group_controls_by_group=None, group_selected
         # If nothing is selected yet, use available entries to populate options/defaults.
         panels_for_settings = panels_for_group or get_comparison_panels(available_group_entries)
 
-        group_options = [
-            {
-                'label': f"{e['name']} (Comparison)" if e.get('source') == 'comparison' else e['name'],
-                'value': e['path'],
-            }
-            for e in available_group_entries
-        ]
+        def _label_for_entry(e):
+            name = e.get('name') or Path(e.get('path') or '').name
+            if e.get('source') == 'comparison':
+                return f"{name} (Comparison)"
+            # VTK entry: prefix label with project folder if possible.
+            p = Path(e.get('path') or '')
+            parts = list(p.parts)
+            proj = None
+            for idx, part in enumerate(parts):
+                if part.lower() == 'vtk' and idx > 0:
+                    proj = parts[idx - 1]
+                    break
+            return f"{proj}/{name}" if proj else name
+
+        group_options = [{'label': _label_for_entry(e), 'value': e['path']} for e in available_group_entries]
 
         stored = stored_controls_by_group.get(group) or {}
 
@@ -1924,6 +2212,11 @@ def build_tab_bar():
 
 INITIAL_ACTIVE_TAB = get_default_active_tab()
 
+# Scan for project folders at startup (before layout creation)
+print(f"[{time.time()-_start_time:.2f}s] Scanning for project folders...")
+discovered_project_folders = scan_project_folders()
+print(f"[{time.time()-_start_time:.2f}s] Found {len(discovered_project_folders)} project folder(s)")
+
 
 def build_size_details_card():
     data = SIZE_DETAILS_DATA
@@ -2262,12 +2555,16 @@ def build_plastic_strain_figures():
     return strain_fig, rate_fig
 
 
+print(f"[{time.time()-_start_time:.2f}s] Building app layout...")
 app.layout = dmc.MantineProvider(
     html.Div(
         id='app-container',
         children=[
             dcc.Store(id='active-tab', data=INITIAL_ACTIVE_TAB),
             dcc.Store(id='comparison-files-store', data=list_comparison_files()),
+            dcc.Store(id='loaded-project-folders', data=[], storage_type='session'),
+            dcc.Store(id='selected-project-folder', data=None, storage_type='session'),
+            dcc.Location(id='url', refresh=False),
             html.Div([
                 html.Div([
                     html.Div([
@@ -2282,35 +2579,73 @@ app.layout = dmc.MantineProvider(
                     ], className='top-right')
             ], className='top-bar')
         ], className='app-header'),
-        html.Div([
+
         html.Div([
             html.Div([
-                html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
-                html.Span("Folders", className='vtk-folder-heading-text')
-            ], className='vtk-folder-heading'),
-        dcc.Tabs(
-            id='vtk-folder-tabs',
-            value='current',
-            className='vtk-tabs',
-            children=[
-            dcc.Tab(
-                label=DEFAULT_VTK_FOLDER_LABEL,
-                value='current',
-                className='vtk-tab',
-                selected_className='vtk-tab--selected'
-            ),
-            dcc.Tab(
-                label='Comparison',
-                value='comparison',
-                className='vtk-tab',
-                selected_className='vtk-tab--selected'
-            )
-            ]
-        ),
-        html.Div(id='vtk-folder-actions', className='vtk-folder-actions'),
-        html.Div(id='vtk-upload-feedback', className='vtk-upload-feedback')
-], className='vtk-folder-row')
+                html.Div([
+                         html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
+                         html.Span("Add Projects", className='vtk-folder-heading-text')
+                    ], className='vtk-folder-heading'),
+
+                     html.Div([
+                        html.Label("Projects:", className='project-folder-label', style={'marginRight': '8px'}),
+                        dcc.Dropdown(
+                            id='project-folder-dropdown',
+                            options=get_project_folder_options(),
+                            placeholder="Load project folder(s)…",
+                            clearable=True,
+                            multi=True,
+                            searchable=False,
+                            className='project-folder-dropdown',
+                            style={'minWidth': '320px'}
+                        ),
+                        html.Label("Active:", className='project-folder-label', style={'marginLeft': '12px', 'marginRight': '8px'}),
+                        dcc.Dropdown(
+                            id='active-project-dropdown',
+                            options=get_project_folder_options(),
+                            placeholder="Active project…",
+                            clearable=True,
+                            multi=False,
+                            searchable=False,
+                            className='project-folder-dropdown',
+                            style={'minWidth': '320px'}
+                        ),
+                     ], style={'display': 'flex', 'alignItems': 'center' })
+            ], className='vtk-folder-row'),
+                
+
+            html.Div([
+                html.Div([
+                         html.Span(DEFAULT_VTK_FOLDER_LABEL, className='vtk-folder-badge'),
+                         html.Span("Tabs", className='vtk-folder-heading-text')
+                ], className='vtk-folder-heading'),
+                dcc.Tabs(
+                    id='vtk-folder-tabs',
+                    value='current',
+                    className='vtk-tabs',
+                    children=[
+                    dcc.Tab(
+                        label=DEFAULT_VTK_FOLDER_LABEL,
+                        value='current',
+                        className='vtk-tab',
+                        selected_className='vtk-tab--selected'
+                    ),
+                    dcc.Tab(
+                        label='Comparison',
+                        value='comparison',
+                        className='vtk-tab',
+                        selected_className='vtk-tab--selected'
+                    )
+                    ]
+                ),
+                html.Div(id='vtk-folder-actions', className='vtk-folder-actions'),
+                html.Div(id='vtk-upload-feedback', className='vtk-upload-feedback')
+
+            ], className='vtk-folder-row')
+
         ], className='vtk-folder-section'),
+
+## -------------------------------------------------------------------------------
             html.Div([
                 html.Div([
                     html.Span("Modules", className='sidebar-title'),
@@ -2336,6 +2671,7 @@ app.layout = dmc.MantineProvider(
         ]
     )
 )
+print(f"[{time.time()-_start_time:.2f}s] App layout built")
 
 
 @app.callback(
@@ -2423,6 +2759,122 @@ def update_folder_actions(active_tab):
         return _comparison_upload()
     return None
 
+
+@app.callback(
+    Output('loaded-project-folders', 'data'),
+    Output('selected-project-folder', 'data'),
+    Output('vtk-upload-feedback', 'children', allow_duplicate=True),
+    Output('active-project-dropdown', 'value'),
+    Input('project-folder-dropdown', 'value'),
+    Input('active-project-dropdown', 'value'),
+    State('active-tab', 'data'),
+    prevent_initial_call=True
+)
+def handle_project_folder_selection(selected_folders, active_project, active_tab):
+    """Handle project folder selection for multi-project browsing.
+
+    - `project-folder-dropdown` loads one or more project folders.
+    - `active-project-dropdown` selects the project used by the main module tabs.
+    - Comparison can pick files from any loaded project without clearing selections.
+    """
+    global current_project_vtk_path
+
+    # Normalize
+    if not selected_folders:
+        selected_folders = []
+    if isinstance(selected_folders, str):
+        selected_folders = [selected_folders]
+    selected_folders = [f for f in selected_folders if f in discovered_project_folders]
+
+    # Update loaded VTK files union for comparison pickers.
+    loaded_vtk_paths = []
+    loaded_names = []
+    for name in selected_folders:
+        info = discovered_project_folders.get(name) or {}
+        if info.get('has_vtk') and info.get('vtk_path'):
+            loaded_names.append(name)
+            loaded_vtk_paths.append(info['vtk_path'])
+
+    global loaded_project_vtk_files, loaded_project_names
+    loaded_project_names = loaded_names
+    all_files = []
+    for vtk_dir in loaded_vtk_paths:
+        all_files.extend(_scan_vtk_dir(Path(vtk_dir)))
+    loaded_project_vtk_files = sorted(set(all_files))
+
+    # Choose active project (for module tabs).
+    active_name = active_project if active_project in selected_folders else (selected_folders[0] if selected_folders else None)
+    if not active_name:
+        current_project_vtk_path = None
+        # Clear module panels.
+        for tab in TAB_CONFIGS:
+            tab_datasets[tab["id"]]["panels"] = []
+        msg = html.Div("No project loaded. Load one or more projects to enable Dash tabs and Comparison pickers.",
+                       className='vtk-upload-feedback vtk-upload-feedback--error')
+        return selected_folders, None, msg, None
+
+    folder_info = discovered_project_folders[active_name]
+
+    # Update the global VTK path to point to selected folder
+    if folder_info.get('has_vtk'):
+        current_project_vtk_path = folder_info['vtk_path']
+    else:
+        current_project_vtk_path = None
+
+    # Build main module tabs for the active project (one file at a time per dataset).
+    try:
+        new_tabs = initialize_tab_datasets_lazy()
+        for tab_id, info in new_tabs.items():
+            tab_datasets[tab_id] = info
+    except Exception:
+        # Leave existing data if initialization fails.
+        pass
+
+    print(f"\n{'='*60}")
+    print(f"PROJECTS LOADED: {', '.join(selected_folders) if selected_folders else '(none)'}")
+    print(f"ACTIVE PROJECT: {active_name}")
+    print(f"{'='*60}")
+    print(f"Path: {folder_info['path']}")
+    if folder_info.get('has_vtk'):
+        print(f"VTK Path: {folder_info['vtk_path']}")
+        print(f"VTK Files (active project): {folder_info.get('vtk_file_count', 0)}")
+        print(f"VTK Files (loaded union): {len(loaded_project_vtk_files)}")
+        print(f"✓ VTK data directory updated to: {current_project_vtk_path}")
+    if folder_info.get('has_textdata'):
+        print(f"TextData Path: {folder_info['textdata_path']}")
+        print(f"TextData Files: {folder_info['textdata_file_count']}")
+    print(f"{'='*60}\n")
+
+    feedback_msg = html.Div([
+        html.Div([
+            html.Span("✓ ", style={'color': '#28a745', 'fontWeight': 'bold', 'fontSize': '16px'}),
+            html.Span(f"Loaded projects: {', '.join(selected_folders) if selected_folders else '(none)'}", style={'fontWeight': '500'}),
+        ]),
+        html.Div([
+            html.Span(f"Active: {active_name} | ", style={'color': '#666', 'fontSize': '12px'}),
+            html.Span(f"VTK files (union): {len(loaded_project_vtk_files)} | ",
+                      style={'color': '#666', 'fontSize': '12px'}),
+            html.Span(f"TextData Files: {folder_info['textdata_file_count']}",
+                      style={'color': '#666', 'fontSize': '12px'}),
+        ], style={'marginTop': '4px'}),
+        html.Div([
+            html.Span("💡 Comparison can pick files from any loaded project; Dash tabs use the Active project.",
+                      style={'color': '#0066cc', 'fontSize': '12px', 'fontStyle': 'italic'})
+        ], style={'marginTop': '8px'})
+    ], className='vtk-upload-feedback vtk-upload-feedback--success',
+       style={'padding': '12px', 'lineHeight': '1.4', 'maxHeight': '300px', 'overflowY': 'auto'})
+
+    # Store the selected folder data
+    folder_data = {
+        'name': active_name,
+        'path': str(folder_info['path']),
+        'vtk_path': str(folder_info['vtk_path']) if folder_info['has_vtk'] else None,
+        'textdata_path': str(folder_info['textdata_path']) if folder_info['has_textdata'] else None,
+        'loaded': selected_folders,
+    }
+
+    return selected_folders, folder_data, feedback_msg, active_name
+
 @app.callback(
     Output('active-tab', 'data'),
     Input({'type': 'tab-button', 'tab': ALL}, 'n_clicks'),
@@ -2445,13 +2897,15 @@ def set_active_tab(n_clicks, current_tab):
     Output({'type': 'tab-button', 'tab': ALL}, 'className'),
     Input('active-tab', 'data'),
     Input('comparison-files-store', 'data'),
+    Input('selected-project-folder', 'data'),
+    Input('loaded-project-folders', 'data'),
     Input('vtk-folder-tabs', 'value'),
     State({'type': 'comparison-controls-store', 'group': ALL}, 'data'),
     State({'type': 'comparison-controls-store', 'group': ALL}, 'id'),
     State({'type': 'comparison-selected-files-store', 'group': ALL}, 'data'),
     State({'type': 'comparison-selected-files-store', 'group': ALL}, 'id'),
 )
-def render_active_tab(active_tab, comparison_files, active_folder,
+def render_active_tab(active_tab, comparison_files, _active_project, _loaded_projects, active_folder,
                       group_controls_data, group_controls_ids,
                       selected_group_data, selected_group_ids):
     if active_tab is None and active_folder != 'comparison':
@@ -2467,6 +2921,16 @@ def render_active_tab(active_tab, comparison_files, active_folder,
         for tab_id in TAB_ORDER
     ]
     if active_folder == 'comparison':
+        # Don't rebuild comparison content when only the active project changes;
+        # comparison can draw from all loaded projects and should preserve UI state.
+        if ctx.triggered_id == 'selected-project-folder':
+            return (
+                no_update,
+                {'display': 'none'},
+                no_update,
+                {'display': 'block'},
+                classes,
+            )
         stored_by_group = {}
         if group_controls_data and group_controls_ids:
             for store_id, store_data in zip(group_controls_ids, group_controls_data):
@@ -2500,8 +2964,6 @@ def render_active_tab(active_tab, comparison_files, active_folder,
         classes,
     )
 # ===== END SECTION 3 =====
-
-
 if SIZE_DETAILS_DATA:
 
     @app.callback(
@@ -2679,6 +3141,27 @@ if __name__ == '__main__':
     print("\n" + "=" * 60)
     print(APP_TITLE.upper())
     print("=" * 60)
+
+    # Scan for project folders containing VTK or TextData
+    print("\nScanning for project folders...")
+    discovered_project_folders = scan_project_folders()
+
+    if discovered_project_folders:
+        print(f"\nFound {len(discovered_project_folders)} project folder(s):")
+        for folder_name, folder_info in sorted(discovered_project_folders.items()):
+            print(f"\n  [{folder_name}]")
+            print(f"    Path: {folder_info['path']}")
+            if folder_info['has_vtk']:
+                print(f"    VTK Files: {folder_info['vtk_file_count']} files in {folder_info['vtk_path'].name}/")
+            if folder_info['has_textdata']:
+                print(f"    TextData Files: {folder_info['textdata_file_count']} files in {folder_info['textdata_path'].name}/")
+    else:
+        print("  No project folders with VTK or TextData found.")
+
+    print("\n" + "-" * 60)
+    print("Current VTK Data Directory: {}".format(vtk_data_dir()))
+    print("-" * 60)
+
     for tab_id, info in tab_datasets.items():
         print(f"[{info['label']}]")
         if not info['panels']:
@@ -2686,6 +3169,7 @@ if __name__ == '__main__':
             continue
         for dataset_label, panel in info['panels']:
             print(f"  - {dataset_label}: {panel.file_path}")
+    print(f"\n[{time.time()-_start_time:.2f}s] Total startup time")
     print("\nStarting Dash server on http://127.0.0.1:8050\n")
 
     app.run(debug=True, host='127.0.0.1', port=8050)

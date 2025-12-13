@@ -28,22 +28,25 @@ def build_controls(
 ):
     """Return control panel stacked above the graph."""
 
-    # Row 1: Optional Time Step, Scalar Field
+    # Row 1: Optional File picker, Scalar Field
     first_row_children = []
 
-    if time_options:
+    if time_options is not None:
         first_row_children.extend([
             html.Label([
-                html.Span("t", className="label-icon"),
-                "Time Step:",
+                html.Span("F", className="label-icon"),
+                "Files:",
             ], className='field-label grid-label'),
             html.Div([
                 dcc.Dropdown(
                     id=component_id(viewer_id, 'time'),
-                    options=time_options,
+                    options=time_options or [],
                     value=time_value,
-                    clearable=False,
+                    clearable=True,
                     searchable=False,
+                    persistence=True,
+                    persistence_type='session',
+                    placeholder="Select file…",
                 )
             ], className='dropdown-wrapper'),
         ])
@@ -186,7 +189,7 @@ def build_controls(
 
 #  HEAD: --------------------- Heatmap plot section -------------------------------------------------------
 
-def build_graph_section(viewer_id: str):
+def build_graph_section(viewer_id: str, *, initial_figure=None, initial_colorbar=None):
     """Graph container - main heatmap block."""
     return html.Div([
 
@@ -242,6 +245,7 @@ def build_graph_section(viewer_id: str):
                     dcc.Graph(
                         id=component_id(viewer_id, 'graph'),
                         className='heatmap-main-graph',
+                        figure=initial_figure,
                         config={
                             'displayModeBar': True,
                             'displaylogo': False,
@@ -259,6 +263,7 @@ def build_graph_section(viewer_id: str):
                     dcc.Graph(
                         id=component_id(viewer_id, 'colorbar'),
                         className='heatmap-colorbar-graph',
+                        figure=initial_colorbar,
                         config={
                             'displayModeBar': False,
                             'displaylogo': False,
@@ -382,7 +387,9 @@ def build_tab_layout(
     time_options=None,
     time_value=None,
     include_range_section=True,
-    include_hidden_line_toggle=False
+    include_hidden_line_toggle=False,
+    initial_figure=None,
+    initial_colorbar=None,
 ):
     """Return the full layout for a viewer tab."""
     return html.Div([
@@ -400,7 +407,7 @@ def build_tab_layout(
                 include_range_section=include_range_section,
                 include_hidden_line_toggle=include_hidden_line_toggle
             ),
-            build_graph_section(viewer_id)
+            build_graph_section(viewer_id, initial_figure=initial_figure, initial_colorbar=initial_colorbar)
         ], className='stacked-card'),
         dcc.Store(id=component_id(viewer_id, 'state'), data=state.to_dict()),
     ], className='viewer-tab')
