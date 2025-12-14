@@ -1331,7 +1331,10 @@ def _comparison_settings(panels, scalar_value=None, range_min=None, range_max=No
         except (TypeError, ValueError):
             slider_min = None
             slider_max = None
-    if slider_min is not None and slider_max is not None:
+    # Treat the range inputs as the source of truth; only fall back to the slider
+    # when inputs are empty/None. The slider itself updates the inputs via
+    # `_update_comparison_range`, so this avoids "manual input ignored" bugs.
+    if parsed_min is None and parsed_max is None and slider_min is not None and slider_max is not None:
         parsed_min = slider_min
         parsed_max = slider_max
     if selected_scalar and (parsed_min is None or parsed_max is None):
@@ -2001,12 +2004,11 @@ def _make_comparison_cache_key(files, field, range_min, range_max, palette, full
     Input({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'value'),
     Input({'type': 'comparison-heatmap-palette', 'group': MATCH}, 'value'),
     Input({'type': 'comparison-heatmap-full-scale', 'group': MATCH}, 'checked'),
-    Input({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'value'),
     State({'type': 'comparison-heatmap-rows', 'group': MATCH}, 'id'),
     State('comparison-files-store', 'data'),
     State({'type': 'comparison-selected-files-store', 'group': MATCH}, 'data'),
 )
-def _update_comparison_heatmaps(field, range_min, range_max, palette, full_scale, slider_range, rows_id, files, selected_paths):
+def _update_comparison_heatmaps(field, range_min, range_max, palette, full_scale, rows_id, files, selected_paths):
     """Update heatmaps for a single comparison group."""
     group = rows_id.get('group') if isinstance(rows_id, dict) else None
     group_entries = _comparison_entries_from_selected(selected_paths)
@@ -2020,7 +2022,7 @@ def _update_comparison_heatmaps(field, range_min, range_max, palette, full_scale
         return []
 
     settings, _, _ = _comparison_settings(
-        panels_for_group, field, range_min, range_max, palette, full_scale, slider_range=slider_range
+        panels_for_group, field, range_min, range_max, palette, full_scale
     )
     return build_comparison_heatmap_row(panels_for_group, group_entries, settings, group)
 
@@ -2065,6 +2067,21 @@ def _sync_comparison_control_options(selected_paths, stored_controls):
         settings.get('palette'),
         not has_selection,
     )
+
+
+@app.callback(
+    Output({'type': 'comparison-heatmap-range-min', 'group': MATCH}, 'disabled'),
+    Output({'type': 'comparison-heatmap-range-max', 'group': MATCH}, 'disabled'),
+    Output({'type': 'comparison-heatmap-range-slider', 'group': MATCH}, 'disabled'),
+    Output({'type': 'comparison-heatmap-reset', 'group': MATCH}, 'disabled'),
+    Output({'type': 'comparison-heatmap-full-scale', 'group': MATCH}, 'disabled'),
+    Input({'type': 'comparison-selected-files-store', 'group': MATCH}, 'data'),
+)
+def _toggle_comparison_range_controls(selected_paths):
+    """Enable range controls only when this group has a selection."""
+    has_selection = bool(_comparison_entries_from_selected(selected_paths))
+    disabled = not has_selection
+    return disabled, disabled, disabled, disabled, disabled
 
 
 @app.callback(
